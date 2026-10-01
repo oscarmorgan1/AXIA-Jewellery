@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AXIA | First Drop</title>
+<meta name="description" content="The AXIA First Drop. Made to order. Register for early access before the public launch.">
+<meta property="og:title" content="AXIA First Drop">
+<meta property="og:description" content="Register for early access to the AXIA First Drop before it opens to the public.">
+<meta property="og:image" content="assets/img/products/two-row-flat-cuban-chain-12mm/silver/1.jpg">
+<meta name="theme-color" content="#111315">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260930a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111315'/%3E%3Cg fill='%23F4F1EA'%3E%3Cpolygon points='16,5 6,27 9.5,27'/%3E%3Cpolygon points='16,5 22.5,27 26,27'/%3E%3Crect x='9' y='20.4' width='14' height='1.7'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--cbar-h:76px}
+  [hidden]{display:none!important}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--font-sans);background:var(--obsidian);color:var(--on-dark);-webkit-font-smoothing:antialiased;overflow-x:hidden;padding-top:var(--cbar-h)}
+  img{display:block;max-width:100%}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gutter)}
+  .eyebrow{font-size:var(--t-label);letter-spacing:var(--ls-wide);text-transform:uppercase;color:var(--on-dark-3);font-weight:600}
+
+  /* ---------- sticky top bar (logo + register) ---------- */
+  .cbar{position:fixed;top:0;left:0;right:0;z-index:100;height:var(--cbar-h);
+    display:flex;align-items:center;gap:var(--s-3);padding:0 var(--gutter);
+    background:rgba(13,15,17,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--line-dark)}
+  .cbar--logo{flex-direction:column;justify-content:center;gap:5px}
+  .cbar__logo{width:132px;height:28px;background-color:var(--on-dark);display:block;cursor:pointer;
+    -webkit-mask:url("assets/img/axia-logo.png") center/contain no-repeat;mask:url("assets/img/axia-logo.png") center/contain no-repeat}
+  .cbar__enter{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--on-dark-3);text-decoration:none;font-weight:600}
+  .cbar__enter:hover{color:var(--ice)}
+  .cbar__brand{width:92px;height:20px;flex:0 0 auto;background-color:var(--on-dark);
+    -webkit-mask:url(assets/img/axia-logo.png) left center/contain no-repeat;
+    mask:url(assets/img/axia-logo.png) left center/contain no-repeat}
+  .cbar__cd{display:none} /* timer temporarily hidden until the drop date is announced - restore to: margin:0 auto;display:flex;align-items:flex-start;gap:.5em */
+  .cbar__brand{cursor:pointer}
+  .cbar__shop{flex:0 0 auto;font-size:var(--t-label);letter-spacing:.1em;text-transform:uppercase;color:var(--ice);font-weight:700;white-space:nowrap;text-decoration:none}
+  .cbar__shop:hover{color:var(--on-dark)}
+  .cbar__soon{margin:0 auto;min-width:0;font-size:var(--t-label);letter-spacing:.14em;text-transform:uppercase;color:var(--on-dark);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cbar__cta{margin-left:auto}
+  @media(max-width:600px){.cbar__soon{display:none}}
+  @media(max-width:700px){.cbar__soon-pre{display:none}}
+  .cbar__u{display:flex;flex-direction:column;align-items:center;line-height:1}
+  .cbar__u b{font-family:var(--font-display);font-weight:800;font-size:1.55rem;line-height:1;color:var(--on-dark);font-variant-numeric:tabular-nums}
+  .cbar__u i{font-style:normal;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--on-dark-3);margin-top:4px}
+  .cbar__sep{color:var(--on-dark-3);font-weight:700;font-size:1.25rem;margin-top:0}
+  .cbar__cta{flex:0 0 auto;background:var(--magenta);color:var(--on-magenta);font-weight:700;
+    border-radius:var(--r-pill);padding:.6em 1.35em;font-size:var(--t-label);letter-spacing:.04em;text-transform:uppercase;
+    transition:background var(--dur-2) var(--ease)}
+  .cbar__cta:hover{background:var(--magenta-press)}
+  @media(max-width:560px){.cbar__brand{width:64px}.cbar__cta{padding:.5em .9em}.cbar__cd{gap:.35em}
+    .cbar__u b{font-size:1.2rem}.cbar__u i{display:none}.cbar__sep{font-size:1rem}}
+  /* launch-giveaway strip, sits under the top bar, taps through to the sign-up */
+  .promo-strip{display:flex;align-items:center;justify-content:center;gap:.85rem;flex-wrap:wrap;
+    text-decoration:none;padding:.72rem 1.1rem;position:relative;overflow:hidden;
+    background:linear-gradient(90deg,#14171b,#1c222a 50%,#14171b);
+    border-bottom:1px solid var(--line-dark);transition:background var(--dur-2) var(--ease)}
+  .promo-strip::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(100deg,transparent 22%,rgba(199,234,247,.16) 50%,transparent 78%);
+    transform:translateX(-100%);animation:promoShine 6s ease-in-out infinite}
+  @keyframes promoShine{0%,55%{transform:translateX(-100%)}100%{transform:translateX(110%)}}
+  .promo-strip__tag{position:relative;z-index:1;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+    font-weight:800;color:var(--obsidian);background:var(--ice);padding:.34em .72em;border-radius:var(--r-pill);white-space:nowrap}
+  .promo-strip__txt{position:relative;z-index:1;color:var(--on-dark);font-size:var(--t-body-s);font-weight:500}
+  .promo-strip__txt em{font-style:normal;color:var(--ice)}
+  .promo-strip__cta{position:relative;z-index:1;display:inline-flex;align-items:center;gap:.4em;
+    color:var(--magenta);font-weight:800;font-size:var(--t-label);letter-spacing:.08em;text-transform:uppercase}
+  .promo-strip__cta .a{transition:transform var(--dur-2) var(--ease)}
+  .promo-strip:hover{background:linear-gradient(90deg,#181c21,#222933 50%,#181c21)}
+  .promo-strip:hover .promo-strip__cta{color:var(--magenta-press)}
+  .promo-strip:hover .promo-strip__cta .a{transform:translateX(3px)}
+  @media(max-width:560px){.promo-strip{gap:.5rem;padding:.6rem .8rem}.promo-strip__txt{font-size:12px}.promo-strip__tag{font-size:9px;padding:.3em .6em}}
+  @media(prefers-reduced-motion:reduce){.promo-strip::before{animation:none;display:none}}
+
+  /* ---------- hero ---------- */
+  .hero{position:relative;text-align:center;padding:clamp(3.5rem,9vw,7rem) var(--gutter) clamp(2.5rem,6vw,4.5rem);overflow:hidden}
+  .hero::before{content:"";position:absolute;top:-20%;left:50%;transform:translateX(-50%);width:120%;height:120%;
+    background:radial-gradient(42% 42% at 50% 30%,var(--ice-bloom),transparent 66%);opacity:.28;mix-blend-mode:screen;pointer-events:none}
+  .hero__in{position:relative;z-index:1;max-width:20ch;margin-inline:auto}
+  .hero__eye{color:var(--magenta);font-weight:700;letter-spacing:var(--ls-wide);text-transform:uppercase;font-size:var(--t-caption);margin-bottom:var(--s-4)}
+  .hero h1{font-family:var(--font-display);font-weight:800;line-height:.88;text-transform:uppercase;letter-spacing:var(--ls-tight);
+    font-size:clamp(3.4rem,15vw,8.5rem)}
+  .hero h1 .date{display:block;color:var(--ice);font-size:clamp(1.5rem,6vw,3.2rem);margin-top:.15em;letter-spacing:.02em}
+  .hero__lede{max-width:38ch;margin:var(--s-6) auto 0;color:var(--on-dark-2);font-size:var(--t-body-l);line-height:var(--lh-body)}
+
+  /* countdown */
+  .count{display:flex;gap:clamp(.6rem,3vw,1.6rem);justify-content:center;margin-top:var(--s-7)}
+  .count__u{min-width:64px}
+  .count__n{font-family:var(--font-display);font-weight:700;font-size:clamp(1.8rem,6vw,3rem);line-height:1;font-variant-numeric:tabular-nums}
+  .count__l{font-size:var(--t-label);letter-spacing:var(--ls-mid);text-transform:uppercase;color:var(--on-dark-3);margin-top:6px}
+  .hero__cue{margin-top:var(--s-7);font-size:var(--t-label);letter-spacing:var(--ls-wide);text-transform:uppercase;color:var(--on-dark-3)}
+  .hero__cue span{display:block;margin-top:6px;animation:bob 1.8s var(--ease) infinite}
+  @keyframes bob{0%,100%{transform:translateY(0);opacity:.6}50%{transform:translateY(6px);opacity:1}}
+
+  /* ---------- slider ---------- */
+  .drop{padding:clamp(2rem,5vw,3.5rem) 0 clamp(3rem,6vw,5rem)}
+  .drop__head{text-align:center;margin-bottom:var(--s-6)}
+  .drop__head h2{font-family:var(--font-display);font-weight:700;text-transform:uppercase;font-size:var(--t-32);letter-spacing:var(--ls-tight)}
+  .drop__head p{color:var(--on-dark-2);margin-top:var(--s-2);font-size:var(--t-body-s)}
+
+  .slider{position:relative;max-width:1080px;margin-inline:auto;padding-inline:var(--gutter)}
+  .viewport{overflow:hidden;border-radius:var(--r-2)}
+  .track{display:flex;transition:transform var(--dur-4) var(--ease-out);will-change:transform}
+  .slide{flex:0 0 100%;position:relative}
+  .stage{position:relative;aspect-ratio:4/5;max-height:78vh;background:radial-gradient(120% 100% at 30% 15%,#232a37 0%,#13161c 55%,#0a0c10 100%);overflow:hidden}
+  @media(min-width:760px){.stage{aspect-ratio:16/10}}
+  .stage__glow{position:absolute;inset:0;background:radial-gradient(44% 40% at 26% 22%,var(--ice-glow),transparent 60%);opacity:.3;pointer-events:none;z-index:1}
+  .stage__img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 42%;
+    transform:scale(var(--wm-crop));transform-origin:50% 0;z-index:0;transition:transform var(--dur-4) var(--ease-out)}
+  /* lighter scrim - only darkens the lower third where the copy sits, so the piece stays visible */
+  .stage__scrim{position:absolute;inset:0;z-index:2;pointer-events:none;
+    background:linear-gradient(0deg,rgba(7,9,12,.9) 0%,rgba(7,9,12,.55) 20%,rgba(7,9,12,.12) 44%,transparent 60%)}
+  .slide__link{display:block;width:100%;color:inherit;text-decoration:none;cursor:pointer;
+    background:none;border:0;padding:0;font:inherit;text-align:left}
+  .slide__link:hover .stage__img{transform:scale(1.2)}
+  .slide__view{display:inline-flex;align-items:center;gap:.35em;margin-top:var(--s-4);
+    font-size:var(--t-label);letter-spacing:var(--ls-mid);text-transform:uppercase;color:var(--ice);font-weight:700}
+  .slide__view svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;transition:transform var(--dur-2) var(--ease)}
+  .slide__link:hover .slide__view svg{transform:translateX(3px)}
+  .slide__copy{position:absolute;left:0;right:0;bottom:0;z-index:3;padding:clamp(1.4rem,4vw,2.6rem);text-align:left}
+  .slide__eye{color:var(--magenta);font-weight:700;letter-spacing:var(--ls-wide);text-transform:uppercase;font-size:var(--t-label)}
+  .slide__name{font-family:var(--font-display);font-weight:700;text-transform:uppercase;line-height:1;letter-spacing:var(--ls-tight);
+    font-size:clamp(1.8rem,5.2vw,3.4rem);margin:var(--s-3) 0 var(--s-4)}
+  .slide__row{display:flex;align-items:center;gap:var(--s-4);flex-wrap:wrap}
+  .made{display:inline-flex;align-items:center;gap:.5em;margin-bottom:var(--s-3);
+    border:1px solid rgba(199,234,247,.4);background:rgba(17,19,21,.62);backdrop-filter:blur(6px);border-radius:var(--r-pill);
+    padding:.55em 1.05em;font-size:var(--t-body-s);letter-spacing:var(--ls-mid);text-transform:uppercase;font-weight:700;color:var(--on-dark)}
+  .made b{color:var(--ice);font-weight:800;font-size:1.15em;font-variant-numeric:tabular-nums}
+  .made .dot{width:7px;height:7px;border-radius:50%;background:var(--magenta);box-shadow:0 0 10px var(--magenta);animation:pulse 2s ease infinite}
+  .made--low{border-color:var(--magenta);background:rgba(243,67,110,.16)}
+  .made--low b{color:#fff}
+  .slide__view{margin-left:auto;margin-top:0}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .slide__price{font-size:var(--t-body);color:var(--on-dark-2);font-weight:500}
+
+  /* video slide */
+  .slide__video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+  .slide--video .stage__scrim{background:linear-gradient(0deg,rgba(7,9,12,.88),rgba(7,9,12,.2) 55%,transparent),
+    linear-gradient(90deg,rgba(7,9,12,.55),transparent 55%)}
+  .slide--video .slide__name{font-size:clamp(2rem,6vw,3.8rem)}
+
+  /* controls */
+  .arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:46px;height:46px;border-radius:50%;
+    display:grid;place-items:center;cursor:pointer;color:var(--on-dark);
+    background:rgba(17,19,21,.55);border:1px solid var(--line-dark-strong);backdrop-filter:blur(8px);
+    transition:background var(--dur-2) var(--ease),transform var(--dur-2) var(--ease)}
+  .arrow:hover{background:rgba(17,19,21,.85)}
+  .arrow:active{transform:translateY(-50%) scale(.94)}
+  .arrow--prev{left:calc(var(--gutter) + 10px)}
+  .arrow--next{right:calc(var(--gutter) + 10px)}
+  .arrow svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2}
+  @media(max-width:560px){.arrow{width:40px;height:40px}.arrow--prev{left:calc(var(--gutter) - 4px)}.arrow--next{right:calc(var(--gutter) - 4px)}}
+  .dots{display:flex;gap:8px;justify-content:center;margin-top:var(--s-5)}
+  .dot-btn{width:9px;height:9px;border-radius:50%;border:0;cursor:pointer;padding:0;background:var(--line-dark-strong);transition:background var(--dur-2) var(--ease),width var(--dur-2) var(--ease)}
+  .dot-btn.on{background:var(--ice);width:24px;border-radius:var(--r-pill)}
+  .counter{text-align:center;margin-top:var(--s-3);font-size:var(--t-label);letter-spacing:var(--ls-mid);color:var(--on-dark-3);font-variant-numeric:tabular-nums}
+
+  /* ---------- giveaway ---------- */
+  /* giveaway kept compact so people reach the sign-up quickly */
+  .give{position:relative;padding:clamp(1.6rem,4vw,2.6rem) var(--gutter);overflow:hidden;
+    border-top:1px solid var(--line-dark);border-bottom:1px solid var(--line-dark)}
+  .give::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 90% at 50% 50%,var(--magenta-soft),transparent 70%);pointer-events:none}
+  .give__in{position:relative;z-index:1;max-width:760px;margin-inline:auto;display:grid;grid-template-columns:220px 1fr;gap:clamp(1rem,3.5vw,2rem);align-items:center}
+  @media(max-width:640px){.give__in{grid-template-columns:1fr;text-align:center;gap:1.1rem}}
+  .give__media{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-2)}
+  .give__media img,.give__media video{width:100%;height:100%;object-fit:cover;border-radius:var(--r-2);
+    aspect-ratio:4/5;border:1px solid var(--line-dark-strong);background:#0c0e12}
+  @media(max-width:640px){.give__media{max-width:260px;margin-inline:auto}}
+  .give__copy{text-align:left}
+  @media(max-width:640px){.give__copy{text-align:center}}
+  .give__eye{color:var(--magenta);font-weight:700;letter-spacing:var(--ls-wide);text-transform:uppercase;font-size:var(--t-label)}
+  .give h2{font-family:var(--font-display);font-weight:700;text-transform:uppercase;font-size:var(--t-28);letter-spacing:var(--ls-tight);margin:var(--s-2) 0}
+  .give h2 em{font-style:normal;color:var(--ice)}
+  .give p{color:var(--on-dark-2);font-size:var(--t-body-s);line-height:var(--lh-body)}
+  .give__val{display:inline-block;margin-top:var(--s-3);font-weight:600;color:var(--on-dark);border:1px solid var(--line-dark-strong);border-radius:var(--r-pill);padding:.45em 1em;font-size:var(--t-body-s)}
+  .give__cta{display:inline-flex;align-items:center;gap:.4em;margin-top:var(--s-3);margin-left:.9em;color:var(--magenta);font-weight:700;font-size:var(--t-body-s);text-transform:uppercase;letter-spacing:.06em;text-decoration:none}
+  .give__cta .a{transition:transform var(--dur-2) var(--ease)}
+  .give__cta:hover .a{transform:translateX(3px)}
+  @media(max-width:640px){.give__cta{margin-left:0;display:flex;justify-content:center}}
+
+  /* ---------- product lightbox (contained listing view) ---------- */
+  .lb{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:var(--gutter)}
+  .lb[hidden]{display:none}
+  .lb__backdrop{position:absolute;inset:0;background:rgba(6,8,10,.84);backdrop-filter:blur(8px)}
+  .lb__panel{position:relative;z-index:1;width:100%;max-width:900px;max-height:90vh;overflow:auto;
+    background:var(--obsidian-2);border:1px solid var(--line-dark-strong);border-radius:var(--r-3);
+    display:grid;grid-template-columns:1.05fr 1fr;animation:lbIn .28s var(--ease-out)}
+  @keyframes lbIn{from{opacity:0;transform:translateY(14px) scale(.99)}to{opacity:1;transform:none}}
+  @media(max-width:720px){.lb__panel{grid-template-columns:1fr;max-height:92vh}}
+  .lb__close{position:absolute;top:12px;right:12px;z-index:3;width:40px;height:40px;border-radius:50%;
+    border:1px solid var(--line-dark-strong);background:rgba(17,19,21,.75);color:var(--on-dark);
+    display:grid;place-items:center;cursor:pointer;transition:background var(--dur-2) var(--ease)}
+  .lb__close:hover{background:rgba(17,19,21,.95)}
+  .lb__close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2}
+  .lb__media{background:#0c0e12;padding:var(--s-4);display:flex;flex-direction:column;gap:var(--s-3)}
+  .lb__main{aspect-ratio:1;border-radius:var(--r-2);overflow:hidden;background:#0a0c10}
+  .lb__main img{width:100%;height:100%;object-fit:cover;object-position:50% 40%}
+  .lb__thumbs{display:flex;gap:8px;flex-wrap:wrap}
+  .lb__thumb{width:54px;height:54px;border-radius:var(--r-1);overflow:hidden;border:1px solid var(--line-dark);
+    cursor:pointer;opacity:.6;background:none;padding:0;transition:opacity var(--dur-2) var(--ease),border-color var(--dur-2) var(--ease)}
+  .lb__thumb.on{opacity:1;border-color:var(--ice)}
+  .lb__thumb img{width:100%;height:100%;object-fit:cover}
+  .lb__info{padding:clamp(1.4rem,4vw,2.2rem);display:flex;flex-direction:column}
+  .lb__made{display:inline-flex;align-items:center;gap:.5em;align-self:flex-start;border:1px solid rgba(199,234,247,.4);
+    border-radius:var(--r-pill);padding:.5em 1em;font-size:var(--t-body-s);letter-spacing:var(--ls-mid);text-transform:uppercase;font-weight:700;color:var(--on-dark)}
+  .lb__made .dot{width:7px;height:7px;border-radius:50%;background:var(--magenta);box-shadow:0 0 10px var(--magenta)}
+  .lb__made b{color:var(--ice);font-weight:800;font-size:1.15em;font-variant-numeric:tabular-nums}
+  .lb__made--low{border-color:var(--magenta);background:rgba(243,67,110,.16)}
+  .lb__made--low b{color:#fff}
+  .lb__scarce{margin-top:var(--s-3);font-size:var(--t-label);color:var(--on-dark-2);letter-spacing:.02em}
+  .lb__scarce b{color:var(--on-dark);font-weight:700}
+  .lb__name{font-family:var(--font-display);font-weight:700;text-transform:uppercase;line-height:1.02;letter-spacing:var(--ls-tight);
+    font-size:clamp(1.6rem,4vw,2.4rem);margin:var(--s-3) 0 var(--s-2)}
+  .lb__price{font-size:var(--t-body-l);color:var(--on-dark);font-weight:600}
+  .lb__desc{margin-top:var(--s-3);color:var(--on-dark-2);line-height:var(--lh-body);font-size:var(--t-body-s)}
+  .lb__spec{margin-top:var(--s-3);font-size:var(--t-label);color:var(--on-dark-3);letter-spacing:.02em}
+  .lb__cta{margin-top:var(--s-5);width:100%}
+  .lb__back{margin-top:var(--s-3);background:none;border:0;color:var(--on-dark-3);cursor:pointer;font:inherit;
+    font-size:var(--t-label);letter-spacing:.03em;text-transform:uppercase;align-self:center;padding:.4em}
+  .lb__back:hover{color:var(--on-dark)}
+  /* colour selector (only for pieces with finishes) */
+  .lb__colors{display:flex;gap:8px;flex-wrap:wrap;margin-top:var(--s-4)}
+  .lb__colors[hidden]{display:none}
+  .lb__chip{display:inline-flex;align-items:center;gap:.5em;border:1px solid var(--line-dark-strong);background:var(--obsidian);
+    color:var(--on-dark-2);border-radius:var(--r-pill);padding:.45em .85em;font:inherit;font-size:var(--t-label);
+    letter-spacing:.02em;cursor:pointer;transition:border-color var(--dur-2) var(--ease),color var(--dur-2) var(--ease)}
+  .lb__chip.on{border-color:var(--ice);color:var(--on-dark)}
+  .lb__chip .sw{width:12px;height:12px;border-radius:50%;border:1px solid rgba(255,255,255,.22)}
+  /* prev/next product arrows (screen edges) */
+  .lb__nav{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:46px;height:46px;border-radius:50%;
+    display:grid;place-items:center;cursor:pointer;color:var(--on-dark);
+    background:rgba(17,19,21,.72);border:1px solid var(--line-dark-strong);transition:background var(--dur-2) var(--ease)}
+  .lb__nav:hover{background:rgba(17,19,21,.96)}
+  .lb__nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2}
+  .lb__prev{left:clamp(8px,3vw,28px)}
+  .lb__next{right:clamp(8px,3vw,28px)}
+  @media(max-width:560px){.lb__nav{width:40px;height:40px}}
+
+  /* ---------- register ---------- */
+  .reg{padding:clamp(2rem,5vw,3.2rem) var(--gutter) clamp(3rem,7vw,5rem);text-align:center;scroll-margin-top:calc(var(--cbar-h) + 8px)}
+  .reg__in{max-width:34rem;margin-inline:auto}
+  .reg__eye{display:block;font-size:var(--t-label);letter-spacing:.24em;text-transform:uppercase;color:var(--ice);font-weight:700;margin-bottom:var(--s-3)}
+  .reg h2{font-family:var(--font-display);font-weight:700;text-transform:uppercase;font-size:clamp(1.7rem,4.5vw,2.6rem);letter-spacing:var(--ls-tight)}
+  .reg p{color:var(--on-dark-2);margin:var(--s-4) auto 0;max-width:40ch;line-height:var(--lh-body)}
+  .reg__benefits{list-style:none;margin:var(--s-4) auto var(--s-2);max-width:34ch;text-align:left;display:inline-block}
+  .reg__benefits li{position:relative;padding-left:1.7em;color:var(--on-dark-2);font-size:var(--t-body-s);line-height:1.45;margin-bottom:.55rem}
+  .reg__benefits li::before{content:"";position:absolute;left:.15em;top:.35em;width:9px;height:5px;border-left:1.5px solid var(--ice);border-bottom:1.5px solid var(--ice);transform:rotate(-45deg)}
+  .form{margin-top:var(--s-6);display:flex;gap:var(--s-3);flex-wrap:wrap;justify-content:center}
+  .form input{flex:1 1 260px;min-width:0;background:var(--obsidian-2);border:1px solid var(--line-dark-strong);color:var(--on-dark);
+    border-radius:var(--r-pill);padding:1em 1.3em;font-family:inherit;font-size:var(--t-body);outline:none;transition:border-color var(--dur-2) var(--ease)}
+  .form input:focus{border-color:var(--ice)}
+  .form input::placeholder{color:var(--on-dark-3)}
+  .btn{cursor:pointer;border:0;font-family:inherit;font-weight:700;letter-spacing:.02em;font-size:var(--t-body);
+    background:var(--magenta);color:var(--on-magenta);border-radius:var(--r-pill);padding:1em 1.8em;
+    transition:background var(--dur-2) var(--ease),transform var(--dur-2) var(--ease),box-shadow var(--dur-2) var(--ease);
+    box-shadow:0 0 0 1px transparent,0 10px 30px rgba(243,67,110,.28)}
+  .btn:hover{background:var(--magenta-press)}
+  .btn:active{transform:scale(.97)}
+  .btn[disabled]{opacity:.6;cursor:default;box-shadow:none}
+  .note{margin-top:var(--s-4);font-size:var(--t-label);letter-spacing:.02em;color:var(--on-dark-3);min-height:1.2em}
+  .note.ok{color:var(--ice)}
+  .note.err{color:var(--magenta)}
+  .reg__micro{margin-top:var(--s-5);font-size:var(--t-label);color:var(--on-dark-3);letter-spacing:.03em;text-transform:uppercase}
+
+  /* multi-field register form */
+  .reg__form{margin-top:var(--s-6);text-align:left}
+  .fld{margin-bottom:var(--s-4)}
+  .fld-row{display:flex;gap:var(--s-3)}
+  .fld-row .fld{flex:1 1 0;min-width:0}
+  @media(max-width:520px){.fld-row{flex-direction:column;gap:0}}
+  .fld label{display:block;font-size:var(--t-label);letter-spacing:var(--ls-mid);text-transform:uppercase;color:var(--on-dark-3);font-weight:600;margin-bottom:8px}
+  .fld label .opt{text-transform:none;letter-spacing:0;font-weight:400}
+  .fld input{width:100%;background:var(--obsidian-2);border:1px solid var(--line-dark-strong);color:var(--on-dark);
+    border-radius:var(--r-2);padding:.95em 1.1em;font-family:inherit;font-size:16px;outline:none;transition:border-color var(--dur-2) var(--ease)}
+  .fld input:focus{border-color:var(--ice)}
+  .fld input::placeholder{color:var(--on-dark-3)}
+  .fld select{width:100%;background:var(--obsidian-2);border:1px solid var(--line-dark-strong);color:var(--on-dark);
+    border-radius:var(--r-2);padding:.95em 2.6em .95em 1.1em;font-family:inherit;font-size:16px;outline:none;cursor:pointer;
+    appearance:none;-webkit-appearance:none;transition:border-color var(--dur-2) var(--ease);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%23B7BDC5' stroke-width='1.6' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 1.1em center;background-size:12px}
+  .fld select:focus{border-color:var(--ice)}
+  .fld select:invalid{color:var(--on-dark-3)}
+  .fld select option{color:var(--obsidian);background:var(--bone)}
+  .consent{display:flex;gap:.7em;align-items:flex-start;margin-top:var(--s-3)}
+  .consent input{margin-top:.15em;width:16px;height:16px;flex:0 0 auto;accent-color:var(--magenta)}
+  .consent label{font-size:var(--t-label);line-height:1.5;color:var(--on-dark-3);letter-spacing:.01em}
+  .reg__form .btn{width:100%;margin-top:var(--s-5)}
+
+  /* success */
+  .done{display:none;margin-top:var(--s-6)}
+  .done.show{display:block;animation:fade .5s var(--ease-out)}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .done .tick{width:56px;height:56px;border-radius:50%;margin:0 auto var(--s-4);display:grid;place-items:center;
+    background:var(--ice);color:var(--obsidian)}
+  .done .tick svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2.4}
+  .done h3{font-family:var(--font-display);font-weight:700;text-transform:uppercase;font-size:var(--t-24)}
+  .done p{color:var(--on-dark-2);margin-top:var(--s-2)}
+
+  /* ---------- footer ---------- */
+  .foot{text-align:center;padding:var(--s-8) var(--gutter) var(--s-9);border-top:1px solid var(--line-dark)}
+  .foot__brand{display:inline-block;width:120px;height:26px;
+    background-color:var(--on-dark);
+    -webkit-mask:url(assets/img/axia-logo.png) center/contain no-repeat;
+    mask:url(assets/img/axia-logo.png) center/contain no-repeat}
+  .foot p{margin-top:var(--s-3);font-size:var(--t-label);color:var(--on-dark-3);letter-spacing:.03em}
+  .foot__btn{display:inline-block;margin-top:var(--s-5);border:1px solid var(--titanium);color:var(--on-dark);
+    border-radius:var(--r-pill);padding:.95em 2em;font-weight:700;font-size:var(--t-body-s);letter-spacing:.03em;
+    transition:background var(--dur-2) var(--ease),border-color var(--dur-2) var(--ease),color var(--dur-2) var(--ease)}
+  .foot__btn:hover{background:var(--bone);border-color:var(--bone);color:var(--obsidian)}
+  .foot__note{margin-top:var(--s-3)!important;font-size:var(--t-label);color:var(--on-dark-3)}
+
+  /* ---------- video hero (above the fold) ---------- */
+  .filmhero{position:relative;overflow:hidden;height:min(82vh,700px);min-height:460px}
+  .filmhero__video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 42%;z-index:0}
+  .filmhero__scrim{position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:linear-gradient(180deg,rgba(17,19,21,.5) 0%,transparent 14%,transparent 62%,rgba(17,19,21,.8) 89%,var(--obsidian) 100%)}
+  .filmhero__in{position:relative;z-index:2;width:100%;max-width:var(--maxw);margin-inline:auto;
+    padding:0 var(--gutter) clamp(1.6rem,5vw,3.2rem);
+    opacity:0;transform:translateY(18px);transition:opacity 1s var(--ease-out) .15s,transform 1s var(--ease-out) .15s}
+  .filmhero.is-in .filmhero__in{opacity:1;transform:none}
+  .filmhero__video{will-change:transform}
+  .filmhero__eye{color:var(--magenta);font-weight:700;letter-spacing:var(--ls-wide);text-transform:uppercase;font-size:var(--t-caption);margin-bottom:var(--s-3)}
+  .filmhero__h{font-family:var(--font-display);font-weight:700;line-height:1;text-transform:uppercase;letter-spacing:var(--ls-tight);
+    font-size:clamp(1.45rem,4.2vw,2.4rem)}
+  .filmhero__sub{max-width:46ch;margin-top:var(--s-4);color:var(--on-dark-2);font-size:var(--t-body-l);line-height:var(--lh-body)}
+  .filmhero__cue{margin-top:var(--s-5);font-size:var(--t-label);letter-spacing:var(--ls-wide);text-transform:uppercase;color:var(--on-dark-3)}
+  .filmhero__cue span{display:inline-block;margin-left:.5em;animation:bob 1.8s var(--ease) infinite}
+  /* full-width First Drop countdown bar (under the logo; shown only when a launch date is set) */
+  .cd-bar{width:100%;background:linear-gradient(180deg,#12161b,#0b0e13);border-bottom:1px solid var(--line-dark);text-align:center;padding:clamp(1.4rem,4vw,2.3rem) var(--gutter)}
+  .cd-bar__eye{font-size:var(--t-label);letter-spacing:.28em;text-transform:uppercase;color:var(--ice);font-weight:700;margin-bottom:.9rem}
+  .cd-bar__grid{display:flex;justify-content:center;gap:clamp(1.4rem,7vw,4.5rem)}
+  .cd-bar__u b{display:block;font-family:var(--font-display);font-weight:800;font-size:clamp(2.4rem,9vw,5rem);line-height:1;font-variant-numeric:tabular-nums;color:var(--bone)}
+  .cd-bar__u span{display:block;margin-top:7px;font-size:var(--t-label);letter-spacing:.16em;text-transform:uppercase;color:var(--on-dark-2)}
+  .cd-bar__soon{font-family:var(--font-display);font-weight:800;text-transform:uppercase;font-size:clamp(2rem,7vw,4rem);line-height:1;color:var(--bone);letter-spacing:.02em}
+
+  /* ===== First-visit logo intro (matches the main site) ===== */
+  .intro{position:fixed;inset:0;z-index:4000;background:radial-gradient(135% 115% at 50% 38%,#171d26 0%,#0c0f14 52%,#07090c 100%);display:grid;place-items:center;overflow:hidden}
+  .intro__bloom{position:absolute;inset:0;background:radial-gradient(44% 40% at 50% 47%,rgba(199,234,247,.12),rgba(199,234,247,.04) 46%,transparent 74%);opacity:0;filter:blur(12px);pointer-events:none}
+  .intro__logo{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:1.15rem;opacity:0;transform:translateY(10px) scale(.985)}
+  .intro__wm{width:min(420px,74vw);aspect-ratio:2000 / 404;background:var(--bone);-webkit-mask:url("assets/img/axia-logo.png") center/contain no-repeat;mask:url("assets/img/axia-logo.png") center/contain no-repeat}
+  .intro__line{width:0;height:1px;background:linear-gradient(90deg,transparent,var(--ice),transparent)}
+  .intro--in .intro__logo{opacity:1;transform:none;transition:opacity 1s cubic-bezier(.2,.7,.2,1),transform 1s cubic-bezier(.2,.7,.2,1)}
+  .intro--in .intro__bloom{opacity:1;transition:opacity 1.6s ease}
+  .intro--in .intro__line{width:min(260px,50vw);transition:width 1s cubic-bezier(.2,.7,.2,1) .35s}
+  .intro--out{opacity:0;transform:scale(1.03);transition:opacity .6s ease,transform .7s cubic-bezier(.2,.7,.2,1);pointer-events:none}
+  html.intro-lock,html.intro-lock body{overflow:hidden}
+  @media(prefers-reduced-motion:reduce){.intro__logo,.intro__bloom,.intro__line{transition:none}}
+
+  /* mobile: show the WHOLE landscape frame (no crop/squish) - video full-width, copy below on obsidian */
+  @media(max-width:700px){
+    .filmhero{height:auto;min-height:0;display:block;background:var(--obsidian)}
+    .filmhero__video{position:static;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain;background:#000;display:block}
+    .filmhero__scrim{display:none}
+    .filmhero__in{position:static;transform:none!important;opacity:1!important;padding:var(--s-5) var(--gutter) var(--s-6)}
+  }
+
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="intro__bloom"></div>
+  <div class="intro__logo"><span class="intro__wm" role="img" aria-label="AXIA"></span><span class="intro__line"></span></div>
+</div>
+
+<header class="cbar cbar--logo">
+  <a class="cbar__logo" href="store.html" aria-label="AXIA, enter the shop" title="Enter the AXIA shop"></a>
+  <a class="cbar__enter" href="store.html">Enter the shop &rarr;</a>
+</header>
+
+<!-- ============ FULL-WIDTH COUNTDOWN (hidden until a launch date is set) ============ -->
+<section class="cd-bar" id="fhCount" hidden aria-label="Countdown to the First Drop">
+  <div class="cd-bar__eye">The First Drop</div>
+  <div class="cd-bar__grid">
+    <div class="cd-bar__u"><b id="cd-d">--</b><span>Days</span></div>
+    <div class="cd-bar__u"><b id="cd-h">--</b><span>Hrs</span></div>
+    <div class="cd-bar__u"><b id="cd-m">--</b><span>Min</span></div>
+    <div class="cd-bar__u"><b id="cd-s">--</b><span>Sec</span></div>
+  </div>
+</section>
+
+<!-- ============ VIDEO HERO ============ -->
+<section class="filmhero">
+  <video class="filmhero__video" src="assets/video/axia-hero.mp4" poster="assets/video/axia-hero-poster.jpg" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>
+  <div class="filmhero__scrim"></div>
+</section>
+
+<!-- ============ EMAIL CAPTURE ============ -->
+<section class="reg" id="register">
+  <div class="reg__in">
+    <form id="form" class="reg__form" novalidate>
+      <span class="reg__eye">First Access</span>
+      <h2>Don't miss the drop</h2>
+      <div class="fld-row">
+        <div class="fld"><label for="fname">First name</label><input id="fname" name="firstName" type="text" autocomplete="given-name" required></div>
+        <div class="fld"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" required></div>
+      </div>
+      <div class="fld"><label for="mobile">Mobile number</label><input id="mobile" name="mobile" type="tel" autocomplete="tel" inputmode="tel" placeholder="e.g. 04XX XXX XXX" required></div>
+      <div class="fld"><label for="insta">Instagram <span class="opt">(optional)</span></label><input id="insta" name="instagram" type="text" autocomplete="off" placeholder="@yourhandle"></div>
+      <div class="fld"><label for="product">Which piece are you after?</label>
+        <select id="product" name="product" required>
+          <option value="" selected disabled>Choose a piece…</option>
+        </select>
+      </div>
+
+      <p class="reg__lead">Made to order. Free to join, ten seconds. Registering gets you:</p>
+      <ul class="reg__benefits">
+        <li>First access before the public, the moment the drop opens</li>
+        <li>15% off your first order</li>
+        <li>Priority on the piece you want</li>
+      </ul>
+
+      <div class="consent">
+        <input id="cEmail" name="emailConsent" type="checkbox" required>
+        <label for="cEmail">Yes, email me about the AXIA launch, early access and drops. I can unsubscribe anytime.</label>
+      </div>
+      <div class="consent">
+        <input id="cSms" name="smsConsent" type="checkbox">
+        <label for="cSms">Optional. Text me launch alerts at the number above. Reply STOP anytime; message and data rates may apply.</label>
+      </div>
+
+      <button class="btn" type="submit" id="submit">Join First Access</button>
+      <p style="font-size:var(--t-label);line-height:1.5;color:var(--on-dark-3);margin-top:var(--s-4);text-align:center">By joining you agree to our <a href="terms.html" style="color:var(--ice)">terms</a> and <a href="terms.html#privacy" style="color:var(--ice)">privacy policy</a>. We'll email you about the drop. Unsubscribe anytime.</p>
+      <div class="note" id="note" aria-live="polite"></div>
+      <div class="reg__micro">Free to join. No payment taken.</div>
+    </form>
+
+    <div class="done" id="done">
+      <div class="tick"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
+      <h3>You're on the list</h3>
+      <p>Check your email for your confirmation and your 15% welcome code. If it lands in your Promotions or Spam tab, drag it into your main inbox so you don't miss the drop. We'll tell you the moment it opens.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDER (what's dropping) ============ -->
+<section class="drop" id="drop">
+  <div class="drop__head">
+    <h2>What's dropping</h2>
+    <p>Every piece is made to order. Tap any one to see it up close.</p>
+  </div>
+
+  <div class="slider">
+    <div class="viewport">
+      <div class="track" id="track"></div>
+    </div>
+
+    <button class="arrow arrow--prev" id="prev" aria-label="Previous">
+      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <button class="arrow arrow--next" id="next" aria-label="Next">
+      <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+
+    <div class="dots" id="dots"></div>
+    <div class="counter" id="counter"></div>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="foot__brand" role="img" aria-label="AXIA"></div>
+  <p>925 sterling silver · Hand-set VVS D-colour moissanite · Made to order</p>
+  <a class="foot__btn" href="store.html">Preview the full collection →</a>
+  <p class="foot__note">The full store opens soon.</p>
+</footer>
+
+<!-- ============ PRODUCT LIGHTBOX (contained listing view) ============ -->
+<div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="Product details">
+  <div class="lb__backdrop" data-close></div>
+  <button class="lb__nav lb__prev" id="lbPrev" type="button" aria-label="Previous piece"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <button class="lb__nav lb__next" id="lbNext" type="button" aria-label="Next piece"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+  <div class="lb__panel">
+    <button class="lb__close" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="lb__media">
+      <div class="lb__main"><img id="lbImg" src="" alt=""></div>
+      <div class="lb__thumbs" id="lbThumbs"></div>
+    </div>
+    <div class="lb__info">
+      <span class="lb__made" id="lbMade"></span>
+      <h3 class="lb__name" id="lbName"></h3>
+      <div class="lb__price" id="lbPrice"></div>
+      <div class="lb__colors" id="lbColors" hidden></div>
+      <p class="lb__desc" id="lbDesc"></p>
+      <div class="lb__spec" id="lbSpec"></div>
+      <div class="lb__scarce" id="lbScarce"></div>
+      <button class="btn lb__cta" id="lbCta" type="button">Register to get it first</button>
+      <button class="lb__back" data-close type="button">← Back to the drop</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/data/products.js"></script>
+<script>
+/* ============================================================
+   AXIA - First Drop landing
+   EDIT THE DROP LINEUP HERE.
+   Stock limits / "only X made" scarcity have been removed sitewide; the `made`
+   field is unused for display and kept only as an internal note.
+   ============================================================ */
+/* First Drop lineup: 10 pieces. Prices are the catalogue "from". */
+var DROP = [
+  { id:'tennis-bracelet',                  name:'Classic Tennis Bracelet',     w:'2-5mm', made:5, price:'from A$129', img:'assets/img/products/tennis-bracelet-4mm/1.jpg' },
+  { id:'iced-cuban-bracelet-5mm',          name:'Iced Cuban Bracelet',         w:'5mm',   made:4, price:'from A$199', img:'assets/img/products/iced-cuban-bracelet-5mm/1.jpg' },
+  { id:'tennis-chain',                     name:'Classic Tennis Chain',        w:'2-5mm', made:4, price:'from A$299', img:'assets/img/products/tennis-chain-4mm/1.jpg' },
+  { id:'square-halo-tennis-bracelet',      name:'Square Halo Tennis Bracelet', w:'8mm',   made:3, price:'from A$499', img:'assets/img/products/square-halo-tennis-bracelet/1.jpg' },
+  { id:'classic-cuban-bracelet-10mm',      name:'Iced Cuban Bracelet',         w:'10mm',  made:3, price:'from A$699', img:'assets/img/products/classic-cuban-bracelet-10mm/silver/1.jpg' },
+  { id:'cross-set',                        name:'The Cross Set',               w:'',      made:2, price:'A$699',      img:'assets/img/products/cross-set/1.jpg' },
+  { id:'two-row-flat-cuban-bracelet-12mm', name:'Iced Cuban Bracelet',         w:'12mm',  made:2, price:'from A$749', img:'assets/img/products/two-row-flat-cuban-bracelet-12mm/1.jpg' },
+  { id:'floral-bracelet-15mm',             name:'Lucky Clover Bracelet',       w:'15mm',  made:3, price:'from A$777', img:'assets/img/products/floral-bracelet-15mm/silver-blue/2.jpg' },
+  { id:'prong-cuban-bracelet-10mm',        name:'Moonrock Cuban Bracelet',     w:'10mm',  made:2, price:'from A$799', img:'assets/img/products/prong-cuban-bracelet-10mm/silver/1.jpg' },
+  { id:'two-row-flat-cuban-chain-12mm',    name:'Iced Cuban Chain',            w:'12mm',  made:2, price:'from A$1,699', img:'assets/img/products/two-row-flat-cuban-chain-12mm/silver/1.jpg' }
+];
+/* display name with size, so the three Cuban bracelets are clearly different */
+function fullName(d){ return d.name + (d.w ? ', ' + d.w : ''); }
+
+/* ---- build slides (the motion film is now the video hero at the top) ---- */
+var track = document.getElementById('track');
+var html = '';
+DROP.forEach(function(p){
+  var nm=fullName(p);
+  var low = p.made<=5 ? ' made--low' : '';
+  html += '<div class="slide">'
+       +   '<button class="slide__link" type="button" data-id="'+p.id+'" aria-label="View '+nm+'">'
+       +   '<div class="stage">'
+       +     '<img class="stage__img" src="'+p.img+'" alt="'+nm+'" loading="lazy">'
+       +     '<div class="stage__glow"></div><div class="stage__scrim"></div>'
+       +     '<div class="slide__copy">'
+       +       '<div class="slide__name">'+nm+'</div>'
+       +       '<div class="slide__row">'
+       +         '<span class="slide__price">'+p.price+'</span>'
+       +         '<span class="slide__view">View details<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>'
+       +       '</div>'
+       +     '</div>'
+       +   '</div>'
+       +   '</button>'
+       + '</div>';
+});
+track.innerHTML = html;
+
+/* ---- carousel logic ---- */
+var slides = track.children;
+var total = slides.length;
+var i = 0;
+var dotsWrap = document.getElementById('dots');
+var counter = document.getElementById('counter');
+var video = track.querySelector('.slide__video');
+var autoTimer = null;
+var AUTO_MS = 5000;
+
+for (var d=0; d<total; d++){
+  var b = document.createElement('button');
+  b.className = 'dot-btn'; b.setAttribute('aria-label','Go to slide '+(d+1));
+  (function(idx){ b.addEventListener('click', function(){ go(idx); restart(); }); })(d);
+  dotsWrap.appendChild(b);
+}
+var dots = dotsWrap.children;
+
+function render(){
+  track.style.transform = 'translateX(' + (-i*100) + '%)';
+  for (var k=0;k<total;k++){ dots[k].className = 'dot-btn' + (k===i?' on':''); }
+  counter.textContent = (i+1) + ' / ' + total;
+  // play the film only while its slide is showing
+  if (video){
+    if (slides[i].classList.contains('slide--video')){ video.play().catch(function(){}); }
+    else { video.pause(); }
+  }
+}
+function go(n){ i = (n+total)%total; render(); }
+function next(){ go(i+1); }
+function prev(){ go(i-1); }
+
+document.getElementById('next').addEventListener('click', function(){ next(); restart(); });
+document.getElementById('prev').addEventListener('click', function(){ prev(); restart(); });
+document.addEventListener('keydown', function(e){
+  if (e.key==='ArrowRight'){ next(); restart(); }
+  if (e.key==='ArrowLeft'){ prev(); restart(); }
+});
+
+/* autoplay (pause on hover / when tab hidden) */
+function start(){ stop(); autoTimer = setInterval(next, AUTO_MS); }
+function stop(){ if (autoTimer){ clearInterval(autoTimer); autoTimer = null; } }
+function restart(){ start(); }
+var sliderEl = document.querySelector('.slider');
+sliderEl.addEventListener('mouseenter', stop);
+sliderEl.addEventListener('mouseleave', start);
+document.addEventListener('visibilitychange', function(){ document.hidden ? stop() : start(); });
+
+/* swipe (and don't let a swipe count as a tap that opens the product) */
+var x0=null, moved=false;
+track.addEventListener('touchstart', function(e){ x0 = e.touches[0].clientX; moved=false; stop(); }, {passive:true});
+track.addEventListener('touchmove', function(e){
+  if (x0!==null && Math.abs(e.touches[0].clientX - x0) > 8){ moved=true; }
+}, {passive:true});
+track.addEventListener('touchend', function(e){
+  if (x0===null) return;
+  var dx = e.changedTouches[0].clientX - x0;
+  if (Math.abs(dx) > 40){ dx < 0 ? next() : prev(); }
+  x0 = null; start();
+}, {passive:true});
+/* tap a slide to open the in-page listing (a drag is ignored, not a tap) */
+track.addEventListener('click', function(e){
+  if (moved){ moved=false; return; }
+  var link = e.target.closest('.slide__link');
+  if (link){ openLB(link.getAttribute('data-id')); }
+});
+
+render(); start();
+
+/* ---- product lightbox: a contained listing view (photos, finish selector, prev/next) ---- */
+var PROD = {}; (window.AXIA_PRODUCTS||[]).forEach(function(p){ PROD[p.id]=p; });
+var DROPIDS = DROP.map(function(d){ return d.id; });
+var lb=document.getElementById('lb'), lbImg=document.getElementById('lbImg'), lbThumbs=document.getElementById('lbThumbs'),
+    lbMade=document.getElementById('lbMade'), lbName=document.getElementById('lbName'), lbPrice=document.getElementById('lbPrice'),
+    lbDesc=document.getElementById('lbDesc'), lbSpec=document.getElementById('lbSpec'), lbCta=document.getElementById('lbCta'),
+    lbColors=document.getElementById('lbColors'), lbPrev=document.getElementById('lbPrev'), lbNext=document.getElementById('lbNext'),
+    lbScarce=document.getElementById('lbScarce');
+var lbIndex=0, lbColour=null, lbProductName='';
+
+function swatch(name){
+  var n=(name||'').toLowerCase();
+  if(n.indexOf('rose')>=0) return '#B76E79';
+  if(n.indexOf('gold')>=0) return '#D4AF37';
+  if(n.indexOf('blue')>=0) return '#8FB7CE';
+  if(n.indexOf('pink')>=0) return '#E39AB0';
+  return '#C9CDD3';
+}
+function imgsFor(p, fallback, colour){
+  var out=[];
+  if(p){
+    if(colour && p.imagesByColor && p.imagesByColor[colour]) out=p.imagesByColor[colour].slice();
+    else if(p.images && p.images.length) out=p.images.slice();
+    else if(p.imagesByColor){ var k=Object.keys(p.imagesByColor)[0]; out=(p.imagesByColor[k]||[]).slice(); }
+    else if(p.widths){ out=p.widths.filter(function(w){return w.image;}).map(function(w){return w.image;}); }
+  }
+  if(!out.length && fallback) out=[fallback];
+  return out.slice(0,5);
+}
+function lbSetMain(src){ lbImg.src=src; [].forEach.call(lbThumbs.children,function(t){ t.classList.toggle('on', t.getAttribute('data-src')===src); }); }
+function renderThumbs(imgs){
+  lbThumbs.innerHTML='';
+  imgs.forEach(function(src,idx){
+    var b=document.createElement('button'); b.className='lb__thumb'+(idx===0?' on':''); b.type='button';
+    b.setAttribute('data-src',src); b.setAttribute('aria-label','Photo '+(idx+1));
+    var im=document.createElement('img'); im.src=src; im.alt=''; b.appendChild(im);
+    b.addEventListener('click',function(){ lbSetMain(src); });
+    lbThumbs.appendChild(b);
+  });
+  lbThumbs.style.display = imgs.length<2 ? 'none' : '';
+  lbSetMain(imgs[0]||'');
+}
+function renderColours(p, d){
+  lbColors.innerHTML='';
+  if(!p || !p.col || p.col.length<2){ lbColors.hidden=true; return; }
+  lbColors.hidden=false;
+  p.col.forEach(function(c){
+    var b=document.createElement('button'); b.type='button'; b.className='lb__chip'+(c===lbColour?' on':'');
+    b.innerHTML='<span class="sw" style="background:'+swatch(c)+'"></span>'+c;
+    b.addEventListener('click',function(){
+      lbColour=c;
+      [].forEach.call(lbColors.children,function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      renderThumbs(imgsFor(p, d.img, c));
+    });
+    lbColors.appendChild(b);
+  });
+}
+function openLBIndex(idx){
+  lbIndex=(idx+DROP.length)%DROP.length;
+  var d=DROP[lbIndex], p=PROD[d.id];
+  lbColour = (p && p.imagesByColor && p.col && p.col.length) ? p.col[0] : null;
+  var nm=fullName(d);
+  lbProductName=nm;
+  lbMade.className='lb__made'; lbMade.innerHTML=''; lbMade.hidden=true;
+  lbName.textContent=nm; lbPrice.textContent=d.price; lbImg.alt=nm;
+  lbDesc.textContent=(p&&p.desc)?p.desc:'';
+  var bits=[]; if(p&&p.col&&p.col.length) bits.push('Available in '+p.col.join(', '));
+  bits.push('925 sterling silver, hand-set VVS D-colour moissanite');
+  lbSpec.textContent=bits.join('  ·  ');
+  lbScarce.innerHTML='Made to order for the First Drop. Register for first access before the public launch.';
+  renderColours(p, d);
+  renderThumbs(imgsFor(p, d.img, lbColour));
+  if(lb.hidden){ lb.hidden=false; document.body.style.overflow='hidden'; stop(); }
+}
+function openLB(id){ var idx=DROPIDS.indexOf(id); if(idx<0) idx=0; openLBIndex(idx); var c=document.querySelector('.lb__close'); if(c) c.focus(); }
+function lbGo(delta){ openLBIndex(lbIndex+delta); }
+function closeLB(){ lb.hidden=true; document.body.style.overflow=''; start(); }
+lbPrev.addEventListener('click', function(){ lbGo(-1); });
+lbNext.addEventListener('click', function(){ lbGo(1); });
+lb.addEventListener('click',function(e){ if(e.target.closest('[data-close]')) closeLB(); });
+document.addEventListener('keydown',function(e){
+  if(lb.hidden) return;
+  if(e.key==='Escape') closeLB();
+  else if(e.key==='ArrowLeft') lbGo(-1);
+  else if(e.key==='ArrowRight') lbGo(1);
+});
+/* swipe the photo to move between pieces (mobile) */
+var lbMainEl=document.querySelector('.lb__main'), lx0=null, lmoved=false;
+lbMainEl.addEventListener('touchstart', function(e){ lx0=e.touches[0].clientX; lmoved=false; }, {passive:true});
+lbMainEl.addEventListener('touchmove', function(e){ if(lx0!==null && Math.abs(e.touches[0].clientX-lx0)>8) lmoved=true; }, {passive:true});
+lbMainEl.addEventListener('touchend', function(e){ if(lx0===null) return; var dx=e.changedTouches[0].clientX-lx0; if(Math.abs(dx)>40){ dx<0?lbGo(1):lbGo(-1); } lx0=null; }, {passive:true});
+lbCta.addEventListener('click',function(){
+  closeLB();
+  if(productSel){ for(var o=0;o<productSel.options.length;o++){ if(productSel.options[o].value===lbProductName){ productSel.selectedIndex=o; break; } } }
+  var reg=document.getElementById('register'); if(reg) reg.scrollIntoView({behavior:'smooth',block:'start'});
+  setTimeout(function(){ var f=document.getElementById('fname'); if(f) f.focus(); }, 500);
+});
+
+/* ---- hero video: force muted autoplay to start (iOS/Low-Power needs muted + playsinline + a play() nudge) ---- */
+(function(){
+  var v = document.querySelector('.filmhero__video'); if(!v) return;
+  function kick(){ try{ v.muted=true; v.defaultMuted=true; v.setAttribute('muted',''); v.playsInline=true; v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline',''); var p=v.play(); if(p&&p.catch) p.catch(function(){}); }catch(e){} }
+  kick();
+  v.addEventListener('loadedmetadata', kick, { once:true });
+  v.addEventListener('canplay', kick, { once:true });
+  ['touchstart','pointerdown','click','scroll'].forEach(function(ev){ addEventListener(ev, kick, { once:true, passive:true }); });
+})();
+
+/* ---- countdown: hidden until the drop date is announced.
+   To go live: set TARGET to the launch date, e.g.
+   var TARGET = new Date('2026-11-20T19:00:00+11:00').getTime();
+   The big countdown over the video (#fhCount) then shows automatically. ---- */
+var TARGET = new Date('2026-11-20T19:00:00+11:00').getTime(); /* PLACEHOLDER launch date - swap for the real one, or set back to null to hide the countdown */
+var LIVE = false; /* LAUNCH TIMER NOT LIVE YET: the bar reads "Dropping soon". Set LIVE = true to run the real countdown. */
+var el = { d:document.getElementById('cd-d'), h:document.getElementById('cd-h'), m:document.getElementById('cd-m'), s:document.getElementById('cd-s') };
+var fhCount = document.getElementById('fhCount');
+if (fhCount) fhCount.hidden = false;
+if (!LIVE) {
+  var grid = fhCount && fhCount.querySelector('.cd-bar__grid');
+  if (grid) grid.outerHTML = '<div class="cd-bar__soon">Dropping soon</div>';
+} else if (TARGET) {
+  var pad = function(n){ return (n<10?'0':'')+n; };
+  var tick = function(){
+    var diff = TARGET - Date.now();
+    if (diff <= 0){ el.d.textContent='00'; el.h.textContent='00'; el.m.textContent='00'; el.s.textContent='00'; return; }
+    var s = Math.floor(diff/1000);
+    el.d.textContent = pad(Math.floor(s/86400));
+    el.h.textContent = pad(Math.floor(s%86400/3600));
+    el.m.textContent = pad(Math.floor(s%3600/60));
+    el.s.textContent = pad(s%60);
+  };
+  tick(); setInterval(tick, 1000);
+}
+
+/* ---- registration ----
+   Emails each signup to AXIA via FormSubmit (no account needed; the inbox must be
+   FormSubmit-activated once). Also keeps a local record so axiaWaitlist() works offline.
+   Note: FormSubmit needs a real http origin - works on the preview/live domain, not file://.
+*/
+var INBOX = 'axiajewellery@gmail.com';
+var ENDPOINT = 'https://formsubmit.co/ajax/' + INBOX;
+
+/* ============================================================
+   KLAVIYO - reliable branded welcome email + unique code + SMS.
+   PASTE TWO PUBLIC VALUES BELOW (both are safe to expose in the page).
+   1) KLAVIYO_PUBLIC_KEY = your 6-char Public API Key / Site ID
+      (Klaviyo > Settings > API keys > "Public API Key"). NOT a private pk_live_ key.
+   2) KLAVIYO_LIST_ID = the list people join
+      (Klaviyo > Lists & Segments > open the list > Settings > List ID, 6 chars).
+   Leave blank to keep the current behaviour (FormSubmit only). Once both are set,
+   each signup subscribes to the list (with consent) and triggers your welcome Flow,
+   which sends the branded email + unique coupon (and SMS, if enabled).
+   ============================================================ */
+var KLAVIYO_PUBLIC_KEY = 'YcKkuc';
+var KLAVIYO_LIST_ID    = 'TBCZbE';
+
+function toE164AU(m){
+  var d=(m||'').replace(/\D/g,'');
+  if(!d) return '';
+  if(d.indexOf('61')===0) return '+'+d;
+  if(d.charAt(0)==='0') return '+61'+d.slice(1);
+  if(d.length===9) return '+61'+d;
+  return '+'+d;
+}
+function subscribeKlaviyo(entry){
+  if(!KLAVIYO_PUBLIC_KEY || !KLAVIYO_LIST_ID) return Promise.resolve('skipped');
+  var phone=toE164AU(entry.mobile);
+  var attrs={
+    email: entry.email,
+    first_name: entry.firstName,
+    properties: { instagram: entry.instagram||'', interested_in: entry.product||'', source:'first-drop-landing' },
+    subscriptions: { email:{ marketing:{ consent:'SUBSCRIBED' } } }
+  };
+  if(phone){ attrs.phone_number=phone; if(entry.smsConsent){ attrs.subscriptions.sms={ marketing:{ consent:'SUBSCRIBED' } }; } }
+  var body={ data:{ type:'subscription', attributes:{
+    custom_source:'First Drop Landing',
+    profile:{ data:{ type:'profile', attributes: attrs } }
+  }, relationships:{ list:{ data:{ type:'list', id: KLAVIYO_LIST_ID } } } } };
+  return fetch('https://a.klaviyo.com/client/subscriptions/?company_id='+encodeURIComponent(KLAVIYO_PUBLIC_KEY), {
+    method:'POST', headers:{ 'Content-Type':'application/json', 'revision':'2025-07-15' }, body: JSON.stringify(body)
+  });
+}
+
+var form = document.getElementById('form');
+var note = document.getElementById('note');
+var doneEl = document.getElementById('done');
+var submitBtn = document.getElementById('submit');
+var fname = document.getElementById('fname');
+var emailIn = document.getElementById('email');
+var mobileIn = document.getElementById('mobile');
+var igIn = document.getElementById('insta');
+var cEmail = document.getElementById('cEmail');
+var cSms = document.getElementById('cSms');
+var productSel = document.getElementById('product');
+
+/* fill the "which piece" dropdown from the drop lineup, + a general-interest option */
+if (productSel){
+  DROP.forEach(function(p){
+    var lbl = fullName(p);
+    var o = document.createElement('option'); o.value = lbl; o.textContent = lbl; productSel.appendChild(o);
+  });
+  var g = document.createElement('option'); g.value = 'General interest in AXIA'; g.textContent = 'General interest in AXIA'; productSel.appendChild(g);
+}
+
+/* keep the @ prefix on the Instagram handle (and collapse @@) */
+igIn.addEventListener('input', function(){ igIn.value = '@' + igIn.value.replace(/^@+/, ''); });
+
+function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+function showErr(msg){ note.textContent = msg; note.className = 'note err'; }
+
+/* Owner helper: run axiaWaitlist() in the console to see all signups. */
+window.axiaWaitlist = function(){ var wl = JSON.parse(localStorage.getItem('axia_waitlist')||'[]'); console.table(wl); return { signups: wl.length, list: wl }; };
+
+form.addEventListener('submit', function(e){
+  e.preventDefault();
+  note.className = 'note'; note.textContent = '';
+  var firstName = fname.value.trim();
+  var email = emailIn.value.trim();
+  var mobile = mobileIn.value.trim();
+  var instagram = igIn.value.trim(); if (instagram === '@') instagram = '';
+  var product = productSel ? productSel.value : '';
+
+  if (!firstName){ showErr('Please add your first name.'); return; }
+  if (!validEmail(email)){ showErr('Please enter a valid email address.'); return; }
+  if (mobile.replace(/\D/g,'').length < 8){ showErr('Please enter a valid mobile number.'); return; }
+  if (!product){ showErr('Please pick what you\'re interested in.'); return; }
+  if (!cEmail.checked){ showErr('Please tick the email consent box so we can reach you.'); return; }
+
+  var entry = { firstName:firstName, email:email, mobile:mobile, instagram:instagram, product:product,
+                emailConsent:true, smsConsent:cSms.checked, at:new Date().toISOString() };
+  try {
+    var wl = JSON.parse(localStorage.getItem('axia_waitlist')||'[]'); wl.push(entry);
+    localStorage.setItem('axia_waitlist', JSON.stringify(wl));
+    var eoi = JSON.parse(localStorage.getItem('axia_eoi')||'[]');
+    if (eoi.indexOf(email) === -1) eoi.push(email);
+    localStorage.setItem('axia_eoi', JSON.stringify(eoi));
+  } catch(err){}
+
+  /* welcome auto-reply sent to the registrant, with their first-order code */
+  var WELCOME_CODE = 'FIRST15';
+  var autoMsg = 'Hi ' + firstName + ", you're on the AXIA First Access list.\n\n"
+    + "You'll be first to know the moment the First Drop opens.\n\n"
+    + 'As a thank you, here is 15% off your first order: ' + WELCOME_CODE + '. Enter it at checkout when the drop opens.\n\n'
+    + "If this landed in your Promotions or Spam tab, drag it into your main inbox so you don't miss the drop.\n\n"
+    + 'See you at the drop,\nAXIA';
+
+  var payload = {
+    _subject: 'AXIA - REGISTRATION - ' + firstName + ' · ' + product,
+    _template: 'table',
+    _captcha: 'false',
+    Category: 'Registration (First Access)',
+    Name: firstName,
+    email: email,            /* lowercase so FormSubmit uses it for reply-to + auto-reply */
+    Mobile: mobile,
+    'Interested in': product,
+    Instagram: instagram || '-',
+    'Email consent': 'Yes',
+    'SMS consent': cSms.checked ? 'Yes' : 'No',
+    Source: 'first-drop-landing',
+    Submitted: entry.at
+  };
+  /* Klaviyo off: FormSubmit sends the customer welcome + code. Klaviyo on: it takes over (no dupes). */
+  if (!(KLAVIYO_PUBLIC_KEY && KLAVIYO_LIST_ID)) { payload._autoresponse = autoMsg; payload['Welcome code sent'] = WELCOME_CODE; }
+
+  var orig = submitBtn.textContent;
+  submitBtn.disabled = true; submitBtn.textContent = 'Joining…';
+
+  function succeed(){ submitBtn.disabled = false; submitBtn.textContent = orig; form.style.display = 'none'; doneEl.classList.add('show'); }
+  function failNow(){ submitBtn.disabled = false; submitBtn.textContent = orig; showErr('Something stopped that from sending. Please try again, or email ' + INBOX + '.'); }
+
+  /* FormSubmit is a best-effort owner notification (it can be flaky); it never blocks the signup. */
+  var fsOk = fetch(ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'}, body:JSON.stringify(payload) })
+    .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ return r.ok && String(d.success) === 'true'; }); })
+    .catch(function(){ return false; });
+
+  if (KLAVIYO_PUBLIC_KEY && KLAVIYO_LIST_ID) {
+    /* Klaviyo is the source of truth - a 202 means they're on the list and the welcome flow fires. */
+    subscribeKlaviyo(entry)
+      .then(function(r){ if (r && r.ok) { succeed(); } else { fsOk.then(function(ok){ ok ? succeed() : failNow(); }); } })
+      .catch(function(){ fsOk.then(function(ok){ ok ? succeed() : failNow(); }); });
+  } else {
+    fsOk.then(function(ok){ ok ? succeed() : failNow(); });
+  }
+});
+</script>
+<script>
+/* ===== First-visit intro + subtle hero motion ===== */
+(function(){
+  var reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var film = document.querySelector('.filmhero');
+  var revealHero = function(){ if(film) film.classList.add('is-in'); };
+
+  var intro = document.getElementById('intro');
+  var seen = false; try{ seen = !!sessionStorage.getItem('axia_intro'); }catch(e){}
+  if(!intro || seen){
+    if(intro) intro.remove();
+    revealHero();
+  } else {
+    var root = document.documentElement; root.classList.add('intro-lock');
+    var finish = function(){
+      intro.classList.add('intro--out');
+      root.classList.remove('intro-lock');
+      try{ sessionStorage.setItem('axia_intro','1'); }catch(e){}
+      revealHero();
+      setTimeout(function(){ if(intro && intro.parentNode) intro.remove(); }, 750);
+    };
+    if(reduce){ finish(); }
+    else {
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){ intro.classList.add('intro--in'); }); });
+      var hold = setTimeout(finish, 2100);
+      var skip = function(){ clearTimeout(hold); finish(); };
+      intro.addEventListener('click', skip, {once:true});
+      addEventListener('keydown', skip, {once:true});
+      addEventListener('wheel', skip, {once:true, passive:true});
+      addEventListener('touchstart', skip, {once:true, passive:true});
+    }
+  }
+
+  /* subtle parallax + fade on the hero as you scroll past it */
+  var vid = document.querySelector('.filmhero__video');
+  var inner = document.querySelector('.filmhero__in');
+  if(film && vid && !reduce && matchMedia('(min-width:701px)').matches){
+    var ticking = false, unlocked = false;
+    var onScroll = function(){
+      if(ticking) return; ticking = true;
+      if(!unlocked && inner){ inner.style.transition = 'opacity .25s linear'; unlocked = true; }
+      requestAnimationFrame(function(){
+        var y = Math.min(window.scrollY || 0, 700);
+        /* no transform on the video itself (avoids any softening); only the copy drifts + fades */
+        if(inner){ inner.style.transform = 'translateY(' + (y * -0.06).toFixed(1) + 'px)'; inner.style.opacity = String(Math.max(0, 1 - y / 560)); }
+        ticking = false;
+      });
+    };
+    addEventListener('scroll', onScroll, {passive:true});
+  }
+})();
+</script>
+<script>
+/* Make the hero video autoplay on mobile (iOS needs muted + playsinline, and often a play() nudge). */
+(function(){
+  var vids=document.querySelectorAll('video[autoplay]'); if(!vids.length) return;
+  function kick(v){ try{ v.muted=true; v.defaultMuted=true; v.setAttribute('muted',''); v.playsInline=true; v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline',''); var p=v.play(); if(p&&p.catch)p.catch(function(){}); }catch(e){} }
+  vids.forEach(function(v){ kick(v); v.addEventListener('loadedmetadata',function(){kick(v)},{once:true}); v.addEventListener('canplay',function(){kick(v)},{once:true}); });
+  var once=function(){ vids.forEach(kick); };
+  ['touchstart','pointerdown','click','scroll'].forEach(function(ev){ addEventListener(ev,once,{once:true,passive:true}); });
+})();
+</script>
+</body>
+</html>

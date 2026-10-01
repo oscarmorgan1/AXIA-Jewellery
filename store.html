@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AXIA | The Cuban</title>
+<meta name="description" content="AXIA. The Cuban and the full moissanite collection. 925 sterling silver, hand-set VVS D-colour moissanite, shipped worldwide.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260930a">
+<link rel="stylesheet" href="assets/css/axia.css?v=20260930a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111315'/%3E%3Cg fill='%23F4F1EA'%3E%3Cpolygon points='16,5 6,27 9.5,27'/%3E%3Cpolygon points='16,5 22.5,27 26,27'/%3E%3Crect x='9' y='20.4' width='14' height='1.7'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  /* --- signature render world --- */
+  .stage{position:relative;background:radial-gradient(120% 100% at 28% 18%, #232a37 0%, #13161c 52%, #0a0c10 100%);overflow:hidden}
+  .stage::before{content:"";position:absolute;inset:0;background:radial-gradient(46% 40% at 24% 20%, var(--ice-glow), transparent 62%);opacity:.75;pointer-events:none}
+  .stage::after{content:"";position:absolute;left:14%;right:14%;bottom:9%;height:44px;background:radial-gradient(closest-side,rgba(0,0,0,.55),transparent 76%);filter:blur(7px);pointer-events:none}
+  .stage>svg{position:relative;z-index:2}
+
+  .nav__brand{font-family:var(--font-serif);font-weight:600;font-size:1.42rem;letter-spacing:.14em;text-indent:.14em;text-transform:uppercase;text-align:center}
+  .nav__brand .x{font-style:normal;font-weight:500}
+
+  /* --- hero: the Cuban dominates --- */
+  .hero{background:var(--obsidian);color:var(--on-dark);position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;top:-10%;right:-6%;width:70%;height:90%;background:radial-gradient(50% 50% at 60% 40%,var(--ice-bloom),transparent 66%);opacity:.5;mix-blend-mode:screen;pointer-events:none;z-index:0}
+  .hero__grid{display:grid;grid-template-columns:0.82fr 1.18fr;align-items:stretch;min-height:calc(100vh - var(--nav-h));position:relative;z-index:1}
+  .hero__copy{display:flex;flex-direction:column;justify-content:center;padding:var(--s-7) clamp(1.4rem,4vw,4rem) var(--s-7) var(--gutter)}
+  .hero__title{font-family:var(--font-display);font-weight:700;font-size:clamp(3.4rem,8vw,7rem);line-height:.9;text-transform:uppercase;letter-spacing:-0.01em}
+  .hero__sub{margin:var(--s-5) 0 var(--s-6);max-width:34ch;color:var(--on-dark-2);font-size:var(--t-body-l)}
+  .hero__sub .num{color:var(--ice)}
+  .hero__cta{display:flex;gap:var(--s-3);flex-wrap:wrap}
+  .hero__stage{display:grid;place-items:center;padding:0}
+  .hero__stage svg{width:min(640px,94%);filter:drop-shadow(0 40px 55px rgba(0,0,0,.55)) drop-shadow(0 0 42px var(--ice-soft))}
+  .hero__photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 45%;transform:scale(var(--wm-crop));transform-origin:50% 0}
+  @media(max-width:900px){
+    .hero__grid{grid-template-columns:1fr}
+    .hero__stage{order:-1;min-height:46vh}.hero__copy{padding:var(--s-6) var(--gutter) var(--s-7);text-align:center}
+    .hero__sub{margin-inline:auto}.hero__cta{justify-content:center}
+  }
+
+  /* --- positioning band --- */
+  .stake{background:var(--obsidian);color:var(--on-dark);text-align:center;position:relative;overflow:hidden}
+  .stake__glow{position:absolute;inset:0;background:radial-gradient(58% 72% at 50% 50%,rgba(199,234,247,.09),transparent 68%);opacity:.55;pointer-events:none;transition:opacity .5s ease}
+  .stake__in{position:relative;z-index:2;max-width:26ch;margin-inline:auto}
+  .stake h2{font-family:var(--font-display);font-weight:700;font-size:clamp(2.6rem,6.4vw,5.4rem);text-transform:uppercase;line-height:.96}
+  .stake__l1,.stake__l2{display:block;will-change:transform}
+  .stake h2 em{font-style:normal;color:var(--ice)}
+
+  /* --- choose your weight (Cuban widths) --- */
+  .weights{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--s-3)}
+  .wtile{display:block;border-radius:var(--r-2);overflow:hidden}
+  .wtile .stage{aspect-ratio:3/4;display:grid;place-items:center}
+  .wtile .stage svg{width:78%}
+  .wtile__img{width:100%;height:100%;object-fit:cover;display:block;transform:scale(var(--wm-crop));transform-origin:50% 0}
+  .wtile__b{padding-top:var(--s-3);display:flex;justify-content:space-between;align-items:baseline}
+  .wtile__w{font-family:var(--font-display);font-weight:700;font-size:var(--t-20);text-transform:uppercase}
+  .wtile__p{font-size:var(--t-body-s);color:var(--ink-secondary)}
+  @media(max-width:900px){.weights{grid-template-columns:repeat(2,1fr);gap:var(--s-4)}}
+
+  /* --- beyond the cuban (subordinate) --- */
+  .beyond{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-4)}
+  .bcard{display:block}
+  .bcard .m{aspect-ratio:1;border-radius:var(--r-2);overflow:hidden;background:var(--bone-2);display:grid;place-items:center}
+  .bcard .m svg{width:56%}
+  .bcard .n{margin-top:var(--s-3);font-size:var(--t-body-s);font-weight:500}
+  .bcard .p{font-size:var(--t-body-s);color:var(--ink-secondary)}
+  @media(max-width:900px){.beyond{grid-template-columns:repeat(2,1fr)}}
+  .shopall-cta{text-align:center;margin-top:clamp(2rem,4vw,3rem)}
+  .btn--shopall{font-size:1.05rem;padding:1.05em 2.4em}
+
+  /* --- magenta moment (drop list) --- */
+  .drop{background:var(--obsidian);color:var(--on-dark);position:relative;overflow:hidden;text-align:center}
+  .drop::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--magenta)}
+  .drop::after{content:"";position:absolute;right:0;top:0;bottom:0;width:6px;background:var(--magenta)}
+  .drop__in{position:relative;z-index:2;max-width:52ch;margin-inline:auto}
+  .drop .eyebrow{color:var(--magenta)}
+  .drop h2{font-family:var(--font-display);font-weight:700;font-size:clamp(2rem,4.6vw,3.4rem);text-transform:uppercase;margin:var(--s-3) 0 var(--s-4)}
+  .drop p{color:var(--on-dark-2);margin-bottom:var(--s-5)}
+  .drop .input-inline{max-width:440px;margin:0 auto;border-color:var(--line-dark-strong)}
+  .drop .input-inline input{color:var(--on-dark)}
+  .form-note{margin-top:var(--s-3);font-size:var(--t-label);color:var(--on-dark-3);min-height:1em}.form-note.ok{color:var(--ice)}
+
+  /* --- material --- */
+  .mat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(1.5rem,3vw,3rem)}
+  .mat h4{margin-bottom:var(--s-2)}.mat p{font-size:var(--t-body-s);color:var(--ink-secondary);max-width:34ch}
+  .mat__ico{width:32px;height:32px;stroke:var(--ink);fill:none;stroke-width:1.3;margin-bottom:var(--s-4)}
+  /* craft section is dark: light text + ice icons */
+  .on-obsidian .mat__ico{stroke:var(--ice)}
+  .on-obsidian .mat .h4{color:var(--bone)}
+  .on-obsidian .mat p{color:var(--on-dark-2)}
+  @media(max-width:900px){.mat-grid{grid-template-columns:1fr;gap:var(--s-6)}}
+
+  .band{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-5);text-align:center}
+  .band .k{font-weight:600;margin-bottom:2px}.band .s{font-size:var(--t-body-s);color:var(--on-dark-2)}
+  @media(max-width:900px){.band{grid-template-columns:repeat(2,1fr);gap:var(--s-6) var(--s-4)}}
+
+  .shead{display:flex;justify-content:space-between;align-items:flex-end;gap:2rem;flex-wrap:wrap;margin-bottom:var(--s-6)}
+  .shead .eyebrow{display:block;margin-bottom:var(--s-3)}
+  /* prominent Titans CTA (bone fill on the dark apex section, ice glow on hover).
+     scoped to .on-obsidian so it beats the .on-obsidian .btn{color:on-dark} rule that was hiding the text */
+  .on-obsidian .btn--titans{background:var(--bone);color:var(--obsidian);border:1px solid var(--bone);padding:.95em 1.7em;font-weight:600;letter-spacing:.02em;border-radius:var(--r-pill);box-shadow:0 0 0 1px transparent,0 0 24px rgba(199,234,247,0);transition:box-shadow var(--dur-2) var(--ease),transform var(--dur-2) var(--ease),background var(--dur-2) var(--ease)}
+  .on-obsidian .btn--titans:hover{background:#fff;color:var(--obsidian);border-color:var(--bone);transform:translateY(-1px);box-shadow:0 0 0 1px var(--ice),0 0 28px var(--ice-soft)}
+  .btn--titans .arw{margin-left:.4em}
+
+  /* full-bleed lifestyle banner between sections (Adamans-style): wide media + overlaid headline & CTA.
+     the real campaign photo/video drops into .mediabreak__inner as an absolute-inset img/video behind the scrim */
+  /* dark band (no white margin strips): the black runs flush into the First Access section below */
+  .mediabreak{padding-block:clamp(var(--s-7),8vw,var(--s-9));background:var(--obsidian)}
+  .mediabreak__inner{position:relative;display:block;overflow:hidden;text-decoration:none;aspect-ratio:5/2;min-height:360px;
+    background:radial-gradient(120% 130% at 72% 15%,#232a37 0%,#12161c 52%,#0a0c10 100%)}
+  .mediabreak__video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;display:block}
+  .mediabreak__inner::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:linear-gradient(90deg,rgba(7,9,12,.82),rgba(7,9,12,.25) 58%,transparent 82%),linear-gradient(0deg,rgba(7,9,12,.8),transparent 55%)}
+  .mediabreak__note{position:absolute;top:var(--s-4);right:var(--s-4);z-index:3;display:inline-flex;align-items:center;gap:.5em;
+    font-size:var(--t-label);letter-spacing:var(--ls-mid);text-transform:uppercase;color:var(--ice);
+    background:rgba(7,9,12,.42);border:1px solid var(--line-dark-strong);border-radius:var(--r-pill);padding:.42em .95em}
+  .mediabreak__note svg{width:14px;height:14px;stroke:var(--ice);fill:none;stroke-width:1.4}
+  .mediabreak__copy{position:absolute;z-index:2;left:clamp(1.4rem,5vw,4rem);bottom:clamp(1.4rem,5vw,3.2rem);max-width:34ch;color:var(--bone)}
+  .mediabreak__eye{font-size:var(--t-label);letter-spacing:var(--ls-wide);text-transform:uppercase;color:var(--ice)}
+  .mediabreak__h{font-family:var(--font-display);font-weight:700;font-size:clamp(2.4rem,6vw,5rem);text-transform:uppercase;line-height:.92;margin:var(--s-2) 0 var(--s-4)}
+  .mediabreak__cta{display:inline-flex;align-items:center;gap:.5em;background:var(--magenta);color:#fff;padding:.85em 1.6em;border-radius:var(--r-pill);font-size:var(--t-label);letter-spacing:var(--ls-mid);text-transform:uppercase;font-weight:600;transition:filter var(--dur-2) var(--ease),transform var(--dur-2) var(--ease)}
+  .mediabreak__inner:hover .mediabreak__cta{filter:brightness(1.06);transform:translateY(-1px)}
+  @media(max-width:760px){.mediabreak__inner{aspect-ratio:16/9;min-height:0}.mediabreak__video{object-fit:contain;background:var(--obsidian)}}
+
+  /* footer */
+  .foot{background:var(--obsidian);color:var(--on-dark-2);padding-top:var(--s-9)}
+  .foot__top{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:var(--s-6);padding-bottom:var(--s-7);border-bottom:1px solid var(--line-dark)}
+  .foot__brand .nav__brand{color:var(--bone);font-size:1.6rem;display:inline-block;margin-bottom:var(--s-4)}
+  .foot__brand p{font-size:var(--t-body-s);max-width:34ch;color:var(--on-dark-3)}
+  .foot h5{font-size:var(--t-label);letter-spacing:var(--ls-mid);text-transform:uppercase;color:var(--bone);margin-bottom:var(--s-4)}
+  .foot a{display:block;font-size:var(--t-body-s);padding:.35rem 0;color:var(--on-dark-2)}.foot a:hover{color:var(--ice)}
+  .foot__bot{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding-block:var(--s-5);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--on-dark-3)}
+  @media(max-width:900px){.foot__top{grid-template-columns:1fr 1fr}.foot__brand{grid-column:1/-1}}
+  @media(max-width:600px){.mat-grid,.band{grid-template-columns:1fr}}
+
+  /* ===== First-visit logo intro ===== */
+  .intro{position:fixed;inset:0;z-index:2000;background:radial-gradient(135% 115% at 50% 38%,#171d26 0%,#0c0f14 52%,#07090c 100%);display:grid;place-items:center;overflow:hidden}
+  .intro__bloom{position:absolute;inset:0;background:radial-gradient(44% 40% at 50% 47%,rgba(199,234,247,.12),rgba(199,234,247,.04) 46%,transparent 74%);opacity:0;filter:blur(12px);pointer-events:none}
+  .intro__logo{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:1.15rem;opacity:0;transform:translateY(10px) scale(.985)}
+  .intro__wm{width:min(460px,78vw);aspect-ratio:2000 / 404;background:var(--bone);-webkit-mask:url("assets/img/axia-logo.png?v=20260930a") center/contain no-repeat;mask:url("assets/img/axia-logo.png?v=20260930a") center/contain no-repeat}
+  .intro__line{width:0;height:1px;background:linear-gradient(90deg,transparent,var(--ice),transparent)}
+  .intro--in .intro__logo{opacity:1;transform:none;transition:opacity 1s cubic-bezier(.2,.7,.2,1),transform 1s cubic-bezier(.2,.7,.2,1)}
+  .intro--in .intro__bloom{opacity:1;transition:opacity 1.6s ease}
+  .intro--in .intro__line{width:min(280px,52vw);transition:width 1s cubic-bezier(.2,.7,.2,1) .35s}
+  .intro--out{opacity:0;transform:scale(1.03);transition:opacity .6s ease,transform .7s cubic-bezier(.2,.7,.2,1);pointer-events:none}
+  html.intro-lock,html.intro-lock body{overflow:hidden}
+  /* hero comes alive */
+  .hero::before{animation:heroBreath 12s ease-in-out infinite}
+  @keyframes heroBreath{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:.66;transform:scale(1.06)}}
+  .hero__stage{will-change:transform}
+  @media (prefers-reduced-motion:reduce){.hero::before{animation:none}.intro__logo,.intro__bloom,.intro__line{transition:none}}
+  /* First Drop countdown (shown only when a launch date is set) */
+  [hidden]{display:none!important}
+  .storecd{background:var(--obsidian);color:var(--on-dark);border-bottom:1px solid var(--line-dark);text-align:center;padding-block:clamp(1.5rem,4vw,2.6rem)}
+  .storecd__eye{display:block;font-size:var(--t-label);letter-spacing:.24em;text-transform:uppercase;color:var(--ice);margin-bottom:.9rem;font-weight:700}
+  .storecd__grid{display:inline-flex;gap:clamp(1rem,4vw,2.6rem)}
+  .storecd__u b{display:block;font-family:var(--font-display);font-weight:800;font-size:clamp(2.1rem,6vw,3.6rem);line-height:1;font-variant-numeric:tabular-nums;color:var(--bone)}
+  .storecd__u span{display:block;margin-top:6px;font-size:var(--t-label);letter-spacing:.14em;text-transform:uppercase;color:var(--on-dark-2)}
+</style>
+</head>
+<body class="chrome-dark chrome-adaptive">
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="intro__bloom"></div>
+  <div class="intro__logo"><span class="intro__wm" role="img" aria-label="AXIA"></span><span class="intro__line"></span></div>
+</div>
+
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs><linearGradient id="axmv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--metal-a)"/><stop offset=".4" stop-color="var(--metal-b)"/><stop offset=".78" stop-color="var(--metal-c)"/><stop offset="1" stop-color="var(--metal-d)"/></linearGradient><radialGradient id="axice" cx=".4" cy=".32" r=".8"><stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="var(--ice)"/><stop offset="1" stop-color="#7fb4cf"/></radialGradient></defs></svg>
+
+
+<header class="nav" id="nav">
+  <nav class="nav__links" aria-label="Primary">
+    <a class="nav__link" href="collection.html">Shop</a>
+    <a class="nav__link" href="cuban.html">The Cuban</a>
+    <a class="nav__link" href="about.html">About</a>
+    <a class="nav__link" href="support.html">Support</a>
+  </nav>
+  <a class="nav__brand" href="store.html" aria-label="AXIA home"><span class="wm-img" aria-hidden="true"></span></a>
+  <div class="nav__right">
+    <button class="nav__icon" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+    <button class="nav__icon" aria-label="Account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></button>
+    <button class="nav__icon" data-cart aria-label="Bag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="cc" id="cc" aria-hidden="true">0</span></button>
+    <button class="nav__icon menu-btn" data-menu aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </div>
+</header>
+<div class="announce" aria-label="Store highlights"><div class="announce__track"><span>Passes a diamond tester</span><span class="dot">/</span><span>Hand-set and made to order</span><span class="dot">/</span><span>Free custom engraving</span><span class="dot">/</span><span>Lifetime warranty on defects</span><span class="dot">/</span><span>Ships in an AXIA box</span><span class="dot">/</span><span>Worldwide shipping</span><span class="dot">/</span><span>30-day exchanges</span><span class="dot">/</span><span>Passes a diamond tester</span><span class="dot">/</span><span>Hand-set and made to order</span><span class="dot">/</span><span>Free custom engraving</span><span class="dot">/</span><span>Lifetime warranty on defects</span><span class="dot">/</span><span>Ships in an AXIA box</span><span class="dot">/</span><span>Worldwide shipping</span><span class="dot">/</span><span>30-day exchanges</span><span class="dot">/</span></div></div>
+
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero__grid">
+    <div class="hero__copy">
+      <span class="eyebrow eyebrow--ice reveal" style="align-self:flex-start">Buy once, shine forever</span>
+      <h1 class="hero__title reveal" data-d="1" style="margin-top:var(--s-4)">The<br>Cuban</h1>
+      <p class="hero__sub reveal" data-d="2">The foundation of AXIA.</p>
+      <div class="hero__cta reveal" data-d="3">
+        <a href="first-drop.html" class="btn btn--cart">Join the First Drop</a>
+        <a href="cuban.html" class="btn">Shop the Cuban</a>
+      </div>
+    </div>
+    <div class="hero__stage stage reveal" data-d="1"><img class="hero__photo" src="assets/img/products/two-row-flat-cuban-chain-12mm/silver/2.jpg?v=20260930a" alt="The Cuban, hand-set moissanite chain"></div>
+  </div>
+</section>
+
+<!-- POSITIONING -->
+<section class="section stake" id="stake">
+  <div class="stake__glow" id="stakeGlow"></div>
+  <div class="stake__in container">
+    <h2 class="reveal" data-d="1"><span class="stake__l1">Made for people</span><span class="stake__l2">with <em>motion</em></span></h2>
+  </div>
+</section>
+
+<!-- CORE SPOTLIGHT -->
+<section class="section--tight container">
+  <div class="shead reveal"><div><span class="eyebrow">The core</span><h2 class="h3">Start here</h2></div><a class="link-u" href="collection.html">Shop all <span class="arw">&rarr;</span></a></div>
+  <div class="grid grid-3" id="homeSpotlight"></div>
+</section>
+
+<!-- BEYOND THE CUBAN -->
+<section class="section--tight container">
+  <div class="shead reveal"><div><span class="eyebrow">Beyond the Cuban</span><h2 class="h4" style="font-weight:500">A complete world</h2></div></div>
+  <div class="grid grid-4" id="homeBeyond"></div>
+  <div class="shopall-cta reveal" data-d="1">
+    <a class="btn btn--cart btn--shopall" href="collection.html">See the full catalogue &rarr;</a>
+  </div>
+</section>
+
+<!-- BIG MEDIA BREAK (full-bleed lifestyle banner between sections; the real film/photo drops into the background) -->
+<section class="mediabreak reveal" data-band-dark aria-label="The First Drop">
+  <a class="mediabreak__inner" href="first-drop.html">
+    <video class="mediabreak__video" src="assets/video/axia-hero.mp4" poster="assets/video/axia-hero-poster.jpg" autoplay muted loop playsinline preload="metadata" aria-hidden="true"></video>
+    <div class="mediabreak__copy">
+      <span class="mediabreak__eye">The first drop</span>
+      <h2 class="mediabreak__h">Made for motion</h2>
+      <span class="mediabreak__cta">Join the First Drop <span class="arw">&rarr;</span></span>
+    </div>
+  </a>
+</section>
+
+<!-- FIRST ACCESS -->
+<section class="section drop">
+  <div class="drop__in container">
+    <span class="eyebrow reveal">First access</span>
+    <h2 class="reveal" data-d="1">Join the First Drop</h2>
+    <p class="reveal" data-d="1">Register your interest and get in before the public launch. No noise, just what's next from AXIA.</p>
+    <div class="reveal" data-d="2" style="margin-top:var(--s-5)"><a class="btn btn--cart" href="first-drop.html">Join the First Drop &rarr;</a></div>
+  </div>
+</section>
+
+<!-- THE TITANS -->
+<section class="section on-obsidian">
+  <div class="container">
+    <div class="shead reveal"><div><span class="eyebrow eyebrow--ice">The apex</span><h2 class="h2" style="color:var(--bone)">The Titans</h2></div><a class="btn btn--titans" href="titans.html">Meet The Titans <span class="arw">&rarr;</span></a></div>
+    <p class="lead reveal" style="max-width:52ch;color:var(--on-dark-2);margin-bottom:var(--s-6)">Four 18mm Cubans, the highest expression of AXIA.</p>
+    <div class="grid grid-4" id="homeTitans"></div>
+  </div>
+</section>
+
+<!-- CRAFT -->
+<section class="section on-obsidian" id="craft" data-band-dark>
+  <div class="container">
+    <div class="shead reveal"><div><span class="eyebrow eyebrow--ice">Craft</span><h2 class="h3" style="color:var(--bone)">Made to be looked at closely</h2></div></div>
+    <p class="reveal" style="max-width:54ch;color:var(--on-dark-2);margin:calc(-1*var(--s-3)) 0 var(--s-6);font-size:var(--t-body-l)">Built for long-term wear with proper care. Made to be worn, not replaced.</p>
+    <div class="mat-grid">
+      <div class="mat reveal"><svg class="mat__ico" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M6 6l12 12M18 6 6 18"/></svg><h4 class="h4">925 sterling silver</h4><p>Solid sterling silver, white-gold plated for a bright, lasting finish. Exact spec on every tag.</p></div>
+      <div class="mat reveal" data-d="1"><svg class="mat__ico" viewBox="0 0 24 24"><path d="M12 3 4 8l8 13 8-13-8-5Z"/><path d="M4 8h16"/></svg><h4 class="h4">VVS D-colour moissanite</h4><p>Hand-set and graded for cut and clarity, and it passes a diamond tester. We tell you exactly what it is, never a diamond game.</p></div>
+      <div class="mat reveal" data-d="2"><svg class="mat__ico" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3Z"/><path d="m9 12 2 2 4-5"/></svg><h4 class="h4">Australian support</h4><p>Local support and made-to-order care for major pieces. Warranty and returns detailed at checkout.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST -->
+<section class="section--tight on-obsidian">
+  <div class="container band reveal">
+    <div><div class="k">Worldwide dispatch</div><div class="s">Express, tracked, insured</div></div>
+    <div><div class="k">Hand-set to order</div><div class="s">Every piece &middot; approx. 3-5 weeks</div></div>
+    <div><div class="k">Australian support</div><div class="s">Real people, real answers</div></div>
+    <div><div class="k">Secure checkout</div><div class="s">Encrypted &amp; private</div></div>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="container">
+    <div class="foot__top">
+      <div class="foot__brand"><a class="nav__brand" href="store.html" aria-label="AXIA"><span class="wm-img" aria-hidden="true"></span></a><p>Buy once, shine forever.</p></div>
+      <div><h5>Shop</h5><a href="cuban.html">The Cuban</a><a href="collection.html?cat=Tennis">Tennis</a><a href="collection.html?cat=Pendants">Pendants</a><a href="titans.html">The Titans</a><a href="collection.html">Shop all</a></div>
+      <div><h5>AXIA</h5><a href="about.html">About</a><a href="first-drop.html">First Drop</a><a href="support.html#sizing">Sizing</a><a href="support.html#materials">Materials</a><a href="support.html#gifting">Gifting</a></div>
+      <div><h5>Support</h5><a href="support.html#shipping">Shipping</a><a href="support.html#warranty">Warranty</a><a href="support.html#returns">Exchanges</a><a href="support.html">Contact</a></div>
+    </div>
+    <div class="foot__bot"><span>© 2026 AXIA Jewellery <span style="opacity:.4;font-size:.82em">ABN 64 972 889 034</span></span><span>Worth, made visible.</span></div>
+  </div>
+</footer>
+
+<!-- cart + menu + toast -->
+<div class="ov" id="ov"></div>
+<aside class="drw" id="drw" role="dialog" aria-modal="true" aria-label="Your bag">
+  <div class="drw__h"><span class="t">Your Bag</span><button data-cart-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="drw__b" id="drwb"></div>
+  <div class="drw__f" id="drwf"><div class="drw__r"><span class="label">Subtotal</span><span class="t num" id="ctot">$0</span></div><p class="drw__note">Lifetime warranty on manufacturing defects. Shipping &amp; taxes calculated at checkout.</p><button class="btn btn--cart btn--block">Checkout</button></div>
+</aside>
+<div class="mm" id="mm">
+  <div class="mm__h"><a class="nav__brand" href="store.html" aria-label="AXIA"><span class="wm-img" aria-hidden="true"></span></a><button data-menu-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" style="width:22px;height:22px"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <nav class="mm__links"><a class="big" href="collection.html" data-menu-close>Shop</a><a class="big" href="cuban.html" data-menu-close>The Cuban</a><a class="big" href="about.html" data-menu-close>About</a><a class="big" href="support.html" data-menu-close>Support</a></nav>
+  <div class="mm__shop">
+    <span class="mm__label">Shop by</span>
+    <div class="mm__cats">
+      <a href="cuban.html" data-menu-close>Cuban</a>
+      <a href="collection.html?cat=Tennis" data-menu-close>Tennis</a>
+      <a href="collection.html?cat=Pendants" data-menu-close>Pendants</a>
+      <a href="titans.html" data-menu-close>The Titans</a>
+      <a href="collection.html?sort=low" data-menu-close>Price: low to high</a>
+      <a href="collection.html?sort=high" data-menu-close>Price: high to low</a>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
+
+<script src="assets/data/products.js?v=20260930a"></script>
+<script src="assets/js/axia.js?v=20260930a"></script>
+<script>
+(function(){
+  const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
+  const fmtA=n=>'A$'+n.toLocaleString('en-AU');
+  const P=window.AXIA_PRODUCTS||[]; const byId=id=>P.find(p=>p.id===id);
+  function card(p){ if(!p) return '';
+    const deal=false; // no strikethrough "was" prices (ACL: nothing has sold at a higher price)
+    const was='';
+    const price=(p.singlePrice?'':'From ')+fmtA(p.fromPriceAUD);
+    const gen=p.art==='tennis'?'tennis':p.art==='cross'?'cross':p.art==='cubanBracelet'?'cubanBracelet':'cuban';
+    const vb=p.art==='cross'?'0 0 300 430':'0 0 1000 620';
+    const meta=(p.col&&p.col.length>1)?p.col.join(' / '):'925 silver';
+    const bdg=p.badge?('<span class="'+(p.badge==='Bestseller'?'tag tag--new card__tag':'tag card__tag')+'"'+(p.badge==='Bestseller'?'':' style="border-color:var(--ice);color:var(--ice)"')+'>'+p.badge+'</span>'):'';
+    const ph=(p.images&&p.images[0])||(p.imagesByColor&&(Object.values(p.imagesByColor).find(a=>a&&a.length)||[])[0])||(p.widths&&((p.widths.find(w=>w.image)||{}).image))||'';
+    const media=(p.showBoth&&p.images&&p.images.length>=2)?'<div class="card__split">'+p.images.slice(0,2).map(im=>'<img src="'+im+'" alt="'+p.name+'" loading="lazy">').join('')+'</div>':(ph?'<img class="card__photo" src="'+ph+'" alt="'+p.name+'" loading="lazy">':'<svg class="card__art" viewBox="'+vb+'" data-cg="'+gen+'"></svg>');
+    return '<a class="card" href="'+(p.linkTo||'product.html?id='+p.id)+'"><div class="card__media">'+bdg+media+'<span class="card__edge"></span></div><div class="card__body"><div class="card__name">'+p.name+(p.width?', '+p.width:'')+'</div><div class="card__meta">'+meta+'</div><div class="card__price num'+(deal?' card__price--deal':'')+'">'+price+'</div></div></a>';
+  }
+  const fill=(sel,list)=>{const el=$(sel); if(el) el.innerHTML=list.map(card).join('');};
+  fill('#homeSpotlight',['tennis-chain','two-row-flat-cuban-bracelet-12mm','square-halo-tennis-bracelet','tennis-bracelet','iced-cuban-bracelet-5mm','classic-cuban-bracelet-10mm','cross-set','prong-cuban-bracelet-10mm','floral-bracelet-15mm'].map(byId));
+  fill('#homeBeyond',['tennis-chain','tennis-bracelet','square-halo-tennis-bracelet','cross-pendant'].map(byId));
+  fill('#homeTitans',P.filter(p=>p.coll.includes('titans')));
+  // render injected arts
+  $$('[data-cg="tennis"]').forEach(x=>window.AXIA_art.tennis(x));
+  $$('[data-cg="cross"]').forEach(x=>window.AXIA_art.cross(x));
+  $$('[data-cg="cubanBracelet"]').forEach(x=>window.AXIA_art.drape(x,{yTop:210,yBot:445,w:50,h:38,n:24,iced:true}));
+  $$('[data-cg="cuban"]').forEach(x=>window.AXIA_art.drape(x,{yTop:210,yBot:445,w:70,h:54,n:18,iced:true}));
+  $$('.card,.wtile').forEach(c=>c.classList.add('reveal','in'));
+})();
+</script>
+<script>
+/* ===== First-visit intro + scroll-alive hero ===== */
+(function(){
+  const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  // first-visit logo intro (once per browser session; skippable)
+  const intro=document.getElementById('intro');
+  if(intro){
+    let seen=false; try{ seen=!!sessionStorage.getItem('axia_intro'); }catch(e){}
+    if(seen){ intro.remove(); }
+    else{
+      const root=document.documentElement; root.classList.add('intro-lock');
+      const finish=()=>{ intro.classList.add('intro--out'); root.classList.remove('intro-lock'); try{sessionStorage.setItem('axia_intro','1');}catch(e){} setTimeout(()=>intro.remove(),750); };
+      if(reduce){ finish(); }
+      else{
+        requestAnimationFrame(()=>requestAnimationFrame(()=>intro.classList.add('intro--in')));
+        const hold=setTimeout(finish,2200);
+        const skip=()=>{ clearTimeout(hold); finish(); };
+        intro.addEventListener('click',skip,{once:true});
+        addEventListener('keydown',skip,{once:true});
+        addEventListener('wheel',skip,{once:true,passive:true});
+        addEventListener('touchstart',skip,{once:true,passive:true});
+      }
+    }
+  }
+
+  // scroll-alive hero: subtle parallax + fade on the image only. The copy (which holds the CTAs)
+  // is deliberately NOT transformed - a moving container was making the first click on
+  // "Shop the Cuban" miss the button (hit-test lag during scroll).
+  const stage=document.querySelector('.hero__stage');
+  if(stage && !reduce){
+    let ticking=false;
+    const onScroll=()=>{ if(ticking) return; ticking=true; requestAnimationFrame(()=>{
+      const y=Math.min(window.scrollY||0,900);
+      stage.style.transform='translate3d(0,'+(y*0.16).toFixed(1)+'px,0)';
+      stage.style.opacity=String(Math.max(0,1-y/720));
+      ticking=false; }); };
+    addEventListener('scroll',onScroll,{passive:true});
+  }
+
+  // "Made for people with motion", kinetic type: the two lines drift apart + a soft glow blooms as it passes
+  const stake=document.querySelector('#stake'), l1=document.querySelector('.stake__l1'), l2=document.querySelector('.stake__l2'), sglow=document.querySelector('#stakeGlow');
+  if(stake && l1 && l2 && !reduce){
+    let tk=false;
+    const onStake=()=>{ if(tk) return; tk=true; requestAnimationFrame(()=>{
+      const r=stake.getBoundingClientRect(), vh=window.innerHeight||1;
+      // -1 (entering from below) → 0 (centred) → 1 (leaving up)
+      const prog=Math.max(-1,Math.min(1, ((vh/2)-(r.top+r.height/2)) / (vh/2+r.height/2) ));
+      const amt=prog*(window.innerWidth<700?16:46);
+      l1.style.transform='translate3d('+(-amt).toFixed(1)+'px,0,0)';
+      l2.style.transform='translate3d('+(amt).toFixed(1)+'px,0,0)';
+      if(sglow) sglow.style.opacity=(0.18+0.5*(1-Math.abs(prog))).toFixed(3);
+      tk=false; }); };
+    addEventListener('scroll',onStake,{passive:true}); onStake();
+  }
+})();
+</script>
+</body>
+</html>

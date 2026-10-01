@@ -1,0 +1,109 @@
+/* ============================================================
+   AXIA - DESIGN TOKENS  (v0.1)
+   Foundation: Obsidian · Bone · Titanium  (~80–85%)
+   Atmosphere: Ice Blue  (environment / light - never a flat fill)
+   Accent: Rose Magenta  (controlled shock - ~3–5%)
+   ============================================================ */
+/* Wordmark: Cormorant (peaked high-contrast serif, the AXIA logotype). Display: Bricolage Grotesque (characterful editorial grotesque). Body/UI: Hanken Grotesk (warm, legible). */
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&family=Cormorant:wght@500;600;700&display=swap');
+
+:root{
+  /* ---- Core palette ---- */
+  --obsidian:#111315;
+  --bone:#F4F1EA;
+  --titanium:#B7BDC5;
+  --ice:#C7EAF7;
+  --magenta:#F3436E;
+
+  /* ---- Derived surfaces ---- */
+  --obsidian-2:#191C1F;      /* raised dark surface */
+  --obsidian-3:#22262A;      /* hairline-lifted dark */
+  --bone-2:#ECE8DD;          /* subtle light panel */
+  --bone-3:#E3DED1;          /* deeper light panel */
+
+  /* ---- Text ---- */
+  --ink:#111315;             /* primary on light */
+  --ink-secondary:#5C636C;   /* AA secondary on bone */
+  --ink-tertiary:#8A9099;    /* labels on bone (large only) */
+  --on-dark:#F4F1EA;         /* primary on obsidian */
+  --on-dark-2:#AEB4BC;       /* secondary on obsidian */
+  --on-dark-3:#767C85;       /* tertiary on obsidian */
+
+  /* ---- Lines ---- */
+  --line:rgba(17,19,21,.12);
+  --line-strong:rgba(17,19,21,.22);
+  --line-dark:rgba(244,241,234,.14);
+  --line-dark-strong:rgba(244,241,234,.26);
+
+  /* ---- Ice atmosphere ---- */
+  --ice-glow:rgba(199,234,247,.72);
+  --ice-soft:rgba(199,234,247,.30);
+  --ice-edge:rgba(160,214,236,.9);
+  --ice-ink:#2A6076;   /* readable ice-derived accent for text/lines on light (AA) */
+  --ice-bloom:rgba(199,234,247,.92);  /* concentrated atmospheric bloom */
+  --ice-rim:rgba(214,240,250,.55);    /* directional rim light on dark */
+  --ice-haze:rgba(150,205,232,.16);   /* faint cold haze over dark sections */
+
+  /* ---- Magenta states ---- */
+  --magenta-press:#DD2F5B;
+  --magenta-soft:rgba(243,67,110,.14);
+  --on-magenta:#FFFFFF;
+
+  /* ---- Metal (product renders) ---- */
+  --metal-a:#EAF3F8; --metal-b:#BEC9D3; --metal-c:#8894A2; --metal-d:#4F5865;   /* cooled toward ice-steel */
+
+  /* ---- Type ---- */
+  --font-display:'Bricolage Grotesque',system-ui,sans-serif; /* impact heads - characterful, not the AI default */
+  --font-sans:'Hanken Grotesk',system-ui,-apple-system,sans-serif;   /* workhorse / body / UI */
+  --font-serif:'Cormorant',Georgia,serif;                           /* wordmark only (peaked-serif logo) */
+
+  /* Fluid type scale (min → max) */
+  --t-label:0.72rem;
+  --t-caption:0.8rem;
+  --t-body-s:0.9rem;
+  --t-body:1rem;
+  --t-body-l:1.075rem;
+  --t-20:clamp(1.15rem,1.4vw,1.35rem);
+  --t-24:clamp(1.35rem,1.9vw,1.6rem);
+  --t-32:clamp(1.7rem,2.8vw,2.1rem);
+  --t-44:clamp(2.2rem,4.4vw,3rem);
+  --t-64:clamp(2.9rem,6.4vw,4.4rem);
+  --t-88:clamp(3.6rem,9vw,6rem);
+  --t-display:clamp(4rem,13vw,9rem);
+
+  --lh-tight:1.02;
+  --lh-snug:1.18;
+  --lh-body:1.65;
+  --ls-wide:0.22em;   /* eyebrows / labels */
+  --ls-mid:0.14em;
+  --ls-tight:-0.01em; /* big display */
+
+  /* ---- Spacing (4pt) ---- */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px;
+  --s-6:32px; --s-7:48px; --s-8:64px; --s-9:96px; --s-10:128px; --s-11:160px;
+
+  /* ---- Radius (engineered = sharp) ---- */
+  --r-0:0px; --r-1:2px; --r-2:4px; --r-pill:999px;
+
+  /* ---- Elevation ---- */
+  --shadow-1:0 1px 2px rgba(17,19,21,.06);
+  --shadow-2:0 18px 40px rgba(17,19,21,.10);
+  --shadow-dark:0 30px 60px rgba(0,0,0,.5);
+
+  /* ---- Motion (controlled, never bouncy) ---- */
+  --dur-1:120ms; --dur-2:220ms; --dur-3:320ms; --dur-4:640ms; --dur-5:900ms;
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+
+  /* ---- Layout ---- */
+  --maxw:1440px;
+  --gutter:clamp(1.25rem,5vw,5.5rem);
+  --nav-h:76px;
+  --announce-h:30px;      /* height of the sticky trust marquee, added to nav/sticky offsets */
+  --give-h:0px;           /* pinned top-banner slot; set to 40px only on pages with the sticky countdown (html.has-cdbar) */
+  --chrome-h:calc(var(--give-h) + var(--announce-h) + var(--nav-h));  /* total pinned chrome, for sticky children */
+  --wm-crop:1.14;         /* scale-from-top on thumbnails: crops the bottom ~12% so the baked watermark shows only on the PDP */
+
+  /* ---- Z ---- */
+  --z-nav:60; --z-overlay:80; --z-drawer:90; --z-toast:95; --z-menu:100;
+}

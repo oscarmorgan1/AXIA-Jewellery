@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support | AXIA</title>
+<meta name="description" content="AXIA support. Shipping, returns, warranty, sizing, care, materials and gifting.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260930a">
+<link rel="stylesheet" href="assets/css/axia.css?v=20260930a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111315'/%3E%3Cg fill='%23F4F1EA'%3E%3Cpolygon points='16,5 6,27 9.5,27'/%3E%3Cpolygon points='16,5 22.5,27 26,27'/%3E%3Crect x='9' y='20.4' width='14' height='1.7'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  .sup-hero{padding-block:clamp(var(--s-8),8vw,var(--s-9)) var(--s-6)}
+  .sup-hero .eyebrow{display:block;margin-bottom:var(--s-3)}
+  .sup-hero h1{font-family:var(--font-display);font-weight:700;font-size:var(--t-64);text-transform:uppercase;line-height:.95}
+  .sup{display:grid;grid-template-columns:220px 1fr;gap:clamp(2rem,5vw,5rem);align-items:start;padding-bottom:var(--s-9)}
+  .sup-nav{position:sticky;top:calc(var(--chrome-h) + 16px)}
+  .sup-nav a{display:block;font-size:var(--t-body-s);color:var(--ink-secondary);padding:.5rem 0;border-left:2px solid transparent;padding-left:var(--s-3);transition:color var(--dur-2) var(--ease),border-color var(--dur-2) var(--ease)}
+  .sup-nav a:hover{color:var(--ink)}
+  .sup-nav a.active{color:var(--ink);border-color:var(--magenta);font-weight:500}
+  .sup-sec{padding-bottom:clamp(var(--s-7),6vw,var(--s-8));border-bottom:1px solid var(--line);margin-bottom:clamp(var(--s-7),6vw,var(--s-8));scroll-margin-top:calc(var(--chrome-h) + 24px)}
+  .sup-sec:last-child{border-bottom:0;margin-bottom:0}
+  .sup-sec h2{font-family:var(--font-display);font-weight:700;font-size:var(--t-32);text-transform:uppercase;margin-bottom:var(--s-4)}
+  .sup-sec p{color:var(--ink-secondary);max-width:60ch;margin-bottom:var(--s-3)}
+  .sup-sec ul{max-width:60ch;margin:var(--s-3) 0}
+  .sup-sec li{position:relative;padding-left:1.2rem;color:var(--ink-secondary);font-size:var(--t-body-s);margin-bottom:.5rem}
+  .sup-sec li::before{content:"";position:absolute;left:0;top:.6em;width:6px;height:1px;background:var(--magenta)}
+  .sup-sec .k{color:var(--ink);font-weight:500}
+  .deftable{margin-top:var(--s-4)}
+  .deftable div{display:flex;justify-content:space-between;gap:1rem;padding:.7rem 0;border-top:1px solid var(--line-soft);font-size:var(--t-body-s)}
+  .deftable .k{color:var(--ink-secondary);letter-spacing:.06em;text-transform:uppercase;font-size:var(--t-label)}
+  .note{font-size:var(--t-body-s);color:var(--ink-tertiary);font-style:italic;margin-top:var(--s-3)}
+  @media(max-width:860px){
+    .sup{grid-template-columns:1fr;gap:var(--s-6)}
+    .sup-nav{position:sticky;top:var(--chrome-h);z-index:30;background:rgba(244,241,234,.94);backdrop-filter:blur(10px);margin-inline:calc(-1*var(--gutter));padding:var(--s-3) var(--gutter);border-bottom:1px solid var(--line);display:flex;gap:var(--s-4);overflow-x:auto}
+    .sup-nav a{border-left:0;border-bottom:2px solid transparent;padding:.2rem 0;white-space:nowrap}
+    .sup-nav a.active{border-color:var(--magenta)}
+  }
+  /* contact form */
+  .cform{max-width:60ch;margin-top:var(--s-5)}
+  .cf-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-4)}
+  @media(max-width:600px){.cf-row{grid-template-columns:1fr;gap:0}}
+  .cf-field{display:flex;flex-direction:column;gap:.5rem;margin-bottom:var(--s-4)}
+  .cf-field label{font-size:var(--t-label);letter-spacing:var(--ls-mid);text-transform:uppercase;color:var(--ink-secondary)}
+  .cf-field label .opt{color:var(--ink-tertiary);text-transform:none;letter-spacing:0;font-weight:400}
+  .cf-field input,.cf-field select,.cf-field textarea{font-family:var(--font-sans);font-size:var(--t-body);padding:.9em 1em;border:1px solid var(--line-strong);border-radius:var(--r-1);background:var(--bone);color:var(--ink);width:100%;transition:border-color var(--dur-2) var(--ease)}
+  .cf-field textarea{resize:vertical;min-height:120px;line-height:1.55}
+  .cf-field input:focus,.cf-field select:focus,.cf-field textarea:focus{outline:none;border-color:var(--ink)}
+  .cf-err{color:var(--magenta);font-size:var(--t-body-s);min-height:1.2em;margin-bottom:var(--s-2)}
+  .cf-success{display:none}
+  .cf-success.on{display:block}
+  .cf-success .cf-tick{width:48px;height:48px;border-radius:50%;border:1.5px solid var(--ice);display:grid;place-items:center;margin-bottom:var(--s-4)}
+  .cf-success .cf-tick svg{width:24px;height:24px}
+  .cf-success h3{font-family:var(--font-display);font-weight:700;font-size:var(--t-24);text-transform:uppercase;margin-bottom:var(--s-3)}
+</style>
+</head>
+<body class="chrome-light show-carousel">
+
+<header class="nav" id="nav">
+  <nav class="nav__links" aria-label="Primary"><a class="nav__link" href="collection.html">Shop</a><a class="nav__link" href="cuban.html">The Cuban</a><a class="nav__link" href="about.html">About</a><a class="nav__link" href="support.html" aria-current="page">Support</a></nav>
+  <a class="nav__brand" href="store.html" aria-label="AXIA home"><span class="wm-img" aria-hidden="true"></span></a>
+  <div class="nav__right">
+    <button class="nav__icon" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+    <button class="nav__icon" aria-label="Account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></button>
+    <button class="nav__icon" data-cart aria-label="Bag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="cc" id="cc" aria-hidden="true">0</span></button>
+    <button class="nav__icon menu-btn" data-menu aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </div>
+</header>
+<div class="announce" aria-label="Store highlights"><div class="announce__track"><span>Passes a diamond tester</span><span class="dot">/</span><span>Hand-set and made to order</span><span class="dot">/</span><span>Free custom engraving</span><span class="dot">/</span><span>Lifetime warranty on defects</span><span class="dot">/</span><span>Ships in an AXIA box</span><span class="dot">/</span><span>Worldwide shipping</span><span class="dot">/</span><span>30-day exchanges</span><span class="dot">/</span><span>Passes a diamond tester</span><span class="dot">/</span><span>Hand-set and made to order</span><span class="dot">/</span><span>Free custom engraving</span><span class="dot">/</span><span>Lifetime warranty on defects</span><span class="dot">/</span><span>Ships in an AXIA box</span><span class="dot">/</span><span>Worldwide shipping</span><span class="dot">/</span><span>30-day exchanges</span><span class="dot">/</span></div></div>
+
+<div class="container sup-hero">
+  <span class="eyebrow eyebrow--ice">Client care</span>
+  <h1>Support</h1>
+</div>
+
+<main class="container sup">
+  <nav class="sup-nav" id="supNav" aria-label="Support sections">
+    <a href="#shipping" class="active">Shipping</a>
+    <a href="#returns">Returns &amp; exchanges</a>
+    <a href="#warranty">Warranty</a>
+    <a href="#sizing">Sizing</a>
+    <a href="#care">Care</a>
+    <a href="#materials">Materials</a>
+    <a href="#gifting">Gifting</a>
+    <a href="#packaging">Packaging &amp; cases</a>
+    <a href="#contact">Contact us</a>
+  </nav>
+
+  <div>
+    <section class="sup-sec" id="shipping">
+      <h2>Shipping</h2>
+      <p>Every AXIA piece is <span class="k">hand-set and made to order</span>. Allow approximately 3-5 weeks for your piece to be made before it ships <span class="k">express, tracked and insured worldwide</span>. The shipping windows below apply once your piece leaves our workshop.</p>
+      <div class="deftable">
+        <div><span class="k">Express</span><span>Calculated at checkout · 1-3 business days</span></div>
+        <div><span class="k">Standard</span><span>Calculated at checkout · 3-6 days</span></div>
+        <div><span class="k">International</span><span>Calculated at checkout · 5-12 days</span></div>
+      </div>
+      <p class="note">International duties and taxes may apply on delivery and are the recipient's responsibility.</p>
+    </section>
+
+    <section class="sup-sec" id="returns">
+      <h2>Returns &amp; exchanges</h2>
+      <p>Changed your mind, or the size isn't right? You have <span class="k">30 days</span> from delivery.</p>
+      <ul>
+        <li>Pieces must be unworn and in original condition with packaging and cards.</li>
+        <li><span class="k">Size exchanges are free</span>, we cover return postage both ways.</li>
+        <li>Refunds are issued to the original payment method once the piece is inspected.</li>
+        <li>Custom or engraved pieces can't be returned unless faulty.</li>
+      </ul>
+      <p>To start, email <span class="k">axiajewellery@gmail.com</span> with your order number and we'll send a prepaid label. Or use the <a class="link-u" href="#contact">contact form below</a>.</p>
+    </section>
+
+    <section class="sup-sec" id="warranty">
+      <h2>Warranty</h2>
+      <p>Every AXIA piece carries a <span class="k">lifetime warranty against manufacturing defects</span>: clasp failure, stone loss from a setting, or finishing faults.</p>
+      <p style="font-size:var(--t-body-s);color:var(--ink-secondary)">Our goods come with guarantees that cannot be excluded under the Australian Consumer Law. You are entitled to a replacement or refund for a major failure and compensation for any other reasonably foreseeable loss or damage. You are also entitled to have the goods repaired or replaced if the goods fail to be of acceptable quality and the failure does not amount to a major failure.</p>
+      <ul>
+        <li>Covered: manufacturing and material defects under normal wear.</li>
+        <li>Not covered: general wear, scratching, loss, or damage from misuse (impact, chemicals, swimming, gym).</li>
+        <li>We'll repair or replace at our discretion; keep your order confirmation as proof of purchase.</li>
+      </ul>
+    </section>
+
+    <section class="sup-sec" id="sizing">
+      <h2>Sizing</h2>
+      <p>Chains and bracelets come in a range of lengths. If you're between sizes, size up.</p>
+      <div class="deftable">
+        <div><span class="k">Bracelets</span><span>7&Prime; - 9&Prime; (18-23 cm)</span></div>
+        <div><span class="k">Chains</span><span>16&Prime; - 24&Prime; (41-61 cm)</span></div>
+        <div><span class="k">Between sizes?</span><span>Go longer for an easier fit</span></div>
+      </div>
+      <p style="margin-top:var(--s-4)">To check: measure a chain or bracelet you already own end to end, or lay a piece of string where you'd want it to sit and measure it against a ruler. Every piece lists its exact available lengths on its product page, and size exchanges are free.</p>
+    </section>
+
+    <section class="sup-sec" id="care">
+      <h2>Care</h2>
+      <ul>
+        <li>Wipe with the included polishing cloth after wear.</li>
+        <li>Remove before swimming, showering, sleeping and the gym to protect the finish.</li>
+        <li>Keep away from perfume, chlorine and harsh cleaners.</li>
+        <li>Store flat in the pouch, away from other metals.</li>
+      </ul>
+      <p class="note">A care card is included with every order.</p>
+    </section>
+
+    <section class="sup-sec" id="materials">
+      <h2>Materials &amp; moissanite</h2>
+      <p>We lead with design and tell you exactly what a piece is made of. The precise specification is printed on every product tag.</p>
+      <div class="deftable">
+        <div><span class="k">Metal</span><span>925 sterling silver · white-gold plated</span></div>
+        <div><span class="k">Stone</span><span>VVS D-colour moissanite · passes a diamond tester</span></div>
+        <div><span class="k">Setting</span><span>Hand-set · pavé, prong &amp; clasp editions</span></div>
+      </div>
+      <p style="margin-top:var(--s-4)"><span class="k">On moissanite:</span> it's a brilliant, hard, ethically created stone we chose for how it throws light and how it wears. It is <span class="k">not</span> a diamond, and we'd never pretend otherwise. We use it because it lets the design carry the piece at a price that makes sense, not to fool anyone.</p>
+    </section>
+
+    <section class="sup-sec" id="gifting">
+      <h2>Gifting</h2>
+      <p>Buying it for someone else? We make it simple to get right.</p>
+      <ul>
+        <li>Every order arrives gift-ready in AXIA packaging.</li>
+        <li>Add a gift note at checkout, and we'll leave pricing out of the parcel.</li>
+        <li>Not sure on size? Free exchanges mean it's an easy fix.</li>
+        <li>Ordering for an occasion? Message us and we'll help you choose and time delivery.</li>
+      </ul>
+      <a class="link-u" href="collection.html" style="margin-top:var(--s-4)">Shop the collection <span class="arw">→</span></a>
+    </section>
+
+    <section class="sup-sec" id="packaging">
+      <h2>Packaging &amp; cases</h2>
+      <p><span class="k">Every AXIA order ships in an AXIA box.</span> Not a bubble mailer with a sticker on it. A proper box, with a pouch and a care card, so your piece turns up the way it should and has somewhere to live between wears. That is included with everything, at no extra cost.</p>
+      <p>For the pieces you travel with, or once you own a few, we are bringing out <span class="k">AXIA travel cases</span>: soft-lined and zip-close, built to hold a stack of chains and bracelets without them tangling or scratching. Travel cases are sold separately from the jewellery.</p>
+      <div style="display:grid;gap:var(--s-4);grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));margin-top:var(--s-5)">
+        <img src="assets/img/packaging/case-lifestyle.jpg" alt="An AXIA travel case, quilted with a gold zip, on a marble surface" loading="lazy" style="aspect-ratio:3/2;width:100%;object-fit:cover;border-radius:var(--r-2);display:block;border:1px solid var(--line)">
+        <img src="assets/img/packaging/case-open-masked.jpg" alt="An AXIA travel case open, holding a stack of iced chains, bracelets and pendants" loading="lazy" style="aspect-ratio:3/2;width:100%;object-fit:contain;display:block">
+      </div>
+    </section>
+
+    <section class="sup-sec" id="contact">
+      <h2>Contact us</h2>
+      <p>Questions about a piece, sizing, an order or anything else? Send us a message and we'll get back to you at <span class="k">axiajewellery@gmail.com</span>, usually within one business day.</p>
+      <form class="cform" id="cForm" novalidate>
+        <div class="cf-row">
+          <div class="cf-field"><label for="cName">Your name</label><input id="cName" name="name" type="text" autocomplete="name" required></div>
+          <div class="cf-field"><label for="cEmail">Email</label><input id="cEmail" name="email" type="email" autocomplete="email" required></div>
+        </div>
+        <div class="cf-row">
+          <div class="cf-field"><label for="cTopic">What's this about?</label>
+            <select id="cTopic" name="topic" required>
+              <option value="Inquiry" selected>General inquiry</option>
+              <option value="Support">Help with an order</option>
+            </select>
+          </div>
+          <div class="cf-field"><label for="cOrder">Order number <span class="opt">(if you have one)</span></label><input id="cOrder" name="order" type="text" autocomplete="off" placeholder="e.g. AXIA-1024"></div>
+        </div>
+        <div class="cf-field"><label for="cMsg">Message</label><textarea id="cMsg" name="message" rows="5" required placeholder="How can we help?"></textarea></div>
+        <p class="cf-err" id="cErr" role="alert"></p>
+        <button class="btn btn--cart" type="submit">Send message</button>
+        <p class="note" style="margin-top:var(--s-3)">By sending you agree to AXIA contacting you about your message. We never sell your details.</p>
+      </form>
+      <div class="cf-success" id="cOk" aria-live="polite">
+        <div class="cf-tick"><svg viewBox="0 0 24 24" fill="none" stroke="var(--ice)" stroke-width="1.6"><path d="m5 13 4 4 10-11"/></svg></div>
+        <h3>Message sent.</h3>
+        <p>Thanks for reaching out. We'll reply to <span id="cOkEmail">you</span> at <span class="k">axiajewellery@gmail.com</span>, usually within one business day.</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="container">
+    <div class="foot__top">
+      <div class="foot__brand"><a class="nav__brand" href="store.html" aria-label="AXIA"><span class="wm-img" aria-hidden="true"></span></a><p>Buy once, shine forever.</p></div>
+      <div><h5>Shop</h5><a href="cuban.html">The Cuban</a><a href="collection.html?cat=Tennis">Tennis</a><a href="collection.html?cat=Pendants">Pendants</a><a href="titans.html">The Titans</a><a href="collection.html">Shop all</a></div>
+      <div><h5>AXIA</h5><a href="about.html">About</a><a href="first-drop.html">First Drop</a><a href="cuban.html">The Cuban</a><a href="#sizing">Sizing</a><a href="#gifting">Gifting</a></div>
+      <div><h5>Support</h5><a href="#shipping">Shipping</a><a href="#warranty">Warranty</a><a href="#returns">Exchanges</a><a href="#materials">Materials</a></div>
+    </div>
+    <div class="foot__bot"><span>© 2026 AXIA Jewellery <span style="opacity:.4;font-size:.82em">ABN 64 972 889 034</span></span><span>Worth, made visible.</span></div>
+  </div>
+</footer>
+
+<div class="ov" id="ov"></div>
+<aside class="drw" id="drw" role="dialog" aria-modal="true" aria-label="Your bag">
+  <div class="drw__h"><span class="t">Your Bag</span><button data-cart-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="drw__b" id="drwb"></div>
+  <div class="drw__f" id="drwf"><div class="drw__r"><span class="label">Subtotal</span><span class="t num" id="ctot">$0</span></div><p class="drw__note">Lifetime warranty on manufacturing defects. Shipping &amp; taxes calculated at checkout.</p><button class="btn btn--cart btn--block">Checkout</button></div>
+</aside>
+<div class="mm" id="mm">
+  <div class="mm__h"><a class="nav__brand" href="store.html" aria-label="AXIA"><span class="wm-img" aria-hidden="true"></span></a><button data-menu-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" style="width:22px;height:22px"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <nav class="mm__links"><a class="big" href="collection.html" data-menu-close>Shop</a><a class="big" href="cuban.html" data-menu-close>The Cuban</a><a class="big" href="about.html" data-menu-close>About</a><a class="big" href="support.html" data-menu-close>Support</a></nav>
+  <div class="mm__shop">
+    <span class="mm__label">Shop by</span>
+    <div class="mm__cats">
+      <a href="cuban.html" data-menu-close>Cuban</a>
+      <a href="collection.html?cat=Tennis" data-menu-close>Tennis</a>
+      <a href="collection.html?cat=Pendants" data-menu-close>Pendants</a>
+      <a href="titans.html" data-menu-close>The Titans</a>
+      <a href="collection.html?sort=low" data-menu-close>Price: low to high</a>
+      <a href="collection.html?sort=high" data-menu-close>Price: high to low</a>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
+
+<script src="assets/data/products.js?v=20260930a"></script>
+<script src="assets/js/axia.js?v=20260930a"></script>
+<script>
+(function(){
+  const links=[...document.querySelectorAll('.sup-nav a')];
+  const nav=document.getElementById('supNav');
+  const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+  const isMobile=()=>matchMedia('(max-width:860px)').matches;
+  const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+    const id='#'+e.target.id;
+    let active=null;
+    links.forEach(a=>{const on=a.getAttribute('href')===id;a.classList.toggle('active',on);if(on)active=a;});
+    /* on mobile the nav scrolls horizontally: keep the active tab (and its underline) in view */
+    if(active&&nav&&isMobile()){
+      const target=active.offsetLeft-(nav.clientWidth/2)+(active.clientWidth/2);
+      nav.scrollTo({left:Math.max(0,target),behavior:'smooth'});
+    }
+  }});},{rootMargin:'-30% 0px -60% 0px'});
+  secs.forEach(s=>s&&io.observe(s));
+
+  /* ---- Contact form: Klaviyo event (reliable record) + FormSubmit email (best-effort) ---- */
+  const INBOX='axiajewellery@gmail.com';
+  const ENDPOINT='https://formsubmit.co/ajax/'+INBOX;
+  const KLAVIYO_PUBLIC_KEY='YcKkuc';
+  const $=s=>document.querySelector(s);
+  const form=$('#cForm'); if(!form) return;
+  const err=$('#cErr'), btn=form.querySelector('button[type="submit"]');
+  const fail=m=>{ err.textContent=m; err.scrollIntoView({block:'center',behavior:'smooth'}); };
+  function klaviyoContactEvent(d){
+    if(!KLAVIYO_PUBLIC_KEY) return Promise.resolve(null);
+    const body={data:{type:'event',attributes:{
+      metric:{data:{type:'metric',attributes:{name:'Submitted Contact Form'}}},
+      properties:{category:d.category,topic:d.topic,order_number:d.order||'',message:d.message},
+      profile:{data:{type:'profile',attributes:{email:d.email,first_name:d.name}}}
+    }}};
+    return fetch('https://a.klaviyo.com/client/events/?company_id='+encodeURIComponent(KLAVIYO_PUBLIC_KEY),{method:'POST',headers:{'Content-Type':'application/json','revision':'2025-07-15'},body:JSON.stringify(body)});
+  }
+  form.addEventListener('submit',async e=>{
+    e.preventDefault(); err.textContent='';
+    const fd=new FormData(form);
+    const name=(fd.get('name')||'').trim();
+    const email=(fd.get('email')||'').trim();
+    const topic=fd.get('topic')||'Inquiry';
+    const order=(fd.get('order')||'').trim();
+    const message=(fd.get('message')||'').trim();
+    if(!name){ fail('Please add your name.'); return; }
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ fail('Please enter a valid email.'); return; }
+    if(message.length<4){ fail('Please add a short message.'); return; }
+    const tag=topic==='Support'?'SUPPORT':'INQUIRY';
+    const category=topic==='Support'?'Support (existing order)':'General inquiry';
+    const payload={
+      _subject:'AXIA - '+tag+' - '+name,
+      _template:'table', _captcha:'false',
+      Category:category,
+      Name:name, Email:email, Topic:topic,
+      'Order number':order||'-', Message:message,
+      Submitted:new Date().toISOString()
+    };
+    const orig=btn.textContent; btn.disabled=true; btn.textContent='Sending…';
+    /* FormSubmit emails the inbox (best-effort); the Klaviyo event is the reliable record. */
+    const fsOk=fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(payload)})
+      .then(r=>r.json().catch(()=>({})).then(d=>r.ok&&String(d.success)==='true')).catch(()=>false);
+    let kOk=false;
+    try{ const kr=await klaviyoContactEvent({name,email,topic,order,message,category}); kOk=!!(kr&&kr.ok); }catch(ex){ kOk=false; }
+    const ok = kOk || await fsOk;
+    btn.disabled=false; btn.textContent=orig;
+    if(!ok){ fail('Something stopped that from sending. Please try again, or email '+INBOX+' directly.'); return; }
+    $('#cOkEmail').textContent=email;
+    form.style.display='none';
+    const okv=$('#cOk'); okv.classList.add('on'); okv.scrollIntoView({block:'center'});
+  });
+})();
+</script>
+</body>
+</html>

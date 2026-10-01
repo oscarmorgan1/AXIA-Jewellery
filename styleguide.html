@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AXIA, Design System v0.1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260930a">
+<link rel="stylesheet" href="assets/css/axia.css?v=20260930a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111315'/%3E%3Cg fill='%23F4F1EA'%3E%3Cpolygon points='16,5 6,27 9.5,27'/%3E%3Cpolygon points='16,5 22.5,27 26,27'/%3E%3Crect x='9' y='20.4' width='14' height='1.7'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  /* styleguide scaffolding only */
+  .sg-head{position:sticky;top:0;z-index:70;display:flex;justify-content:space-between;align-items:center;
+    padding:1rem var(--gutter);background:var(--obsidian);color:var(--on-dark);border-bottom:1px solid var(--line-dark)}
+  .sg-sec{padding-block:clamp(var(--s-7),6vw,var(--s-9))}
+  .sg-num{font-family:var(--font-sans);font-weight:600;font-size:var(--t-label);letter-spacing:var(--ls-wide);text-transform:uppercase;color:var(--magenta)}
+  .sg-title{font-family:var(--font-display);font-weight:700;font-size:var(--t-44);text-transform:uppercase;line-height:1.02;margin:.4rem 0 2.4rem}
+  .sg-grid{display:grid;gap:var(--s-4)}
+  .sw{border-radius:var(--r-2);overflow:hidden;border:1px solid var(--line)}
+  .sw__c{height:120px}
+  .sw__m{padding:.8rem .9rem;background:var(--bone);font-size:var(--t-body-s)}
+  .sw__m b{display:block;font-weight:600;letter-spacing:.02em}
+  .sw__m span{color:var(--ink-secondary);font-variant-numeric:tabular-nums}
+  .sw__role{display:block;margin-top:.4rem;font-size:.72rem;color:var(--ink-tertiary)}
+  .ratio{display:flex;height:44px;border-radius:var(--r-1);overflow:hidden;border:1px solid var(--line)}
+  .ratio i{display:flex;align-items:center;justify-content:center;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase}
+  .type-row{display:flex;align-items:baseline;gap:1.4rem;padding:1rem 0;border-top:1px solid var(--line);flex-wrap:wrap}
+  .type-row .meta{font-size:.72rem;color:var(--ink-tertiary);letter-spacing:.1em;text-transform:uppercase;min-width:180px}
+  .space-row{display:flex;align-items:center;gap:1rem;padding:.5rem 0}
+  .space-row .bar{height:16px;background:var(--titanium);border-radius:var(--r-1)}
+  .space-row .lbl{font-size:.75rem;color:var(--ink-secondary);min-width:120px;font-variant-numeric:tabular-nums}
+  .row{display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
+  .stack{display:flex;flex-direction:column;gap:1.2rem}
+  .panel{padding:2rem;border:1px solid var(--line);border-radius:var(--r-2)}
+  .dodont{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-4)}
+  .dd{border-radius:var(--r-2);overflow:hidden;border:1px solid var(--line)}
+  .dd__body{height:220px;position:relative;display:grid;place-items:center}
+  .dd__tag{padding:.7rem .9rem;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;display:flex;align-items:center;gap:.5em}
+  .dd__tag--yes{color:#1f7a4d}.dd__tag--no{color:var(--magenta)}
+  .mono-note{font-size:.8rem;color:var(--ink-secondary);max-width:60ch;margin-top:1rem}
+  @media(max-width:700px){.dodont{grid-template-columns:1fr}.type-row .meta{min-width:unset}}
+</style>
+</head>
+<body>
+
+<!-- titanium sprite -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs>
+  <linearGradient id="mv" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="var(--metal-a)"/><stop offset=".4" stop-color="var(--metal-b)"/>
+    <stop offset=".78" stop-color="var(--metal-c)"/><stop offset="1" stop-color="var(--metal-d)"/>
+  </linearGradient>
+  <radialGradient id="ice" cx=".4" cy=".32" r=".8">
+    <stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="var(--ice)"/><stop offset="1" stop-color="#7fb4cf"/>
+  </radialGradient>
+</defs></svg>
+
+<div class="sg-head">
+  <span class="wordmark wordmark--sm">A<span class="x">X</span>IA</span>
+  <span class="label" style="color:var(--on-dark-3)">Design System · v0.1</span>
+</div>
+
+<!-- intro -->
+<section class="sg-sec container">
+  <p class="sg-num">Phase 02, Visual Language</p>
+  <h1 class="sg-title">The System</h1>
+  <p class="lead">Cold, precise, engineered, a fashion house that happens to sell jewellery. Foundation of Obsidian, Bone and Titanium; Ice Blue lives only as light and atmosphere; Rose Magenta is the controlled shock. Approve this before we build a single page.</p>
+</section>
+<hr class="divider container" style="max-width:var(--maxw)">
+
+<!-- 01 Logo -->
+<section class="sg-sec container">
+  <p class="sg-num">01</p><h2 class="sg-title">Logo &amp; Wordmark</h2>
+  <p class="lead" style="margin-bottom:2rem">Interim serif treatment (high-contrast Didone) until your custom AXIA asset is supplied. Wordmark only, no tagline, no emblem. The interrupted <em>X</em> hints at the future custom letterform.</p>
+  <div class="sg-grid grid-2">
+    <div class="panel" style="background:var(--obsidian)"><div style="height:120px;display:grid;place-items:center"><span class="wordmark wordmark--lg" style="color:var(--bone)">A<span class="x">X</span>IA</span></div><span class="label" style="color:var(--on-dark-3);display:block;text-align:center;margin-top:1rem">White on Obsidian</span></div>
+    <div class="panel"><div style="height:120px;display:grid;place-items:center"><span class="wordmark wordmark--lg" style="color:var(--obsidian)">A<span class="x">X</span>IA</span></div><span class="label" style="color:var(--ink-tertiary);display:block;text-align:center;margin-top:1rem">Obsidian on Bone</span></div>
+    <div class="panel"><div style="height:80px;display:grid;place-items:center"><span class="wordmark" style="font-size:1.6rem;color:#000">A<span class="x">X</span>IA</span></div><span class="label" style="color:var(--ink-tertiary);display:block;text-align:center;margin-top:1rem">Mono Black</span></div>
+    <div class="panel" style="background:var(--obsidian-2)"><div style="height:80px;display:grid;place-items:center"><span class="wordmark" style="font-size:1.6rem;color:#fff">A<span class="x">X</span>IA</span></div><span class="label" style="color:var(--on-dark-3);display:block;text-align:center;margin-top:1rem">Mono White</span></div>
+  </div>
+  <p class="mono-note">Clear space ≥ the cap-height of the “A” on all sides · minimum digital size 64px wide · engraving version is the flat mono form · master is monochrome, chrome/metallic only in campaign imagery, never as the master.</p>
+</section>
+<hr class="divider container" style="max-width:var(--maxw)">
+
+<!-- 02 Colour -->
+<section class="sg-sec container">
+  <p class="sg-num">02</p><h2 class="sg-title">Colour</h2>
+  <div class="sg-grid grid-3" style="margin-bottom:2.4rem">
+    <div class="sw"><div class="sw__c" style="background:#111315"></div><div class="sw__m"><b>Obsidian</b><span>#111315</span><span class="sw__role">Power &amp; contrast · dark surfaces, nav, editorial</span></div></div>
+    <div class="sw"><div class="sw__c" style="background:#F4F1EA"></div><div class="sw__m"><b>Bone</b><span>#F4F1EA</span><span class="sw__role">Clarity &amp; warmth · primary background, reading</span></div></div>
+    <div class="sw"><div class="sw__c" style="background:#B7BDC5"></div><div class="sw__m"><b>Titanium</b><span>#B7BDC5</span><span class="sw__role">The product · hairlines, secondary, metal</span></div></div>
+    <div class="sw"><div class="sw__c ice-field"></div><div class="sw__m"><b>Ice Blue</b><span>#C7EAF7</span><span class="sw__role">Atmosphere only, light, glow, reflections. Never a flat fill.</span></div></div>
+    <div class="sw"><div class="sw__c" style="background:#F3436E"></div><div class="sw__m"><b>Rose Magenta</b><span>#F3436E</span><span class="sw__role">Controlled shock · conversion, hover, edges, drops</span></div></div>
+    <div class="sw"><div class="sw__c" style="background:linear-gradient(90deg,#111315 0 33%,#F4F1EA 33% 66%,#B7BDC5 66%)"></div><div class="sw__m"><b>Foundation</b><span>Obsidian · Bone · Titanium</span><span class="sw__role">The 80–85% the brand lives in</span></div></div>
+  </div>
+  <p class="label" style="margin-bottom:.7rem">Usage ratio</p>
+  <div class="ratio">
+    <i style="background:#111315;color:#F4F1EA;flex:40">Obsidian</i>
+    <i style="background:#F4F1EA;color:#111315;flex:30">Bone</i>
+    <i style="background:#B7BDC5;color:#111315;flex:15">Titanium</i>
+    <i class="ice-field" style="flex:10;color:#fff">Ice</i>
+    <i style="background:#F3436E;color:#fff;flex:5">Magenta</i>
+  </div>
+</section>
+<hr class="divider container" style="max-width:var(--maxw)">
+
+<!-- 03 Typography -->
+<section class="sg-sec container">
+  <p class="sg-num">03</p><h2 class="sg-title">Typography</h2>
+  <p class="lead" style="margin-bottom:1.4rem">Archivo Expanded for impact, Archivo for everything, Bodoni Moda for the wordmark and rare editorial lines. Two families, disciplined.</p>
+  <div class="type-row"><span class="meta">Display · Archivo Exp 800</span><span class="display" style="font-size:var(--t-64)">STATEMENT</span></div>
+  <div class="type-row"><span class="meta">H1 · Archivo Exp 700</span><span class="h1" style="font-size:var(--t-44)">The 12mm Cuban</span></div>
+  <div class="type-row"><span class="meta">H3 · Archivo 600</span><span class="h3">Engineered brilliance</span></div>
+  <div class="type-row"><span class="meta">Editorial · Bodoni 400</span><span class="editorial" style="font-size:var(--t-32)">Worth, <em>made visible.</em></span></div>
+  <div class="type-row"><span class="meta">Body · Archivo 400</span><span class="body" style="max-width:52ch">Hand-set moissanite in a polished, engineered setting, described exactly as it is built, priced for what it is.</span></div>
+  <div class="type-row"><span class="meta">Eyebrow / Label</span><span class="eyebrow">New Release, Drop 001</span></div>
+</section>
+<hr class="divider container" style="max-width:var(--maxw)">
+
+<!-- 04 Spacing -->
+<section class="sg-sec container">
+  <p class="sg-num">04</p><h2 class="sg-title">Spacing &amp; Grid</h2>
+  <p class="lead" style="margin-bottom:1.4rem">A 4-point rhythm. Radius stays near-sharp (0–4px), engineered, not soft.</p>
+  <div id="spaceScale"></div>
+</section>
+<hr class="divider container" style="max-width:var(--maxw)">
+
+<!-- 05 Buttons -->
+<section class="sg-sec container">
+  <p class="sg-num">05</p><h2 class="sg-title">Buttons &amp; Controls</h2>
+  <div class="stack">
+    <div class="row"><button class="btn btn--primary">Shop the Cuban</button><button class="btn btn--ghost">Explore</button><button class="btn btn--cart">Add to Bag</button><a class="link-u">View all <span class="arw">→</span></a></div>
+    <div class="row"><span class="tag">In Stock</span><span class="tag tag--new">New</span>
+      <button class="chip is-active">8mm</button><button class="chip">10mm</button><button class="chip">12mm</button></div>
+    <div class="panel on-obsidian" style="background:var(--obsidian)"><div class="row"><button class="btn">Secondary on dark</button><button class="btn btn--cart">Add to Bag</button><a class="link-u" style="color:var(--on-dark)">View all <span class="arw">→</span></a></div></div>
+    <p class="mono-note">Magenta appears only on conversion (Add to Bag), hover accents and drop tags, never as a general button colour.</p>
+  </div>
+</section>
+<hr class="divider container" style="max-width:var(--maxw)">
+
+<!-- 06 Inputs -->
+<section class="sg-sec container">
+  <p class="sg-num">06</p><h2 class="sg-title">Forms</h2>
+  <div class="sg-grid grid-2">
+    <div class="field"><label for="e1">Email</label><input class="input" id="e1" placeholder="you@email.com"></div>
+    <div class="field"><label>Drop access</label><div class="input-inline"><input placeholder="Your email"><button>Join →</button></div></div>
+  </div>
+  <p class="mono-note">Focus uses an Ice Blue glow (atmosphere), not a colour change, precision, not decoration.</p>
+</section>
+<hr class="divider container" style="max-width:var(--maxw)">
+
+<!-- 07 Product card -->
+<section class="sg-sec container">
+  <p class="sg-num">07</p><h2 class="sg-title">Product Card</h2>
+  <p class="lead" style="margin-bottom:2rem">Spec-named (archetype + width). Hover reveals the Ice glow and a Magenta base edge. Fashion scale, minimal text.</p>
+  <div class="sg-grid grid-4">
+    <a class="card"><div class="card__media card__media--dark"><span class="tag tag--new card__tag">New</span><svg class="card__art" id="c1" viewBox="0 0 1000 620"></svg><span class="card__edge"></span></div><div class="card__body"><div class="card__name">Cuban 12mm</div><div class="card__meta">Titanium · Moissanite</div><div class="card__price">$1,290</div></div></a>
+    <a class="card"><div class="card__media"><svg class="card__art" id="c2" viewBox="0 0 1000 620"></svg><span class="card__edge"></span></div><div class="card__body"><div class="card__name">Cuban 8mm</div><div class="card__meta">Titanium · Moissanite</div><div class="card__price">$690</div></div></a>
+    <a class="card"><div class="card__media card__media--dark"><svg class="card__art" viewBox="0 0 120 120" style="width:38%"><use href="#gemart"/></svg><span class="card__edge"></span></div><div class="card__body"><div class="card__name">Signet</div><div class="card__meta">Titanium · Engravable</div><div class="card__price">$320</div></div></a>
+    <a class="card"><div class="card__media"><svg class="card__art" id="c3" viewBox="0 0 1000 620"></svg><span class="card__edge"></span></div><div class="card__body"><div class="card__name">Tennis 4mm</div><div class="card__meta">Moissanite</div><div class="card__price">$740</div></div></a>
+  </div>
+</section>
+<hr class="divider container" style="max-width:var(--maxw)">
+
+<!-- 08 Nav -->
+<section class="sg-sec container">
+  <p class="sg-num">08</p><h2 class="sg-title">Navigation</h2>
+</section>
+<nav class="nav" style="position:relative">
+  <div class="nav__links"><a class="nav__link" aria-current="page">Shop</a><a class="nav__link">Chains</a><a class="nav__link">Rings</a></div>
+  <span class="wordmark wordmark--sm">A<span class="x">X</span>IA</span>
+  <div class="nav__right"><span class="nav__icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span><span class="nav__icon"><svg viewBox="0 0 24 24"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></span></div>
+</nav>
+<nav class="nav nav--dark" style="position:relative">
+  <div class="nav__links"><a class="nav__link" aria-current="page">Shop</a><a class="nav__link">Chains</a><a class="nav__link">Rings</a></div>
+  <span class="wordmark wordmark--sm" style="color:var(--bone)">A<span class="x">X</span>IA</span>
+  <div class="nav__right" style="color:var(--on-dark)"><span class="nav__icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span><span class="nav__icon"><svg viewBox="0 0 24 24"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></span></div>
+</nav>
+<hr class="divider container" style="max-width:var(--maxw);margin-top:var(--s-8)">
+
+<!-- 09 Atmosphere & accent -->
+<section class="sg-sec container">
+  <p class="sg-num">09</p><h2 class="sg-title">Ice &amp; Magenta, Do / Don't</h2>
+  <div class="dodont" style="margin-bottom:var(--s-5)">
+    <div class="dd"><div class="dd__body ice-field"><span class="wordmark" style="color:var(--bone);font-size:1.8rem">A<span class="x">X</span>IA</span></div><div class="dd__tag dd__tag--yes">✓ Ice as light &amp; atmosphere behind product</div></div>
+    <div class="dd"><div class="dd__body" style="background:#C7EAF7"><span style="color:#111315;font-weight:600">flat ice fill</span></div><div class="dd__tag dd__tag--no">✕ Ice as a flat background / button</div></div>
+  </div>
+  <div class="dodont">
+    <div class="dd"><div class="dd__body" style="background:var(--obsidian)"><button class="btn btn--cart">Add to Bag</button></div><div class="dd__tag dd__tag--yes">✓ Magenta as a single conversion moment</div></div>
+    <div class="dd"><div class="dd__body" style="background:var(--magenta);gap:.6rem;flex-direction:column;display:flex;align-items:center;justify-content:center"><span style="color:#fff;font-weight:700">EVERYTHING PINK</span><span style="color:#fff;font-size:.75rem">buttons · bg · text</span></div><div class="dd__tag dd__tag--no">✕ Magenta as a theme (cosmetics / Barbie)</div></div>
+  </div>
+</section>
+<hr class="divider container" style="max-width:var(--maxw)">
+
+<!-- 10 Motion -->
+<section class="sg-sec container">
+  <p class="sg-num">10</p><h2 class="sg-title">Motion</h2>
+  <div class="sg-grid grid-2">
+    <div class="panel"><p class="h4" style="margin-bottom:.8rem">Rules</p><p class="small">Reveals 640–900ms, ease-out. Hovers 220–320ms. Never bouncy, never spinning. Ice reflections and product parallax only. Motion serves clarity; performance is part of the premium. Respects <code>prefers-reduced-motion</code>.</p></div>
+    <div class="panel reveal"><p class="eyebrow eyebrow--ice">Reveal demo</p><p class="editorial" style="font-size:var(--t-32);margin-top:.6rem">This entered on scroll.</p></div>
+  </div>
+</section>
+
+<footer class="on-obsidian" style="padding:var(--s-8) 0">
+  <div class="container" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+    <span class="wordmark wordmark--sm" style="color:var(--bone)">A<span class="x">X</span>IA</span>
+    <span class="label" style="color:var(--on-dark-3)">Worth, made visible.</span>
+  </div>
+</footer>
+
+<!-- gem symbol -->
+<svg width="0" height="0" style="position:absolute"><symbol id="gemart" viewBox="0 0 120 120"><path d="M60 12 L100 48 L60 108 L20 48 Z" fill="url(#ice)" stroke="#cfe6f2" stroke-width="2"/><path d="M20 48 L100 48 M60 12 L60 108 M20 48 L60 48 L40 12 M100 48 L60 48 L80 12" stroke="#8fb4c8" stroke-width="1" opacity=".6" fill="none"/></symbol></svg>
+
+<script>
+(function(){
+  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  // spacing scale
+  const steps=[['s-1',4],['s-2',8],['s-3',12],['s-4',16],['s-5',24],['s-6',32],['s-7',48],['s-8',64],['s-9',96],['s-10',128]];
+  document.getElementById('spaceScale').innerHTML=steps.map(([n,v])=>`<div class="space-row"><span class="lbl">--${n} · ${v}px</span><span class="bar" style="width:${v}px"></span></div>`).join('');
+  // titanium cuban chain generator
+  const tan=(p,i)=>{const a=p[Math.max(0,i-1)],b=p[Math.min(p.length-1,i+1)];return Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;};
+  function drape(id,{yTop,yBot,w,h,n}){const svg=document.getElementById(id);if(!svg)return;const x0=110,x1=890,cx=500;
+    const yA=x=>{const u=(x-cx)/((x1-x0)/2);return yTop-(yTop-yBot)*(1-u*u);};const p=[];for(let x=x0;x<=x1+1;x+=(x1-x0)/n)p.push({x,y:yA(x)});
+    let m='';for(let i=0;i<p.length;i++){const a=tan(p,i)+(i%2?8:-8);m+=`<g transform="translate(${p[i].x.toFixed(1)},${p[i].y.toFixed(1)}) rotate(${a.toFixed(1)})"><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="${(h*0.46).toFixed(1)}" fill="url(#mv)" stroke="#3a4048" stroke-width="1.2"/><rect x="${-w/2+7}" y="${-h/2+5}" width="${w-14}" height="${(h*0.13).toFixed(1)}" rx="3" fill="#fff" opacity=".32"/></g>`;}
+    svg.innerHTML=m;}
+  drape('c1',{yTop:170,yBot:470,w:78,h:60,n:20});
+  drape('c2',{yTop:190,yBot:460,w:52,h:40,n:24});
+  // tennis
+  const t=document.getElementById('c3');if(t){let m='<path d="M120 200 Q500 470 880 200" fill="none" stroke="url(#mv)" stroke-width="4" opacity=".4"/>';for(let i=0;i<=22;i++){const u=i/22,x=120+(880-120)*u,y=200+Math.sin(u*Math.PI)*250;m+=`<rect x="${x-13}" y="${y-13}" width="26" height="26" rx="4" transform="rotate(45 ${x} ${y})" fill="url(#ice)" stroke="#9fc4d6" stroke-width="1.5"/>`;}t.innerHTML=m;}
+  // reveals
+  const els=document.querySelectorAll('.reveal');
+  if(reduce||!('IntersectionObserver'in window))els.forEach(e=>e.classList.add('in'));
+  else{const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.2});els.forEach(e=>io.observe(e));}
+  // chip demo
+  document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{c.parentElement.querySelectorAll('.chip').forEach(x=>x.classList.remove('is-active'));c.classList.add('is-active');});
+})();
+</script>
+</body>
+</html>
