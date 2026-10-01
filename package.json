@@ -1,0 +1,21 @@
+{
+  "name": "axia-jewellery",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "firebase emulators:exec --project axia-jewellery --ui \"npm run seed && npm run admin:dev\"",
+    "emulators": "firebase emulators:start --project axia-jewellery",
+    "seed": "node scripts/seed.mjs",
+    "set-admin": "node scripts/set-admin.mjs",
+    "export:products": "node scripts/export-products.mjs",
+    "admin:dev": "npm --prefix admin-portal run dev",
+    "admin:build": "npm --prefix admin-portal run build",
+    "build": "npm run admin:build",
+    "deploy": "firebase deploy --project axia-jewellery",
+    "postinstall": "npm --prefix admin-portal install"
+  },
+  "devDependencies": {
+    "firebase-admin": "^13.5.0",
+    "firebase-tools": "^14.19.0"
+  }
+}

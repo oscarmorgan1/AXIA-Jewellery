@@ -1,0 +1,20 @@
+# dependencies
+node_modules/
+
+# admin portal build output (built from admin-portal/, served at /admin)
+/admin/
+
+# Firebase local state
+.firebase/
+*-debug.log
+firebase-debug.*.log
+emulator-data/
+
+# PRIVATE business data: factory costs and margins. Never commit.
+private/
+*backend-data*.json
+*service-account*.json
+
+.DS_Store
+.env
+.env.local

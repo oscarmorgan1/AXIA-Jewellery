@@ -1,0 +1,17 @@
+rules_version = '2';
+
+// Product photos uploaded from the admin portal live under products/.
+// Anyone can view them (they're shown on the storefront); only admins upload.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /products/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true
+        && request.resource.size < 15 * 1024 * 1024
+        && request.resource.contentType.matches('(image|video)/.*');
+    }
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
