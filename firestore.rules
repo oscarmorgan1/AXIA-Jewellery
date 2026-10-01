@@ -1,0 +1,45 @@
+rules_version = '2';
+
+// AXIA Firestore security rules.
+//
+//   products/{id}        public catalogue: anyone can read, only admins write
+//   productCosts/{id}    PRIVATE factory costs and margins: admins only
+//   internal/{doc}       PRIVATE cost assumptions, launch plan: admins only
+//   orders/{id}          admins only (Stripe webhooks will write via the Admin SDK)
+//
+// "Admin" means a signed-in user whose ID token carries the custom claim
+// admin == true (set with `npm run set-admin -- <email>`).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasAll(['id', 'name'])
+        && request.resource.data.id == productId
+        // cost/economics fields must never land in the public collection
+        && !request.resource.data.keys().hasAny(['economics', 'factory_cost_AUD', 'factoryCostAUD', 'cost']);
+      allow delete: if isAdmin();
+    }
+
+    match /productCosts/{productId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /internal/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Anything not listed above is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

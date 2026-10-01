@@ -1,10 +1,12 @@
 /* ============================================================
-   AXIA, PRODUCT CATALOGUE (single source of truth)
-   Generated from AXIA CATALOGUE.docx + AXIA PRICES.docx.
+   AXIA, PRODUCT CATALOGUE (offline fallback + seed source)
+   The live catalogue is the Firestore "products" collection, edited in
+   the admin portal (/admin) and loaded by assets/js/catalogue.js.
+   This file is only used if Firestore can't be reached, and to seed a
+   fresh database. Refresh it with `npm run export:products -- --prod`.
    PUBLIC DATA ONLY: customer-facing AUD retail prices.
    Factory/manufacturer costs are deliberately NOT included here
    (private business data, must never appear on the website).
-   Every page renders from this array; no per-product hard-coding.
    ============================================================ */
 window.AXIA_PRODUCTS = [
   {
