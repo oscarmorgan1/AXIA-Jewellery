@@ -1,6 +1,7 @@
 // Seeds Firestore from the current site data.
 //
 //   products/{id}       <- assets/data/products.js (public catalogue)
+//   collections/{slug}  <- starter collections (scripts/catalogue.mjs)
 //   productCosts/{id}   <- private/AXIA-backend-data.json  products[].economics (admin only)
 //   internal/costAssumptions, internal/firstDropPlan <- same private file
 //
@@ -14,7 +15,7 @@ import { resolve } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { FieldValue } from 'firebase-admin/firestore';
 import { auth, db, PROD, PROJECT_ID, argValue } from './_firebase.mjs';
-import { loadStaticCatalogue } from './catalogue.mjs';
+import { loadStaticCatalogue, STARTER_COLLECTIONS, withLegacyCollections } from './catalogue.mjs';
 
 const PRIVATE_PATH = resolve(argValue('--private') || 'private/AXIA-backend-data.json');
 const skipProducts = process.argv.includes('--skip-products');
@@ -38,9 +39,13 @@ async function commitInChunks(ops) {
 if (!skipProducts) {
   const products = loadStaticCatalogue();
   await commitInChunks(products.map((p, i) => batch => {
-    batch.set(db.collection('products').doc(p.id), { ...p, sort: i * 10, archived: false, updatedAt: FieldValue.serverTimestamp() });
+    batch.set(db.collection('products').doc(p.id), { ...withLegacyCollections(p), sort: i * 10, archived: false, updatedAt: FieldValue.serverTimestamp() });
   }));
   console.log(`✓ products: ${products.length} documents`);
+  await commitInChunks(STARTER_COLLECTIONS.map(c => batch => {
+    batch.set(db.collection('collections').doc(c.slug), { ...c, updatedAt: FieldValue.serverTimestamp() });
+  }));
+  console.log(`✓ collections: ${STARTER_COLLECTIONS.length} documents`);
 }
 
 if (existsSync(PRIVATE_PATH)) {

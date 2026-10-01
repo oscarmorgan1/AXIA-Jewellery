@@ -39,7 +39,10 @@ On localhost the storefront reads the emulator. Add `?catalogue=live` to read pr
 
 | Collection | Who can read | Who can write | Holds |
 | --- | --- | --- | --- |
-| `products/{id}` | everyone | admins | The public catalogue, same fields as `products.js`, plus `sort`, `archived`, `updatedAt` |
+| `products/{id}` | everyone | admins | The public catalogue, same fields as `products.js`, plus `sort`, `archived`, `updatedAt`. `coll` lists the collection slugs it belongs to |
+| `collections/{slug}` | everyone | admins | Reusable groups of products. `showInShop` ones become the Shop All tabs, in `sort` order |
+| `signups/{id}` | admins | anyone can create (validated) | Waitlist registrations from the landing and First Drop pages. Shown under Customers |
+| `messages/{id}` | admins | anyone can create (validated) | Support page contact form. Shown in the Inbox |
 | `productCosts/{id}` | admins | admins | Factory cost, quoted size, notes. **Private** |
 | `internal/costAssumptions` | admins | admins | Payment fee, packaging, returns reserve |
 | `internal/firstDropPlan` | admins | admins | Internal unit plan |
@@ -74,8 +77,17 @@ The raw `AXIA-backend-data.json` must never be committed or deployed: `.gitignor
    npm run deploy
    ```
 
+### Upgrading a database seeded before collections existed
+
+```bash
+npx firebase deploy --only firestore:rules --project axia-jewellery
+npm run migrate:collections -- --prod   # adds starter collections, never overwrites your edits
+npm run deploy
+```
+
 Before later deploys, refresh the offline fallback so it matches Firestore: `npm run export:products -- --prod`.
 
 ## Not done yet
 
+- **Emails.** The site no longer sends any email (FormSubmit and Klaviyo were removed). Sign-ups and messages are saved to Firestore; export customers as CSV from the portal.
 - **Stripe checkout.** `checkout.html` is still a preview and discount codes are still in the page. The `orders` collection and dashboard are ready for a Stripe webhook (Cloud Function) to write paid orders.

@@ -1,16 +1,12 @@
-import type { Product } from '../types';
+import type { Collection, Product } from '../types';
 
-export type Collection = 'Sets' | 'Titans' | 'Pendants' | 'Tennis' | 'Cuban';
-
-/** Same grouping the storefront's Shop All page uses. */
-export function collectionOf(p: Product): Collection {
-  const coll = p.coll || [];
-  if (p.bundle || p.bundleOf) return 'Sets';
-  if (coll.includes('titans')) return 'Titans';
-  if (coll.includes('pendants')) return 'Pendants';
-  if (coll.includes('tennis')) return 'Tennis';
-  return 'Cuban';
+/** The collection a product is grouped under: its first shop collection, else its first known one. */
+export function primaryCollection(p: Product, cols: Collection[]): Collection | undefined {
+  const mine = cols.filter(c => (p.coll || []).includes(c.slug));
+  return mine.find(c => c.showInShop) || mine[0];
 }
+
+export const collectionLabel = (c?: Collection) => (c ? c.tab || c.name.replace(/^The /, '') : 'Unsorted');
 
 export type Status = 'Live' | 'Coming soon' | 'Redirect' | 'Archived';
 

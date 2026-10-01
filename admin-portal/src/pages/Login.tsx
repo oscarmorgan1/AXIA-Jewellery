@@ -26,25 +26,32 @@ export default function Login() {
 
   return (
     <div className="login">
-      <form className="card" onSubmit={submit}>
-        <div className="brand" style={{ alignSelf: 'flex-start' }}>
-          <span className="brand__mark">A</span>AXIA Admin
+      <div className="login__art">
+        <div className="login__wm">AXIA</div>
+        <div>
+          <h2>Every piece, in your hands.</h2>
+          <p>Products, collections, customers and margins for the AXIA store, all in one place.</p>
         </div>
-        <h1>Sign in</h1>
-        <p>Staff only. Your account needs admin access to manage the store.</p>
-        {usingEmulators && <span className="env-badge" style={{ alignSelf: 'flex-start' }}>Local emulators</span>}
-        <label className="field">Email<input className="input" type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required /></label>
-        <label className="field">Password<input className="input" type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} required /></label>
-        {error && <div className="notice notice--error">{error}</div>}
-        {info && <div className="notice notice--ok">{info}</div>}
-        <button className="btn btn--primary" disabled={busy} style={{ justifyContent: 'center' }}>{busy ? 'Signing in…' : 'Sign in'}</button>
-        <button type="button" className="btn" disabled={busy} style={{ justifyContent: 'center' }}
-          onClick={() => run(() => signInWithPopup(auth, new GoogleAuthProvider()))}>Continue with Google</button>
-        <button type="button" className="btn btn--sm" style={{ alignSelf: 'center', border: 0 }} disabled={busy || !email}
-          onClick={() => run(async () => { await sendPasswordResetEmail(auth, email.trim()); setInfo('Password reset email sent.'); })}>
-          Forgot password?
-        </button>
-      </form>
+        <p style={{ fontSize: 12 }}>Staff only</p>
+      </div>
+      <div className="login__panel">
+        <form className="card" onSubmit={submit}>
+          <h1>Welcome back</h1>
+          <p>Sign in with an admin account to manage the store.</p>
+          {usingEmulators && <span className="env-badge" style={{ alignSelf: 'flex-start' }}>Local emulators</span>}
+          <label className="field">Email<input className="input" type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required /></label>
+          <label className="field">Password<input className="input" type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} required /></label>
+          {error && <div className="notice notice--error">{error}</div>}
+          {info && <div className="notice notice--ok">{info}</div>}
+          <button className="btn btn--primary" disabled={busy} style={{ justifyContent: 'center' }}>{busy ? 'Signing in…' : 'Sign in'}</button>
+          <button type="button" className="btn" disabled={busy} style={{ justifyContent: 'center' }}
+            onClick={() => run(() => signInWithPopup(auth, new GoogleAuthProvider()))}>Continue with Google</button>
+          <button type="button" className="btn btn--ghost btn--sm" style={{ alignSelf: 'center' }} disabled={busy || !email}
+            onClick={() => run(async () => { await sendPasswordResetEmail(auth, email.trim()); setInfo('Password reset email sent.'); })}>
+            Forgot password?
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

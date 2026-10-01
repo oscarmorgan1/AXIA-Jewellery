@@ -1,58 +1,101 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  BadgePercent, ExternalLink, HelpCircle, LayoutGrid, LogOut, Package, PlusCircle, Receipt, Search, Settings as SettingsIcon,
+  ArrowUpRight, Bell, BadgePercent, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Receipt, Search, Settings as SettingsIcon, Users,
 } from 'lucide-react';
 import { useAuth } from '../auth';
 import { siteUrl } from '../firebase';
-import { useProducts } from '../lib/data';
+import { useCollections, useMessages, useProducts, useSignups } from '../lib/data';
+import { useTheme } from '../lib/theme';
+import CommandPalette from './CommandPalette';
+
+const TITLES: [RegExp, string][] = [
+  [/^\/$/, 'Dashboard'], [/^\/products\/new/, 'New product'], [/^\/products\//, 'Edit product'], [/^\/products/, 'Products'],
+  [/^\/collections/, 'Collections'], [/^\/customers/, 'Customers'], [/^\/inbox/, 'Inbox'], [/^\/margins/, 'Margins'],
+  [/^\/orders/, 'Orders'], [/^\/settings/, 'Settings'],
+];
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const { theme, toggle } = useTheme();
+  const loc = useLocation();
   const { data: products } = useProducts();
-  const nav = useNavigate();
-  const [q, setQ] = useState('');
-  const active = products.filter(p => !p.archived).length;
-  const initial = (user?.displayName || user?.email || '?').slice(0, 1).toUpperCase();
+  const { data: collections } = useCollections();
+  const { data: signups } = useSignups();
+  const { data: messages } = useMessages();
+  const [palette, setPalette] = useState(false);
 
-  const onSearch = (e: FormEvent) => { e.preventDefault(); nav(`/products?q=${encodeURIComponent(q)}`); };
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPalette(p => !p); }
+      else if (e.key === '/' && !/input|textarea|select/i.test((e.target as HTMLElement).tagName)) { e.preventDefault(); setPalette(true); }
+    };
+    addEventListener('keydown', k);
+    return () => removeEventListener('keydown', k);
+  }, []);
+
+  const liveProducts = products.filter(p => !p.archived).length;
+  const customers = new Set(signups.map(s => s.email.toLowerCase())).size;
+  const unread = messages.filter(m => m.status !== 'done').length;
+  const title = TITLES.find(([r]) => r.test(loc.pathname))?.[1] ?? '';
+  const name = user?.displayName || user?.email?.split('@')[0] || 'Admin';
   const link = ({ isActive }: { isActive: boolean }) => 'nav-link' + (isActive ? ' active' : '');
+  const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
 
   return (
     <div className="shell">
-      <header className="topbar">
+      <aside className="sidebar">
         <NavLink to="/" className="brand">
           <span className="brand__mark">A</span>
-          AXIA Admin
+          <span><span className="brand__name">AXIA</span><span className="brand__sub">Admin</span></span>
         </NavLink>
-        <form className="topbar__search" onSubmit={onSearch}>
-          <Search size={18} />
-          <input placeholder="Search product" value={q} onChange={e => setQ(e.target.value)} aria-label="Search products" />
-        </form>
-        <a className="icon-btn" href={siteUrl('index.html')} target="_blank" rel="noreferrer" title="Open storefront"><ExternalLink size={18} /></a>
-        <a className="icon-btn" href="https://console.firebase.google.com/project/axia-jewellery/overview" target="_blank" rel="noreferrer" title="Firebase console"><HelpCircle size={18} /></a>
-        <div className="user-chip">
-          <span className="avatar">{initial}</span>
-          <div><span>{user?.displayName || user?.email}</span><small>Admin</small></div>
-        </div>
-      </header>
 
-      <aside className="sidebar">
-        <div className="sidebar__label">Menu</div>
-        <NavLink to="/" end className={link}><LayoutGrid size={20} /> Dashboard</NavLink>
-        <NavLink to="/margins" className={link}><BadgePercent size={20} /> Margins</NavLink>
-        <NavLink to="/orders" className={link}><Receipt size={20} /> Orders</NavLink>
+        <div className="sidebar__label">Main</div>
+        <NavLink to="/" end className={link}><LayoutGrid size={19} /> Dashboard</NavLink>
+        <NavLink to="/customers" className={link}><Users size={19} /> Customers {customers > 0 && <span className="pill">{customers}</span>}</NavLink>
+        <NavLink to="/inbox" className={link}><Inbox size={19} /> Inbox {unread > 0 && <span className="pill pill--hot">{unread}</span>}</NavLink>
+        <NavLink to="/orders" className={link}><Receipt size={19} /> Orders</NavLink>
 
-        <div className="sidebar__label">Products</div>
-        <NavLink to="/products" end className={link}><Package size={20} /> Store <span className="pill">{active}</span></NavLink>
-        <NavLink to="/products/new" className={link}><PlusCircle size={20} /> Add product</NavLink>
+        <div className="sidebar__label">Catalogue</div>
+        <NavLink to="/products" className={link}><Package size={19} /> Products <span className="pill">{liveProducts}</span></NavLink>
+        <NavLink to="/collections" className={link}><FolderHeart size={19} /> Collections <span className="pill">{collections.length}</span></NavLink>
+        <NavLink to="/margins" className={link}><BadgePercent size={19} /> Margins</NavLink>
 
         <div className="sidebar__label">General</div>
-        <NavLink to="/settings" className={link}><SettingsIcon size={20} /> Settings</NavLink>
-        <button className="nav-link nav-link--logout" onClick={logout}><LogOut size={20} /> Log out</button>
+        <NavLink to="/settings" className={link}><SettingsIcon size={19} /> Settings</NavLink>
+        <button className="nav-link" onClick={logout}><LogOut size={19} /> Log out</button>
+
+        <div className="sidebar__foot">
+          <div className="theme-row"><Moon size={19} /> Dark mode
+            <button className="switch" role="switch" aria-checked={theme === 'dark'} aria-label="Dark mode" onClick={toggle} />
+          </div>
+          <div className="store-card">
+            <b>Your storefront</b>
+            <p>Changes you save here show on the site straight away.</p>
+            <a href={siteUrl('index.html')} target="_blank" rel="noreferrer">Open site <ArrowUpRight size={14} /></a>
+          </div>
+        </div>
       </aside>
 
-      <main className="main"><Outlet /></main>
+      <div className="main">
+        <header className="header">
+          <div className="header__title">AXIA / <b>{title}</b></div>
+          <span className="spacer" />
+          <button className="search-trigger" onClick={() => setPalette(true)} aria-label="Search">
+            <Search size={16} /><span>Search anything</span><kbd>{isMac ? '⌘' : 'Ctrl'} K</kbd>
+          </button>
+          <NavLink to="/inbox" className="icon-btn" aria-label="Inbox">
+            <Bell size={18} />{unread > 0 && <span className="dot">{unread}</span>}
+          </NavLink>
+          <div className="user-chip">
+            <span className="avatar">{name.slice(0, 1).toUpperCase()}</span>
+            <div><span>{name}</span><small>Admin</small></div>
+          </div>
+        </header>
+        <div className="page" key={loc.pathname}><Outlet /></div>
+      </div>
+
+      <CommandPalette open={palette} onClose={() => setPalette(false)} products={products} collections={collections} signups={signups} />
     </div>
   );
 }

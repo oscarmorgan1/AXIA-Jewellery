@@ -77,3 +77,46 @@ export interface Order {
   totalAUD?: number;
   status?: 'pending' | 'paid' | 'fulfilled' | 'refunded' | 'cancelled' | string;
 }
+
+/** Public collection document (Firestore `collections/{slug}`). Products join via `coll`. */
+export interface Collection {
+  slug: string;
+  name: string;
+  tab?: string;
+  intro?: string;
+  image?: string;
+  showInShop?: boolean;
+  sort?: number;
+  updatedAt?: unknown;
+}
+
+type Ts = { toDate(): Date };
+
+/** Waitlist / registration entry (Firestore `signups/{id}`), admins only. */
+export interface Signup {
+  id: string;
+  firstName: string;
+  email: string;
+  mobile?: string;
+  instagram?: string;
+  productId?: string;
+  productName?: string;
+  size?: string;
+  emailConsent?: boolean;
+  smsConsent?: boolean;
+  source?: string;
+  page?: string;
+  createdAt?: Ts;
+}
+
+/** Support form message (Firestore `messages/{id}`), admins only. */
+export interface Message {
+  id: string;
+  name: string;
+  email: string;
+  topic: string;
+  order?: string;
+  message: string;
+  status: 'new' | 'done' | string;
+  createdAt?: Ts;
+}

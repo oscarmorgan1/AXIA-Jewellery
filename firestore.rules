@@ -5,6 +5,9 @@ rules_version = '2';
 //   products/{id}        public catalogue: anyone can read, only admins write
 //   productCosts/{id}    PRIVATE factory costs and margins: admins only
 //   internal/{doc}       PRIVATE cost assumptions, launch plan: admins only
+//   collections/{slug}   public: anyone can read, only admins write
+//   signups/{id}         waitlist sign-ups: anyone can CREATE a valid entry, only admins read
+//   messages/{id}        support form: anyone can CREATE a valid entry, only admins read
 //   orders/{id}          admins only (Stripe webhooks will write via the Admin SDK)
 //
 // "Admin" means a signed-in user whose ID token carries the custom claim
@@ -23,6 +26,62 @@ service cloud.firestore {
         // cost/economics fields must never land in the public collection
         && !request.resource.data.keys().hasAny(['economics', 'factory_cost_AUD', 'factoryCostAUD', 'cost']);
       allow delete: if isAdmin();
+    }
+
+    match /collections/{slug} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource.data.slug == slug
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0;
+      allow delete: if isAdmin();
+    }
+
+    function str(d, k, max) {
+      return d[k] is string && d[k].size() <= max;
+    }
+    function optStr(d, k, max) {
+      return !(k in d) || str(d, k, max);
+    }
+    function optBool(d, k) {
+      return !(k in d) || d[k] is bool;
+    }
+    function validEmail(e) {
+      return e is string && e.size() <= 200 && e.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$');
+    }
+
+    // Public forms write here. No reads, no edits: an entry can only be created,
+    // with a fixed set of fields, and stamped with the server time.
+    match /signups/{id} {
+      allow create: if request.resource.data.keys().hasOnly([
+            'firstName', 'email', 'mobile', 'instagram', 'productId', 'productName', 'size',
+            'emailConsent', 'smsConsent', 'source', 'page', 'createdAt'])
+        && str(request.resource.data, 'firstName', 80) && request.resource.data.firstName.size() > 0
+        && validEmail(request.resource.data.email)
+        && optStr(request.resource.data, 'mobile', 30)
+        && optStr(request.resource.data, 'instagram', 60)
+        && optStr(request.resource.data, 'productId', 120)
+        && optStr(request.resource.data, 'productName', 160)
+        && optStr(request.resource.data, 'size', 40)
+        && optStr(request.resource.data, 'page', 200)
+        && optBool(request.resource.data, 'emailConsent')
+        && optBool(request.resource.data, 'smsConsent')
+        && request.resource.data.source in ['landing', 'first-drop', 'other']
+        && request.resource.data.createdAt == request.time;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /messages/{id} {
+      allow create: if request.resource.data.keys().hasOnly([
+            'name', 'email', 'topic', 'order', 'message', 'status', 'createdAt'])
+        && str(request.resource.data, 'name', 100) && request.resource.data.name.size() > 0
+        && validEmail(request.resource.data.email)
+        && str(request.resource.data, 'topic', 40)
+        && optStr(request.resource.data, 'order', 60)
+        && str(request.resource.data, 'message', 5000) && request.resource.data.message.size() > 3
+        && request.resource.data.status == 'new'
+        && request.resource.data.createdAt == request.time;
+      allow read, update, delete: if isAdmin();
     }
 
     match /productCosts/{productId} {
