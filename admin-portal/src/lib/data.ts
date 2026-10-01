@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { collection, doc, onSnapshot, type DocumentData } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Collection, CostAssumptions, Message, Order, Product, ProductCost, Signup } from '../types';
+import type { Collection, CostAssumptions, Message, Order, Product, ProductCost, Signup, Countdown } from '../types';
 import { DEFAULT_ASSUMPTIONS } from './economics';
 
 interface Live<T> { data: T; loading: boolean; error: Error | null }
@@ -37,6 +37,19 @@ export function useAssumptions(): Live<CostAssumptions> {
   useEffect(() => onSnapshot(
     doc(db, 'internal', 'costAssumptions'),
     snap => setState({ data: { ...DEFAULT_ASSUMPTIONS, ...(snap.data() as Partial<CostAssumptions> | undefined) }, loading: false, error: null }),
+    error => setState(s => ({ ...s, loading: false, error })),
+  ), []);
+  return state;
+}
+
+/** Matches DEFAULT_COUNTDOWN in assets/js/catalogue.js (what the site shows before anything is saved). */
+export const DEFAULT_COUNTDOWN: Countdown = { mode: 'text', label: 'The First Drop', text: 'Dropping soon', target: '2026-11-20T19:00:00+11:00', endedText: 'Out now' };
+
+export function useCountdown(): Live<Countdown> & { saved: boolean } {
+  const [state, setState] = useState<Live<Countdown> & { saved: boolean }>({ data: DEFAULT_COUNTDOWN, loading: true, error: null, saved: false });
+  useEffect(() => onSnapshot(
+    doc(db, 'site', 'countdown'),
+    snap => setState({ data: { ...DEFAULT_COUNTDOWN, ...(snap.data() as Partial<Countdown> | undefined) }, loading: false, error: null, saved: snap.exists() }),
     error => setState(s => ({ ...s, loading: false, error })),
   ), []);
   return state;

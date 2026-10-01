@@ -130,7 +130,7 @@ export default function ProductEdit() {
     const b = writeBatch(db);
     b.delete(doc(db, 'products', id));
     b.delete(doc(db, 'productCosts', id));
-    await b.commit();
+    try { await b.commit(); } catch (e) { return setError((e as Error).message); }
     nav('/products');
   }
 

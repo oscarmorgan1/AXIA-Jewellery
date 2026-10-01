@@ -120,3 +120,14 @@ export interface Message {
   status: 'new' | 'done' | string;
   createdAt?: Ts;
 }
+
+/** site/countdown: the launch countdown shown across the storefront. Public. */
+export interface Countdown {
+  mode: 'timer' | 'text' | 'off';
+  label: string;
+  text: string;
+  /** ISO date-time the timer counts down to. */
+  target: string;
+  endedText: string;
+  updatedAt?: { toDate(): Date };
+}

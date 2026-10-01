@@ -12,6 +12,7 @@ import Settings from './pages/Settings';
 import Collections from './pages/Collections';
 import Customers from './pages/Customers';
 import InboxPage from './pages/Inbox';
+import Website from './pages/Website';
 
 export default function App() {
   const { user, isAdmin, loading } = useAuth();
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="inbox" element={<InboxPage />} />
         <Route path="margins" element={<Margins />} />
         <Route path="orders" element={<Orders />} />
+        <Route path="website" element={<Website />} />
         <Route path="settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

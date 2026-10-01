@@ -142,7 +142,7 @@
       <h1>Join the First Drop</h1>
       <p class="fd-tag">Buy once, shine forever.</p>
       <p>The first AXIA release. 925 sterling silver, hand-set VVS D-colour moissanite. Register your interest and get in before the public launch.</p>
-      <!-- Countdown appears only when a launch date is genuinely fixed (set LAUNCH_DATE below). -->
+      <!-- Countdown: set in the admin portal under Settings > Countdown. -->
       <div id="countdown" aria-live="polite">
         <div class="cd-grid">
           <div class="cd-unit"><b id="cdD">0</b><span>Days</span></div>
@@ -268,34 +268,33 @@
 </div>
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
 
-<script src="assets/js/catalogue.js?v=20261001a"></script>
-<script type="text/axia-deferred" src="assets/js/axia.js?v=20260930a"></script>
+<script src="assets/js/catalogue.js?v=20261001b"></script>
+<script type="text/axia-deferred" src="assets/js/axia.js?v=20261001b"></script>
 <script type="text/axia-deferred">
 (function(){
   const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
   const P=window.AXIA_PRODUCTS||[]; const byId=id=>P.find(p=>p.id===id);
   const fmtA=n=>'A$'+Number(n).toLocaleString('en-AU');
 
-  /* ---- Launch countdown: OFF until a real date is set. To enable, set LAUNCH_DATE
-     to an ISO string, e.g. '2026-09-15T10:00:00+10:00'. Leave null while unconfirmed. ---- */
-  const LAUNCH_DATE = '2026-11-20T19:00:00+11:00'; /* PLACEHOLDER launch date - keep in sync with index.html/store.html; set back to null to hide */
+  /* ---- Launch countdown. Date, text and on/off are set in the admin portal
+     (Settings > Countdown) and arrive through catalogue.js. ---- */
   (function(){
-    const cd=$('#countdown'), soon=$('#cdSoon');
-    if(!LAUNCH_DATE){ return; } // countdown stays hidden, "announced to the list first" shows
-    const target=new Date(LAUNCH_DATE).getTime(); if(isNaN(target)) return;
-    cd.classList.add('on'); if(soon) soon.style.display='none';
-    /* LAUNCH TIMER NOT LIVE YET: show "Dropping soon" instead of a countdown. Set LIVE = true to start it. */
-    const LIVE=false;
-    if(!LIVE){ cd.innerHTML='<div style="font-family:var(--font-display);font-weight:700;text-transform:uppercase;font-size:clamp(1.8rem,5vw,3rem);color:var(--bone);letter-spacing:.02em">Dropping soon</div>'; }
-    if(LIVE){
-      const p2=n=>(n<10?'0':'')+n;
-      const tick=()=>{ let d=Math.max(0,target-Date.now()); const day=864e5;
-        $('#cdD').textContent=p2(Math.floor(d/day)); d%=day;
-        $('#cdH').textContent=p2(Math.floor(d/36e5)); d%=36e5;
-        $('#cdM').textContent=p2(Math.floor(d/6e4)); d%=6e4;
-        $('#cdS').textContent=p2(Math.floor(d/1e3)); };
-      tick(); setInterval(tick,1000);
-    }
+    const cd=$('#countdown'), soon=$('#cdSoon'); if(!cd||!window.AXIA_CD) return;
+    const grid=cd.querySelector('.cd-grid');
+    const txt=document.createElement('div');
+    txt.style.cssText='font-family:var(--font-display);font-weight:700;text-transform:uppercase;font-size:clamp(1.8rem,5vw,3rem);color:var(--bone);letter-spacing:.02em';
+    window.AXIA_CD.run(st=>{
+      cd.classList.toggle('on', st.mode!=='off');
+      if(soon) soon.style.display = st.mode==='off' ? '' : 'none';
+      if(st.mode==='off') return;
+      if(st.mode==='timer'){
+        if(txt.parentNode) txt.replaceWith(grid);
+        $('#cdD').textContent=st.d; $('#cdH').textContent=st.h; $('#cdM').textContent=st.m; $('#cdS').textContent=st.s;
+      } else {
+        txt.textContent=st.text;
+        if(grid.parentNode) grid.replaceWith(txt);
+      }
+    });
   })();
 
   /* ---- Populate preferred product (grouped) + dependent size/length ---- */

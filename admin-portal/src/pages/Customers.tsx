@@ -91,7 +91,7 @@ export default function Customers() {
     if (!confirm(`Delete ${c.name || c.email} and all ${c.entries.length} of their sign-ups? Use this for privacy deletion requests. It can’t be undone.`)) return;
     const b = writeBatch(db);
     c.entries.forEach(e => b.delete(doc(db, 'signups', e.id)));
-    await b.commit();
+    try { await b.commit(); } catch (e) { return toast.show(`Couldn’t save: ${(e as Error).message}`); }
     setOpen(null);
     toast.show('Customer deleted');
   }

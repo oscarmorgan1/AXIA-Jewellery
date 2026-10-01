@@ -20,13 +20,13 @@ export default function Inbox() {
   const open = messages.find(m => m.id === openId) || null;
 
   async function setStatus(m: Message, status: 'new' | 'done') {
-    await updateDoc(doc(db, 'messages', m.id), { status });
+    try { await updateDoc(doc(db, 'messages', m.id), { status }); } catch (e) { return toast.show(`Couldn’t save: ${(e as Error).message}`); }
     toast.show(status === 'done' ? 'Marked as done' : 'Moved back to new');
     if (status === 'done') setOpenId(null);
   }
   async function remove(m: Message) {
     if (!confirm(`Delete this message from ${m.name}?`)) return;
-    await deleteDoc(doc(db, 'messages', m.id));
+    try { await deleteDoc(doc(db, 'messages', m.id)); } catch (e) { return toast.show(`Couldn’t save: ${(e as Error).message}`); }
     setOpenId(null);
     toast.show('Message deleted');
   }

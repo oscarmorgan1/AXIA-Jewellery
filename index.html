@@ -494,7 +494,7 @@
   </div>
 </div>
 
-<script src="assets/js/catalogue.js?v=20261001a"></script>
+<script src="assets/js/catalogue.js?v=20261001b"></script>
 <script type="text/axia-deferred">
 /* ============================================================
    AXIA - First Drop landing
@@ -720,31 +720,26 @@ lbCta.addEventListener('click',function(){
   ['touchstart','pointerdown','click','scroll'].forEach(function(ev){ addEventListener(ev, kick, { once:true, passive:true }); });
 })();
 
-/* ---- countdown: hidden until the drop date is announced.
-   To go live: set TARGET to the launch date, e.g.
-   var TARGET = new Date('2026-11-20T19:00:00+11:00').getTime();
-   The big countdown over the video (#fhCount) then shows automatically. ---- */
-var TARGET = new Date('2026-11-20T19:00:00+11:00').getTime(); /* PLACEHOLDER launch date - swap for the real one, or set back to null to hide the countdown */
-var LIVE = false; /* LAUNCH TIMER NOT LIVE YET: the bar reads "Dropping soon". Set LIVE = true to run the real countdown. */
-var el = { d:document.getElementById('cd-d'), h:document.getElementById('cd-h'), m:document.getElementById('cd-m'), s:document.getElementById('cd-s') };
-var fhCount = document.getElementById('fhCount');
-if (fhCount) fhCount.hidden = false;
-if (!LIVE) {
-  var grid = fhCount && fhCount.querySelector('.cd-bar__grid');
-  if (grid) grid.outerHTML = '<div class="cd-bar__soon">Dropping soon</div>';
-} else if (TARGET) {
-  var pad = function(n){ return (n<10?'0':'')+n; };
-  var tick = function(){
-    var diff = TARGET - Date.now();
-    if (diff <= 0){ el.d.textContent='00'; el.h.textContent='00'; el.m.textContent='00'; el.s.textContent='00'; return; }
-    var s = Math.floor(diff/1000);
-    el.d.textContent = pad(Math.floor(s/86400));
-    el.h.textContent = pad(Math.floor(s%86400/3600));
-    el.m.textContent = pad(Math.floor(s%3600/60));
-    el.s.textContent = pad(s%60);
-  };
-  tick(); setInterval(tick, 1000);
-}
+/* ---- countdown over the video (#fhCount). Date, text and on/off are set in the
+   admin portal (Settings > Countdown) and arrive through catalogue.js. ---- */
+(function(){
+  var bar = document.getElementById('fhCount'); if (!bar || !window.AXIA_CD) return;
+  var eye = bar.querySelector('.cd-bar__eye'), grid = bar.querySelector('.cd-bar__grid');
+  var soon = document.createElement('div'); soon.className = 'cd-bar__soon';
+  var el = { d:document.getElementById('cd-d'), h:document.getElementById('cd-h'), m:document.getElementById('cd-m'), s:document.getElementById('cd-s') };
+  window.AXIA_CD.run(function(st){
+    bar.hidden = st.mode === 'off';
+    if (st.mode === 'off') return;
+    eye.textContent = st.label;
+    if (st.mode === 'timer') {
+      if (soon.parentNode) soon.parentNode.replaceChild(grid, soon);
+      el.d.textContent = st.d; el.h.textContent = st.h; el.m.textContent = st.m; el.s.textContent = st.s;
+    } else {
+      soon.textContent = st.text;
+      if (grid.parentNode) grid.parentNode.replaceChild(soon, grid);
+    }
+  });
+})();
 
 /* ---- registration ----
    Saves each sign-up to the AXIA database (Firestore "signups"), where it shows

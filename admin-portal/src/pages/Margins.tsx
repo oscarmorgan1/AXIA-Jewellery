@@ -42,7 +42,8 @@ export default function Margins() {
   async function saveCost(id: string, name: string, size: string | null | undefined, value: string) {
     const n = value.trim() === '' ? null : Number(value);
     if (n != null && (Number.isNaN(n) || n < 0)) return toast.show('Enter a valid cost');
-    await setDoc(doc(db, 'productCosts', id), { id, name, factoryCostAUD: n, representativeSize: size ?? null, updatedAt: serverTimestamp() }, { merge: true });
+    try { await setDoc(doc(db, 'productCosts', id), { id, name, factoryCostAUD: n, representativeSize: size ?? null, updatedAt: serverTimestamp() }, { merge: true }); }
+    catch (e) { return toast.show(`Couldn’t save: ${(e as Error).message}`); }
     toast.show('Factory cost saved');
   }
 
