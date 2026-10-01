@@ -12,7 +12,8 @@
     "admin:build": "npm --prefix admin-portal run build",
     "build": "npm run admin:build",
     "deploy": "firebase deploy --project axia-jewellery",
-    "postinstall": "npm --prefix admin-portal install"
+    "postinstall": "npm --prefix admin-portal install",
+    "migrate:collections": "node scripts/migrate-collections.mjs"
   },
   "devDependencies": {
     "firebase-admin": "^13.5.0",

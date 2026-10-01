@@ -262,23 +262,12 @@
   }});},{rootMargin:'-30% 0px -60% 0px'});
   secs.forEach(s=>s&&io.observe(s));
 
-  /* ---- Contact form: Klaviyo event (reliable record) + FormSubmit email (best-effort) ---- */
+  /* ---- Contact form: saved to the AXIA database (Firestore "messages"), read in the admin portal Inbox ---- */
   const INBOX='axiajewellery@gmail.com';
-  const ENDPOINT='https://formsubmit.co/ajax/'+INBOX;
-  const KLAVIYO_PUBLIC_KEY='YcKkuc';
   const $=s=>document.querySelector(s);
   const form=$('#cForm'); if(!form) return;
   const err=$('#cErr'), btn=form.querySelector('button[type="submit"]');
   const fail=m=>{ err.textContent=m; err.scrollIntoView({block:'center',behavior:'smooth'}); };
-  function klaviyoContactEvent(d){
-    if(!KLAVIYO_PUBLIC_KEY) return Promise.resolve(null);
-    const body={data:{type:'event',attributes:{
-      metric:{data:{type:'metric',attributes:{name:'Submitted Contact Form'}}},
-      properties:{category:d.category,topic:d.topic,order_number:d.order||'',message:d.message},
-      profile:{data:{type:'profile',attributes:{email:d.email,first_name:d.name}}}
-    }}};
-    return fetch('https://a.klaviyo.com/client/events/?company_id='+encodeURIComponent(KLAVIYO_PUBLIC_KEY),{method:'POST',headers:{'Content-Type':'application/json','revision':'2025-07-15'},body:JSON.stringify(body)});
-  }
   form.addEventListener('submit',async e=>{
     e.preventDefault(); err.textContent='';
     const fd=new FormData(form);
@@ -290,23 +279,12 @@
     if(!name){ fail('Please add your name.'); return; }
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ fail('Please enter a valid email.'); return; }
     if(message.length<4){ fail('Please add a short message.'); return; }
-    const tag=topic==='Support'?'SUPPORT':'INQUIRY';
-    const category=topic==='Support'?'Support (existing order)':'General inquiry';
-    const payload={
-      _subject:'AXIA - '+tag+' - '+name,
-      _template:'table', _captcha:'false',
-      Category:category,
-      Name:name, Email:email, Topic:topic,
-      'Order number':order||'-', Message:message,
-      Submitted:new Date().toISOString()
-    };
     const orig=btn.textContent; btn.disabled=true; btn.textContent='Sending…';
-    /* FormSubmit emails the inbox (best-effort); the Klaviyo event is the reliable record. */
-    const fsOk=fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(payload)})
-      .then(r=>r.json().catch(()=>({})).then(d=>r.ok&&String(d.success)==='true')).catch(()=>false);
-    let kOk=false;
-    try{ const kr=await klaviyoContactEvent({name,email,topic,order,message,category}); kOk=!!(kr&&kr.ok); }catch(ex){ kOk=false; }
-    const ok = kOk || await fsOk;
+    let ok=true;
+    try{
+      await window.AXIA_DB.add('messages',{ name:name.slice(0,100), email:email.toLowerCase().slice(0,200), topic:String(topic).slice(0,40),
+        order:order.slice(0,60), message:message.slice(0,5000), status:'new' });
+    }catch(ex){ ok=false; if(window.console) console.error(ex); }
     btn.disabled=false; btn.textContent=orig;
     if(!ok){ fail('Something stopped that from sending. Please try again, or email '+INBOX+' directly.'); return; }
     $('#cOkEmail').textContent=email;

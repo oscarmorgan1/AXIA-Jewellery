@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { useAssumptions, useCosts, useProducts } from '../lib/data';
-import { collectionOf, statusOf } from '../lib/catalogue';
+import { useAssumptions, useCollections, useCosts, useProducts } from '../lib/data';
+import { collectionLabel, primaryCollection, statusOf } from '../lib/catalogue';
 import { productEconomics, retailAtSize, type Economics } from '../lib/economics';
 import { aud, pct } from '../lib/format';
 import StatCard from '../components/StatCard';
@@ -17,6 +17,7 @@ export default function Margins() {
   const { data: products } = useProducts();
   const { byId: costs, loading, error } = useCosts();
   const { data: assumptions } = useAssumptions();
+  const { data: collections } = useCollections();
   const nav = useNavigate();
   const toast = useToast();
   const [sort, setSort] = useState<SortKey>('margin');
@@ -48,10 +49,10 @@ export default function Margins() {
   return (
     <>
       <div className="page-head"><h1>Margins</h1></div>
-      <div className="grid-4" style={{ gridTemplateColumns: 'repeat(3, minmax(0,1fr))' }}>
-        <StatCard label="Blended gross margin" value={pct(totRetail ? (totGp / totRetail) * 100 : null)} icon={<BadgePercent size={20} />} foot={<>One of each costed piece</>} />
-        <StatCard label="Avg contribution / sale" value={aud(priced.length ? priced.reduce((a, r) => a + r.e!.contributionAUD, 0) / priced.length : null)} icon={<Wallet size={20} />} foot={<>After fees ({(assumptions.paymentFeePct * 100).toFixed(1)}% + {aud(assumptions.paymentFeeFixedAUD, 2)}) and packaging</>} />
-        <StatCard label="Lowest margin" value={lowest ? pct(lowest.e!.grossMarginPct) : '–'} icon={<TrendingDown size={20} />} foot={lowest ? <b>{lowest.p.name}</b> : null} />
+      <div className="grid-3 stagger">
+        <StatCard label="Blended gross margin" value={pct(totRetail ? (totGp / totRetail) * 100 : null)} tone="good" icon={<BadgePercent size={20} />} foot={<>One of each costed piece</>} />
+        <StatCard label="Avg contribution / sale" value={aud(priced.length ? priced.reduce((a, r) => a + r.e!.contributionAUD, 0) / priced.length : null)} tone="ice" icon={<Wallet size={20} />} foot={<>After fees ({(assumptions.paymentFeePct * 100).toFixed(1)}% + {aud(assumptions.paymentFeeFixedAUD, 2)}) and packaging</>} />
+        <StatCard label="Lowest margin" value={lowest ? pct(lowest.e!.grossMarginPct) : '–'} tone="magenta" icon={<TrendingDown size={20} />} foot={lowest ? <b>{lowest.p.name}</b> : null} />
       </div>
       <div className="card">
         <div className="private-note"><Lock size={14} /> Private. Factory costs live in an admin-only collection and are never sent to the storefront.</div>
@@ -72,11 +73,11 @@ export default function Margins() {
               <th className="num">Gross profit</th><th className="num">Gross margin</th><th className="num">Contribution</th>
               <th className="num">Break-even ROAS</th><th className="num">Max ad / sale</th>
             </tr></thead>
-            <tbody>
+            <tbody className="rows-anim">
               {rows.map(({ p, c, e }) => (
                 <tr key={p.id}>
                   <td className="clickable" style={{ cursor: 'pointer' }} onClick={() => nav(`/products/${encodeURIComponent(p.id)}`)}>
-                    {p.name}{p.width ? `, ${p.width}` : ''}<div style={{ color: 'var(--muted)', fontSize: 12 }}>{collectionOf(p)} · {statusOf(p)}</div>
+                    {p.name}{p.width ? `, ${p.width}` : ''}<div style={{ color: 'var(--muted)', fontSize: 12 }}>{collectionLabel(primaryCollection(p, collections))} · {statusOf(p)}</div>
                   </td>
                   <td>{c?.representativeSize || '–'}</td>
                   <td className="num">{aud(retailAtSize(p, c?.representativeSize))}</td>

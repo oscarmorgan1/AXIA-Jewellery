@@ -53,6 +53,7 @@ window.AXIA_PRODUCTS = [
     "badge": "First Drop",
     "mto": false,
     "coll": [
+      "sets",
       "pendants"
     ],
     "art": "cross",
@@ -93,6 +94,7 @@ window.AXIA_PRODUCTS = [
     "badge": "Matching set",
     "mto": false,
     "coll": [
+      "sets",
       "tennis"
     ],
     "art": "tennis",
@@ -154,6 +156,7 @@ window.AXIA_PRODUCTS = [
     "badge": "Matching set",
     "mto": false,
     "coll": [
+      "sets",
       "cuban"
     ],
     "art": "cuban",
@@ -203,6 +206,7 @@ window.AXIA_PRODUCTS = [
     "badge": "Matching set",
     "mto": false,
     "coll": [
+      "sets",
       "cuban"
     ],
     "art": "cuban",
@@ -265,6 +269,7 @@ window.AXIA_PRODUCTS = [
     "badge": "Matching set",
     "mto": false,
     "coll": [
+      "sets",
       "cuban"
     ],
     "art": "cuban",
@@ -310,6 +315,7 @@ window.AXIA_PRODUCTS = [
     "badge": "Matching set",
     "mto": false,
     "coll": [
+      "sets",
       "cuban"
     ],
     "art": "cuban",
@@ -1594,7 +1600,8 @@ window.AXIA_PRODUCTS = [
     "badge": "Feeling lucky?",
     "mto": false,
     "coll": [
-      "flower"
+      "flower",
+      "cuban"
     ],
     "art": "cubanBracelet",
     "stone": "Coloured moissanite",

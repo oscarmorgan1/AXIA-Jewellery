@@ -433,7 +433,7 @@
     <div class="done" id="done">
       <div class="tick"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
       <h3>You're on the list</h3>
-      <p>Check your email for your confirmation and your 15% welcome code. If it lands in your Promotions or Spam tab, drag it into your main inbox so you don't miss the drop. We'll tell you the moment it opens.</p>
+      <p>Here's 15% off your first order: <strong>FIRST15</strong>. Enter it at checkout when the drop opens. We'll let you know the moment it does.</p>
     </div>
   </div>
 </section>
@@ -747,53 +747,11 @@ if (!LIVE) {
 }
 
 /* ---- registration ----
-   Emails each signup to AXIA via FormSubmit (no account needed; the inbox must be
-   FormSubmit-activated once). Also keeps a local record so axiaWaitlist() works offline.
-   Note: FormSubmit needs a real http origin - works on the preview/live domain, not file://.
+   Saves each sign-up to the AXIA database (Firestore "signups"), where it shows
+   in the admin portal under Customers. Nothing is emailed from the site.
+   Also keeps a local record so axiaWaitlist() works offline.
 */
 var INBOX = 'axiajewellery@gmail.com';
-var ENDPOINT = 'https://formsubmit.co/ajax/' + INBOX;
-
-/* ============================================================
-   KLAVIYO - reliable branded welcome email + unique code + SMS.
-   PASTE TWO PUBLIC VALUES BELOW (both are safe to expose in the page).
-   1) KLAVIYO_PUBLIC_KEY = your 6-char Public API Key / Site ID
-      (Klaviyo > Settings > API keys > "Public API Key"). NOT a private pk_live_ key.
-   2) KLAVIYO_LIST_ID = the list people join
-      (Klaviyo > Lists & Segments > open the list > Settings > List ID, 6 chars).
-   Leave blank to keep the current behaviour (FormSubmit only). Once both are set,
-   each signup subscribes to the list (with consent) and triggers your welcome Flow,
-   which sends the branded email + unique coupon (and SMS, if enabled).
-   ============================================================ */
-var KLAVIYO_PUBLIC_KEY = 'YcKkuc';
-var KLAVIYO_LIST_ID    = 'TBCZbE';
-
-function toE164AU(m){
-  var d=(m||'').replace(/\D/g,'');
-  if(!d) return '';
-  if(d.indexOf('61')===0) return '+'+d;
-  if(d.charAt(0)==='0') return '+61'+d.slice(1);
-  if(d.length===9) return '+61'+d;
-  return '+'+d;
-}
-function subscribeKlaviyo(entry){
-  if(!KLAVIYO_PUBLIC_KEY || !KLAVIYO_LIST_ID) return Promise.resolve('skipped');
-  var phone=toE164AU(entry.mobile);
-  var attrs={
-    email: entry.email,
-    first_name: entry.firstName,
-    properties: { instagram: entry.instagram||'', interested_in: entry.product||'', source:'first-drop-landing' },
-    subscriptions: { email:{ marketing:{ consent:'SUBSCRIBED' } } }
-  };
-  if(phone){ attrs.phone_number=phone; if(entry.smsConsent){ attrs.subscriptions.sms={ marketing:{ consent:'SUBSCRIBED' } }; } }
-  var body={ data:{ type:'subscription', attributes:{
-    custom_source:'First Drop Landing',
-    profile:{ data:{ type:'profile', attributes: attrs } }
-  }, relationships:{ list:{ data:{ type:'list', id: KLAVIYO_LIST_ID } } } } };
-  return fetch('https://a.klaviyo.com/client/subscriptions/?company_id='+encodeURIComponent(KLAVIYO_PUBLIC_KEY), {
-    method:'POST', headers:{ 'Content-Type':'application/json', 'revision':'2025-07-15' }, body: JSON.stringify(body)
-  });
-}
 
 var form = document.getElementById('form');
 var note = document.getElementById('note');
@@ -850,51 +808,18 @@ form.addEventListener('submit', function(e){
     localStorage.setItem('axia_eoi', JSON.stringify(eoi));
   } catch(err){}
 
-  /* welcome auto-reply sent to the registrant, with their first-order code */
-  var WELCOME_CODE = 'FIRST15';
-  var autoMsg = 'Hi ' + firstName + ", you're on the AXIA First Access list.\n\n"
-    + "You'll be first to know the moment the First Drop opens.\n\n"
-    + 'As a thank you, here is 15% off your first order: ' + WELCOME_CODE + '. Enter it at checkout when the drop opens.\n\n'
-    + "If this landed in your Promotions or Spam tab, drag it into your main inbox so you don't miss the drop.\n\n"
-    + 'See you at the drop,\nAXIA';
-
-  var payload = {
-    _subject: 'AXIA - REGISTRATION - ' + firstName + ' · ' + product,
-    _template: 'table',
-    _captcha: 'false',
-    Category: 'Registration (First Access)',
-    Name: firstName,
-    email: email,            /* lowercase so FormSubmit uses it for reply-to + auto-reply */
-    Mobile: mobile,
-    'Interested in': product,
-    Instagram: instagram || '-',
-    'Email consent': 'Yes',
-    'SMS consent': cSms.checked ? 'Yes' : 'No',
-    Source: 'first-drop-landing',
-    Submitted: entry.at
-  };
-  /* Klaviyo off: FormSubmit sends the customer welcome + code. Klaviyo on: it takes over (no dupes). */
-  if (!(KLAVIYO_PUBLIC_KEY && KLAVIYO_LIST_ID)) { payload._autoresponse = autoMsg; payload['Welcome code sent'] = WELCOME_CODE; }
-
   var orig = submitBtn.textContent;
   submitBtn.disabled = true; submitBtn.textContent = 'Joining…';
 
   function succeed(){ submitBtn.disabled = false; submitBtn.textContent = orig; form.style.display = 'none'; doneEl.classList.add('show'); }
   function failNow(){ submitBtn.disabled = false; submitBtn.textContent = orig; showErr('Something stopped that from sending. Please try again, or email ' + INBOX + '.'); }
 
-  /* FormSubmit is a best-effort owner notification (it can be flaky); it never blocks the signup. */
-  var fsOk = fetch(ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'}, body:JSON.stringify(payload) })
-    .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ return r.ok && String(d.success) === 'true'; }); })
-    .catch(function(){ return false; });
-
-  if (KLAVIYO_PUBLIC_KEY && KLAVIYO_LIST_ID) {
-    /* Klaviyo is the source of truth - a 202 means they're on the list and the welcome flow fires. */
-    subscribeKlaviyo(entry)
-      .then(function(r){ if (r && r.ok) { succeed(); } else { fsOk.then(function(ok){ ok ? succeed() : failNow(); }); } })
-      .catch(function(){ fsOk.then(function(ok){ ok ? succeed() : failNow(); }); });
-  } else {
-    fsOk.then(function(ok){ ok ? succeed() : failNow(); });
-  }
+  var pick = (DROP || []).filter(function(p){ return fullName(p) === product; })[0];
+  window.AXIA_DB.add('signups', {
+    firstName: firstName.slice(0, 80), email: email.toLowerCase().slice(0, 200), mobile: mobile.slice(0, 30),
+    instagram: instagram.slice(0, 60), productId: pick ? pick.id : '', productName: product.slice(0, 160),
+    emailConsent: true, smsConsent: cSms.checked, source: 'landing', page: location.pathname.slice(0, 200)
+  }).then(succeed, function(err){ if (window.console) console.error(err); failNow(); });
 });
 </script>
 <script type="text/axia-deferred">

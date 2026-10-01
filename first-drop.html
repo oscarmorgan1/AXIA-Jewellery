@@ -215,7 +215,7 @@
       <div class="fd-success" id="successView" aria-live="polite">
         <div class="tick"><svg viewBox="0 0 24 24"><path d="m5 13 4 4 10-11"/></svg></div>
         <h2>You're on the AXIA First Access list.</h2>
-        <p>Members receive early access before the public release. We'll email <span id="okEmail">you</span>, and text you if you opted in, the moment the first drop opens.</p>
+        <p>Members receive early access before the public release. We'll contact <span id="okEmail">you</span>, and text you if you opted in, the moment the first drop opens.</p>
         <p style="margin-top:var(--s-5)"><a class="link-u" href="collection.html">Browse the collection <span class="arw">→</span></a></p>
       </div>
     </div>
@@ -331,24 +331,10 @@
     ig.addEventListener('input',()=>{ ig.value='@'+ig.value.replace(/^@+/,''); });
   }
 
-  /* ---- Submit: validate, email the registration to AXIA, record demand, show success ---- */
-  // Registrations are emailed to axiajewellery@gmail.com via FormSubmit (no account needed).
-  // The subject is tagged "AXIA - REGISTRATION - ..." so the inbox self-sorts by category.
-  // We ALSO keep a local demand tally so axiaInterest() still works offline.
+  /* ---- Submit: validate, save the registration to the AXIA database, record demand, show success ---- */
+  // Registrations are saved to Firestore ("signups") and show in the admin portal under Customers.
+  // Nothing is emailed from the site. We ALSO keep a local demand tally so axiaInterest() still works offline.
   const INBOX='axiajewellery@gmail.com';
-  const ENDPOINT='https://formsubmit.co/ajax/'+INBOX;
-  /* Klaviyo (same list as the landing) is the reliable source of truth for sign-ups. */
-  const KLAVIYO_PUBLIC_KEY='YcKkuc';
-  const KLAVIYO_LIST_ID='TBCZbE';
-  function toE164AU(m){var d=(m||'').replace(/\D/g,'');if(!d)return'';if(d.indexOf('61')===0)return'+'+d;if(d.charAt(0)==='0')return'+61'+d.slice(1);if(d.length===9)return'+61'+d;return'+'+d;}
-  function subscribeKlaviyo(entry){
-    if(!KLAVIYO_PUBLIC_KEY||!KLAVIYO_LIST_ID) return Promise.resolve('skipped');
-    const phone=toE164AU(entry.mobile);
-    const attrs={email:entry.email,first_name:entry.firstName,properties:{instagram:entry.instagram||'',interested_in:entry.product||'',source:'first-drop-page'},subscriptions:{email:{marketing:{consent:'SUBSCRIBED'}}}};
-    if(phone){attrs.phone_number=phone;if(entry.smsConsent){attrs.subscriptions.sms={marketing:{consent:'SUBSCRIBED'}};}}
-    const body={data:{type:'subscription',attributes:{custom_source:'First Drop Page',profile:{data:{type:'profile',attributes:attrs}}},relationships:{list:{data:{type:'list',id:KLAVIYO_LIST_ID}}}}};
-    return fetch('https://a.klaviyo.com/client/subscriptions/?company_id='+encodeURIComponent(KLAVIYO_PUBLIC_KEY),{method:'POST',headers:{'Content-Type':'application/json','revision':'2025-07-15'},body:JSON.stringify(body)});
-  }
   function record(entry){
     try{
       const wl=JSON.parse(localStorage.getItem('axia_waitlist')||'[]'); wl.push(entry); localStorage.setItem('axia_waitlist',JSON.stringify(wl));
@@ -381,29 +367,15 @@
     const instagram=(function(){const v=(fd.get('instagram')||'').trim();return v==='@'?'':v;})();
     const entry={ firstName, email, mobile, productId, productName, size, instagram, emailConsent, smsConsent:$('#cSms').checked, at:new Date().toISOString() };
     record(entry);
-    const payload={
-      _subject:'AXIA - REGISTRATION - '+firstName+' · '+productName,
-      _template:'table',
-      _captcha:'false',
-      Category:'Registration (First Access)',
-      Name:firstName, Email:email, Mobile:mobile,
-      'Preferred product':productName, 'Preferred size / length':size,
-      Instagram:instagram||'-',
-      'Email consent':emailConsent?'Yes':'No',
-      'SMS consent':entry.smsConsent?'Yes':'No',
-      Submitted:entry.at
-    };
     const orig=submitBtn.textContent; submitBtn.disabled=true; submitBtn.textContent='Joining…';
-    /* FormSubmit is a best-effort owner notification (can be flaky); never let it block the signup. */
-    const fsOk=fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(payload)})
-      .then(r=>r.json().catch(()=>({})).then(d=>r.ok&&String(d.success)==='true')).catch(()=>false);
-    /* Klaviyo is the source of truth: subscribes them + fires the welcome flow. */
-    const kEntry={firstName,email,mobile,instagram,product:productName+(size?(' · '+size):''),smsConsent:entry.smsConsent};
-    let ok=false;
-    if(KLAVIYO_PUBLIC_KEY&&KLAVIYO_LIST_ID){
-      try{ const kr=await subscribeKlaviyo(kEntry); ok=!!(kr&&kr.ok); }catch(e){ ok=false; }
-      if(!ok) ok=await fsOk;
-    } else { ok=await fsOk; }
+    let ok=true;
+    try{
+      await window.AXIA_DB.add('signups',{
+        firstName:firstName.slice(0,80), email:email.toLowerCase().slice(0,200), mobile:mobile.slice(0,30),
+        instagram:instagram.slice(0,60), productId:String(productId).slice(0,120), productName:productName.slice(0,160),
+        size:String(size).slice(0,40), emailConsent, smsConsent:entry.smsConsent, source:'first-drop', page:location.pathname.slice(0,200)
+      });
+    }catch(ex){ ok=false; if(window.console) console.error(ex); }
     submitBtn.disabled=false; submitBtn.textContent=orig;
     if(!ok){ fail('Something stopped that from sending. Please try again, or email '+INBOX+'.'); return; }
     $('#okEmail').textContent=email;

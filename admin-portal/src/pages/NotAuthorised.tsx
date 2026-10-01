@@ -5,8 +5,8 @@ export default function NotAuthorised() {
   const { user, refresh, logout } = useAuth();
   const [checking, setChecking] = useState(false);
   return (
-    <div className="login">
-      <div className="card">
+    <div className="loading-screen">
+      <div className="card" style={{ width: 'min(440px, calc(100vw - 32px))', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <h1>No admin access</h1>
         <p>You’re signed in as <b>{user?.email}</b>, but this account isn’t an AXIA admin yet.</p>
         <p>The owner can grant access from the repo with:</p>

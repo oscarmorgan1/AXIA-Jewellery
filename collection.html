@@ -318,9 +318,18 @@
   const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
   const fmtA=n=>'A$'+n.toLocaleString('en-AU');
   const P=(window.AXIA_PRODUCTS||[]).slice();
-  const cat=p=> p.bundle?'Sets': p.coll.includes('titans')?'Titans': p.coll.includes('pendants')?'Pendants': p.coll.includes('tennis')?'Tennis':'Cuban';
+  /* Shop tabs come from the collections managed in the admin portal (window.AXIA_COLLECTIONS). */
+  const COLS=(window.AXIA_COLLECTIONS||[]).filter(c=>c.showInShop);
+  const colBy=v=>COLS.find(c=>c.slug===v||String(c.tab||c.name).toLowerCase()===String(v).toLowerCase()||c.name.toLowerCase()===String(v).toLowerCase());
+  const inCol=(p,slug)=>(p.coll||[]).includes(slug);
+  const tabLabel=c=>c.tab||c.name.replace(/^The /,'');
+  (function buildTabs(){
+    if(!COLS.length) return;
+    const html='<button class="fpill is-active" data-val="All">All</button>'+COLS.map(c=>'<button class="fpill fpill--'+c.slug+'" data-val="'+c.slug+'">'+tabLabel(c).replace(/[&<>"]/g,'')+'</button>').join('');
+    $$('[data-filter="cat"]').forEach(g=>{ const row=g.querySelector('.row')||g; $$('.fpill',row).forEach(b=>b.remove()); row.insertAdjacentHTML('beforeend',html); });
+  })();
   const state={cat:'All',sort:'featured',q:'',width:''};
-  const kw=p=>[p.name,p.width,p.cat,p.cons,(p.col||[]).join(' '),(p.coll||[]).join(' '),cat(p)].join(' ').toLowerCase();
+  const kw=p=>[p.name,p.width,p.cat,p.cons,(p.col||[]).join(' '),(p.coll||[]).join(' '),(p.coll||[]).map(s=>(colBy(s)||{}).name||'').join(' ')].join(' ').toLowerCase();
   const featEl=document.querySelector('.featured');
   function updateHead(){
     const T=$('#colTitle'),C=$('#colCrumb'),I=$('#colIntro');
@@ -336,17 +345,10 @@
       if(I)I.innerHTML='Showing everything that matches <strong>'+esc+'</strong>. <a class="link-u" href="collection.html">Clear search →</a>';
       if(featEl)featEl.style.display='none';
     } else if(state.cat && state.cat!=='All'){
-      const NAMES={Cuban:'The Cuban',Tennis:'Tennis',Pendants:'Pendants',Sets:'Sets'};
-      const INTROS={
-        Cuban:'The foundation of AXIA. Hand-set, made to be worn every day.',
-        Tennis:'Clean lines, wall to wall brilliance. Hand-set in 925 silver.',
-        Pendants:'The cross, on its own or on a chain.',
-        Sets:'Matched pieces, bought together for less.'
-      };
-      const nm=NAMES[state.cat]||state.cat;
-      if(T)T.textContent=nm;
-      if(C)C.textContent=nm;
-      if(I)I.textContent=(INTROS[state.cat]||'');
+      const col=colBy(state.cat)||{name:state.cat,intro:''};
+      if(T)T.textContent=col.name;
+      if(C)C.textContent=col.name;
+      if(I)I.textContent=(col.intro||'');
       if(featEl)featEl.style.display='none';
     } else {
       if(T)T.textContent='Shop All';
@@ -374,7 +376,7 @@
     let list=P.slice().filter(p=>!p.hidden); // hidden products (per-width variants rolled into a combined listing) stay out of the grid
     if(state.width) list=list.filter(p=>p.width===state.width);
     else if(state.q){ const qq=state.q.toLowerCase(); list=list.filter(p=>kw(p).includes(qq)); }
-    if(state.cat!=='All') list=list.filter(p=>cat(p)===state.cat);
+    if(state.cat!=='All') list=list.filter(p=>inCol(p,state.cat));
     if(state.sort==='low') list.sort((a,b)=>a.fromPriceAUD-b.fromPriceAUD);
     else if(state.sort==='high') list.sort((a,b)=>b.fromPriceAUD-a.fromPriceAUD);
     else list.sort((a,b)=> (a.level-b.level) || ((b.badge==='Bestseller')-(a.badge==='Bestseller')) || (a.fromPriceAUD-b.fromPriceAUD));
@@ -383,7 +385,7 @@
       grid.innerHTML='<p class="empty-note" style="grid-column:1/-1">Nothing here right now. <a class="link-u" href="collection.html">View everything →</a></p>';
     } else grid.innerHTML=list.map(p=>{
       const price=(p.singlePrice?'':'From ')+fmtA(p.fromPriceAUD);
-      if(p.id==='the-ascendant' && state.cat==='Titans'){
+      if(p.id==='the-ascendant' && state.cat==='titans'){
         return '<a class="card card--apex" href="'+(p.linkTo||'product.html?id='+p.id)+'"><div class="card__media">'+badge(p)+media(p)+'<span class="card__edge"></span></div><div class="card__body"><span class="card__eyebrow">The apex of AXIA</span><div class="card__name">'+p.name+'</div><div class="card__meta">'+metaText(p)+'</div><div class="card__price num">'+price+'</div><span class="card__cta">Meet the Ascendant →</span></div></a>';
       }
       return '<a class="card" href="'+(p.linkTo||'product.html?id='+p.id)+'"><div class="card__media">'+badge(p)+media(p)+'<span class="card__edge"></span></div><div class="card__body"><div class="card__name">'+p.name+'</div><div class="card__meta">'+metaText(p)+'</div><div class="card__price num">'+price+'</div></div></a>';
@@ -433,7 +435,7 @@
   if($('#featChain')) window.AXIA_art.drape($('#featChain'),{yTop:170,yBot:470,w:88,h:66,n:16,iced:true});
   const params=new URLSearchParams(location.search);
   const qCat=params.get('cat');
-  if(qCat){ const valid=['Sets','Cuban','Tennis','Pendants']; const m=valid.find(v=>v.toLowerCase()===qCat.toLowerCase()); if(m){ state.cat=m; $$('[data-filter="cat"] .fpill').forEach(x=>x.classList.toggle('is-active',x.dataset.val===m)); } }
+  if(qCat){ const m=colBy(qCat); if(m){ state.cat=m.slug; $$('[data-filter="cat"] .fpill').forEach(x=>x.classList.toggle('is-active',x.dataset.val===m.slug)); } }
   const qSort=params.get('sort');
   if(qSort && ['low','high','featured'].includes(qSort)){ state.sort=qSort; const so=$('#sort'); if(so)so.value=qSort; $$('[data-filter="sortg"] .fpill').forEach(x=>x.classList.toggle('is-active',x.dataset.val===qSort)); }
   const qWidth=(params.get('width')||'').trim();

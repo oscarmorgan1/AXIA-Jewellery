@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Lock, Plus, Trash2 } from 'lucide-react';
 import { doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { db, siteUrl } from '../firebase';
-import { useAssumptions, useProducts } from '../lib/data';
+import { useAssumptions, useCollections, useProducts } from '../lib/data';
 import { allPrices, slugify, statusOf, withDerivedPrices } from '../lib/catalogue';
 import { economics, retailAtSize } from '../lib/economics';
 import { aud, pct, timeAgo } from '../lib/format';
@@ -12,7 +12,6 @@ import VariantsTable from '../components/VariantsTable';
 import { useToast } from '../components/Toast';
 import type { Product, ProductCost, WidthOption } from '../types';
 
-const COLLECTIONS = ['cuban', 'tennis', 'titans', 'pendants'];
 const BLANK: Product = {
   id: '', name: '', desc: '', cat: 'bracelet', coll: ['cuban'], col: ['Silver'], art: 'cuban', level: 1,
   badge: null, width: null, cons: null, mto: false, hidden: true, images: [], variants: [{ length: '7"', priceAUD: 0 }],
@@ -40,6 +39,7 @@ export default function ProductEdit() {
   const toast = useToast();
   const { data: products } = useProducts();
   const { data: assumptions } = useAssumptions();
+  const { data: collections } = useCollections();
 
   const [draft, setDraft] = useState<Product | null>(isNew ? { ...BLANK } : null);
   const [cost, setCost] = useState<Partial<ProductCost>>({});
@@ -185,12 +185,17 @@ export default function ProductEdit() {
               <label className="field">Colours (comma separated)<input className="input" value={(draft.col || []).join(', ')} onChange={e => set({ col: list(e.target.value) })} /></label>
               <label className="field">Stone<input className="input" value={draft.stone ?? ''} placeholder="e.g. VVS D-colour moissanite" onChange={e => set({ stone: e.target.value || undefined })} /></label>
               <div className="field full">Collections
-                <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', paddingTop: 4 }}>
-                  {COLLECTIONS.map(c => (
-                    <label key={c} className="check"><input type="checkbox" checked={(draft.coll || []).includes(c)}
-                      onChange={e => set({ coll: e.target.checked ? [...(draft.coll || []), c] : (draft.coll || []).filter(x => x !== c) })} />
-                      {c[0].toUpperCase() + c.slice(1)}</label>
-                  ))}
+                <div className="tags" style={{ paddingTop: 4 }}>
+                  {collections.map(c => {
+                    const on = (draft.coll || []).includes(c.slug);
+                    return (
+                      <button type="button" key={c.slug} className={`tag-toggle${on ? ' on' : ''}`}
+                        onClick={() => set({ coll: on ? (draft.coll || []).filter(x => x !== c.slug) : [...(draft.coll || []), c.slug] })}>
+                        {c.name}
+                      </button>
+                    );
+                  })}
+                  <Link to="/collections" className="tag-toggle" style={{ borderStyle: 'dashed' }}>+ New collection</Link>
                 </div>
               </div>
             </div>

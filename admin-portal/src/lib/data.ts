@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { collection, doc, onSnapshot, type DocumentData } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { CostAssumptions, Order, Product, ProductCost } from '../types';
+import type { Collection, CostAssumptions, Message, Order, Product, ProductCost, Signup } from '../types';
 import { DEFAULT_ASSUMPTIONS } from './economics';
 
 interface Live<T> { data: T; loading: boolean; error: Error | null }
@@ -40,4 +40,23 @@ export function useAssumptions(): Live<CostAssumptions> {
     error => setState(s => ({ ...s, loading: false, error })),
   ), []);
   return state;
+}
+
+const byNewest = <T extends { createdAt?: { toDate(): Date } }>(a: T, b: T) =>
+  (b.createdAt?.toDate().getTime() ?? 0) - (a.createdAt?.toDate().getTime() ?? 0);
+
+export function useCollections() {
+  const s = useLiveCollection<Collection>('collections', (id, d) => ({ ...(d as Collection), slug: id }));
+  const data = [...s.data].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+  return { ...s, data, bySlug: new Map(data.map(c => [c.slug, c])) };
+}
+
+export function useSignups() {
+  const s = useLiveCollection<Signup>('signups', (id, d) => ({ ...(d as Signup), id }));
+  return { ...s, data: [...s.data].sort(byNewest) };
+}
+
+export function useMessages() {
+  const s = useLiveCollection<Message>('messages', (id, d) => ({ ...(d as Message), id }));
+  return { ...s, data: [...s.data].sort(byNewest) };
 }

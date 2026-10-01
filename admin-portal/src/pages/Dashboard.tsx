@@ -1,101 +1,186 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BadgePercent, DollarSign, Gem, ShoppingCart } from 'lucide-react';
+import { Activity, BadgePercent, Gem, Inbox as InboxIcon, Mail, Package, PenLine, Sparkles, UserPlus, Users } from 'lucide-react';
 import StatCard from '../components/StatCard';
-import { BarChart, StackedBars } from '../components/Charts';
-import { useAssumptions, useCosts, useOrders, useProducts } from '../lib/data';
-import { collectionOf, statusOf, type Collection } from '../lib/catalogue';
+import CountUp from '../components/CountUp';
+import Donut from '../components/Donut';
+import { BarChart } from '../components/Charts';
+import { useAssumptions, useCollections, useCosts, useMessages, useProducts, useSignups } from '../lib/data';
+import { collectionLabel, firstImage, primaryCollection, statusOf } from '../lib/catalogue';
 import { productEconomics } from '../lib/economics';
 import { aud, pct } from '../lib/format';
-import { usingEmulators } from '../firebase';
-import { OrdersTable } from './Orders';
+import { siteUrl, usingEmulators } from '../firebase';
 
-const COLLECTIONS: Collection[] = ['Cuban', 'Tennis', 'Titans', 'Pendants', 'Sets'];
-const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+export const PALETTE = ['var(--bar-strong)', '#2A6076', '#9FD3EA', '#F3436E', '#B7BDC5', '#6E7781', '#E3DED1'];
+const DAY = 86400000;
+const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN);
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+
+function ago(d?: Date) {
+  if (!d) return '';
+  const s = (Date.now() - d.getTime()) / 1000;
+  if (s < 60) return 'just now';
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+}
 
 export default function Dashboard() {
   const { data: products, loading } = useProducts();
+  const { data: collections } = useCollections();
   const { byId: costs } = useCosts();
   const { data: assumptions } = useAssumptions();
-  const { data: orders } = useOrders();
-  const [scope, setScope] = useState<'live' | 'all'>('live');
+  const { data: signups } = useSignups();
+  const { data: messages } = useMessages();
+  const [range, setRange] = useState<'daily' | 'weekly'>('daily');
 
-  const stats = useMemo(() => {
+  const s = useMemo(() => {
     const active = products.filter(p => !p.archived);
     const live = active.filter(p => statusOf(p) === 'Live');
-    const inScope = scope === 'live' ? live : active;
-    const econ = inScope.map(p => ({ p, e: productEconomics(p, costs.get(p.id), assumptions) })).filter(x => x.e);
-    const byColl = COLLECTIONS.map(c => {
-      const ps = inScope.filter(p => collectionOf(p) === c);
-      const es = econ.filter(x => collectionOf(x.p) === c).map(x => x.e!);
-      return {
-        label: c,
-        count: ps.length,
-        avgPrice: avg(ps.map(p => p.fromPriceAUD || 0)),
-        avgCost: avg(es.map(e => e.factoryCostAUD)),
-        avgMargin: avg(es.map(e => e.grossProfitAUD)),
-      };
-    }).filter(c => c.count > 0);
-    const paid = orders.filter(o => o.status === 'paid' || o.status === 'fulfilled');
+    const econ = live.map(p => productEconomics(p, costs.get(p.id), assumptions)).filter(Boolean);
+    const emails = new Set(signups.map(x => x.email.toLowerCase()));
+    const weekAgo = Date.now() - 7 * DAY;
+    const newThisWeek = new Set(signups.filter(x => (x.createdAt?.toDate().getTime() ?? 0) > weekAgo).map(x => x.email.toLowerCase())).size;
+
+    // sign-ups chart
+    const today = startOfDay(new Date());
+    const buckets = range === 'daily'
+      ? Array.from({ length: 14 }, (_, i) => { const t = today - (13 - i) * DAY; return { from: t, to: t + DAY, label: new Date(t).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }).replace(' ', ' ') }; })
+      : Array.from({ length: 8 }, (_, i) => { const t = today - (7 - i) * 7 * DAY - 6 * DAY; return { from: t, to: t + 7 * DAY, label: new Date(t).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) }; });
+    const series = buckets.map(b => ({
+      label: range === 'daily' ? b.label.split(' ')[0] : b.label,
+      value: signups.filter(x => { const t = x.createdAt?.toDate().getTime() ?? 0; return t >= b.from && t < b.to; }).length,
+    }));
+
+    // collections donut (live pieces per shop collection)
+    const shopCols = collections.filter(c => c.showInShop);
+    const counts = shopCols.map(c => ({ c, n: live.filter(p => (p.coll || []).includes(c.slug)).length })).filter(x => x.n > 0);
+    const donut = counts.map((x, i) => ({ label: collectionLabel(x.c), value: x.n, color: PALETTE[i % PALETTE.length] }));
+
+    // most wanted (sign-up interest by product)
+    const want = new Map<string, number>();
+    signups.forEach(x => { if (x.productId) want.set(x.productId, (want.get(x.productId) || 0) + 1); });
+    const wanted = [...want.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6)
+      .map(([id, n]) => ({ p: products.find(p => p.id === id), id, n })).filter(x => x.p);
+    const fallbackTop = live.slice().sort((a, b) => (b.fromPriceAUD || 0) - (a.fromPriceAUD || 0)).slice(0, 6);
+
+    // activity feed
+    const feed = [
+      ...signups.slice(0, 8).map(x => ({ t: x.createdAt?.toDate(), icon: <UserPlus size={18} />, tone: 'ice', title: `${x.firstName} joined the waitlist`, sub: x.productName || x.email, to: `/customers?q=${encodeURIComponent(x.email)}` })),
+      ...messages.slice(0, 6).map(m => ({ t: m.createdAt?.toDate(), icon: <Mail size={18} />, tone: m.status === 'done' ? '' : 'magenta', title: `${m.topic} from ${m.name}`, sub: m.message.slice(0, 70), to: '/inbox' })),
+      ...products.filter(p => p.updatedAt).slice().sort((a, b) => ((b.updatedAt as { toMillis?: () => number })?.toMillis?.() ?? 0) - ((a.updatedAt as { toMillis?: () => number })?.toMillis?.() ?? 0)).slice(0, 4)
+        .map(p => ({ t: (p.updatedAt as { toDate?: () => Date })?.toDate?.(), icon: <PenLine size={18} />, tone: '', title: `${p.name} updated`, sub: statusOf(p), to: `/products/${encodeURIComponent(p.id)}` })),
+    ].filter(x => x.t).sort((a, b) => b.t!.getTime() - a.t!.getTime()).slice(0, 6);
+
     return {
-      active, live, inScope, byColl,
-      comingSoon: active.filter(p => p.hidden).length,
-      avgPrice: avg(inScope.map(p => p.fromPriceAUD || 0)),
-      avgGross: avg(econ.map(x => x.e!.grossMarginPct)),
-      avgContribution: avg(econ.map(x => x.e!.contributionMarginPct)),
-      costed: econ.length,
-      revenue: paid.reduce((a, o) => a + (o.totalAUD || 0), 0),
-      paidCount: paid.length,
+      active, live, emails, newThisWeek, series, donut, wanted, fallbackTop, feed,
+      unread: messages.filter(m => m.status !== 'done').length,
+      avgGross: avg(econ.map(e => e!.grossMarginPct)),
     };
-  }, [products, costs, assumptions, orders, scope]);
+  }, [products, collections, costs, assumptions, signups, messages, range]);
+
+  const hello = new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening';
 
   return (
     <>
       <div className="page-head">
-        <h1>Store Overview</h1>
+        <div>
+          <h1>{hello}</h1>
+          <p className="lede" style={{ margin: 0 }}>Here’s what’s happening across AXIA.</p>
+        </div>
         <span className="spacer" />
         <span className={`env-badge${usingEmulators ? '' : ' env-badge--live'}`}>{usingEmulators ? 'Local emulators' : 'Live data'}</span>
-        <div className="segmented" role="tablist">
-          <button className={scope === 'live' ? 'on' : ''} onClick={() => setScope('live')}>Live pieces</button>
-          <button className={scope === 'all' ? 'on' : ''} onClick={() => setScope('all')}>Incl. coming soon</button>
-        </div>
+        <Link to="/products/new" className="btn btn--primary"><Sparkles size={16} /> New product</Link>
       </div>
 
-      <div className="grid-4">
-        <StatCard label="Products on sale" value={loading ? '…' : stats.live.length} icon={<Gem size={20} />}
-          chip={<span className="chip chip--muted">{stats.active.length} total</span>}
-          foot={<>Coming soon: <b>{stats.comingSoon}</b></>} />
-        <StatCard label="Average from-price" value={aud(stats.avgPrice)} icon={<DollarSign size={20} />}
-          foot={<>Across <b>{stats.inScope.length}</b> pieces</>} />
-        <StatCard label="Avg gross margin" value={pct(stats.avgGross)} icon={<BadgePercent size={20} />}
-          chip={<span className="chip chip--good">{pct(stats.avgContribution)} contrib.</span>}
-          foot={<>{stats.costed} of {stats.inScope.length} pieces costed · <Link to="/margins" style={{ color: 'var(--accent)' }}>details</Link></>} />
-        <StatCard label="Revenue" value={aud(stats.revenue, 2)} icon={<ShoppingCart size={20} />}
-          foot={stats.paidCount ? <>Paid orders: <b>{stats.paidCount}</b></> : <>Awaiting Stripe checkout</>} />
+      <div className="grid-4 stagger">
+        <StatCard tone="dark" label="Products on sale" icon={<Gem size={22} />}
+          value={loading ? '…' : <CountUp value={s.live.length} />} foot={<><b>{s.active.length - s.live.length}</b> not on sale yet</>} />
+        <StatCard tone="ice" label="Customers" icon={<Users size={22} />}
+          value={<CountUp value={s.emails.size} />} foot={<><b>+{s.newThisWeek}</b> this week</>} />
+        <StatCard tone={s.unread ? 'magenta' : ''} label="Unread messages" icon={<InboxIcon size={22} />}
+          value={<CountUp value={s.unread} />} foot={<Link to="/inbox" style={{ color: 'var(--accent)' }}>Open inbox</Link>} />
+        <StatCard tone="good" label="Avg gross margin" icon={<BadgePercent size={22} />}
+          value={<CountUp value={s.avgGross} format={n => pct(n)} />} foot={<Link to="/margins" style={{ color: 'var(--accent)' }}>See margins</Link>} />
       </div>
 
       <div className="grid-2">
         <div className="card">
-          <div className="card__head"><h2>Average price by collection</h2></div>
-          <BarChart data={stats.byColl.map(c => ({ label: c.label, value: Math.round(c.avgPrice) }))} format={n => aud(n)} />
+          <div className="card__head">
+            <div className="card__title"><Activity size={18} /><h2>Waitlist sign-ups</h2></div>
+            <span className="spacer" />
+            <div className="segmented">
+              <button className={range === 'daily' ? 'on' : ''} onClick={() => setRange('daily')}>Daily</button>
+              <button className={range === 'weekly' ? 'on' : ''} onClick={() => setRange('weekly')}>Weekly</button>
+            </div>
+          </div>
+          <BarChart key={range} data={s.series} format={n => `${n} sign-up${n === 1 ? '' : 's'}`} />
         </div>
         <div className="card">
           <div className="card__head">
-            <div><h2>Cost and margin</h2><div className="card__sub">Average per piece at its quoted size. Admins only.</div></div>
+            <div className="card__title"><Package size={18} /><h2>Collections</h2></div>
+            <span className="spacer" /><Link to="/collections" className="btn btn--sm">Manage</Link>
           </div>
-          <div className="chart-inset">
-            <div className="card__head" style={{ marginBottom: 6 }}>
-              <b style={{ fontSize: 15, fontWeight: 500 }}>By collection</b><span className="spacer" />
-              <div className="legend"><span><i style={{ background: 'var(--accent)' }} />Margin</span><span><i style={{ background: 'var(--dark)' }} />Factory cost</span></div>
-            </div>
-            <StackedBars data={stats.byColl.filter(c => c.avgCost > 0).map(c => ({ label: c.label, bottom: c.avgCost, top: c.avgMargin }))} format={n => aud(n)} />
-          </div>
+          {s.donut.length ? (
+            <>
+              <Donut data={s.donut} centerLabel="Live pieces" centerValue={String(s.live.length)} />
+              <div className="rank">
+                {s.donut.map(d => (
+                  <div className="rank__row" key={d.label}>
+                    <i style={{ background: d.color }} /><span>{d.label}</span>
+                    <span>{d.value} piece{d.value === 1 ? '' : 's'}</span><b>{Math.round((d.value / s.donut.reduce((a, x) => a + x.value, 0)) * 100)}%</b>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : <div className="empty">No live pieces in shop collections yet.</div>}
         </div>
       </div>
 
-      <div className="card">
-        <div className="card__head"><h2>Recent orders</h2><span className="spacer" /><Link className="btn btn--sm" to="/orders">View all</Link></div>
-        <OrdersTable orders={orders.slice(0, 6)} empty="Checkout is still a preview. Paid Stripe orders will show up here." />
+      <div className="grid-2" style={{ gridTemplateColumns: 'minmax(0,1fr) minmax(0,1.4fr)' }}>
+        <div className="card">
+          <div className="card__head"><div className="card__title"><Activity size={18} /><h2>Recent activity</h2></div><span className="spacer" /><Link to="/customers" className="btn btn--sm">See all</Link></div>
+          {s.feed.length ? (
+            <div className="feed">
+              {s.feed.map((f, i) => (
+                <Link key={i} to={f.to} className="feed__item">
+                  <span className={`feed__icon stat__icon--${f.tone || 'x'}`}>{f.icon}</span>
+                  <div className="feed__body"><b>{f.title}</b><small>{f.sub}</small></div>
+                  <small style={{ color: 'var(--faint)', whiteSpace: 'nowrap' }}>{ago(f.t)}</small>
+                </Link>
+              ))}
+            </div>
+          ) : <div className="empty"><b>Quiet so far</b>Sign-ups, messages and edits will show here.</div>}
+        </div>
+
+        <div className="card">
+          <div className="card__head">
+            <div className="card__title"><Gem size={18} /><h2>{s.wanted.length ? 'Most wanted' : 'Top pieces'}</h2></div>
+            <span className="spacer" /><span className="card__sub" style={{ margin: 0 }}>{s.wanted.length ? 'By waitlist interest' : 'Highest priced live pieces'}</span>
+          </div>
+          <div className="table-wrap">
+            <table className="table">
+              <thead><tr><th>Product</th><th>Collection</th><th className="num">From</th><th className="num">{s.wanted.length ? 'Interest' : 'Margin'}</th></tr></thead>
+              <tbody className="rows-anim">
+                {(s.wanted.length ? s.wanted.map(x => ({ p: x.p!, n: x.n as number | null })) : s.fallbackTop.map(p => ({ p, n: null }))).map(({ p, n }) => {
+                  const img = firstImage(p);
+                  const e = productEconomics(p, costs.get(p.id), assumptions);
+                  return (
+                    <tr key={p.id}>
+                      <td><Link to={`/products/${encodeURIComponent(p.id)}`} className="prod-cell">
+                        {img ? <img className="thumb" src={siteUrl(img)} alt="" loading="lazy" /> : <span className="thumb" />}
+                        <div>{p.name}<small>{p.width || p.id}</small></div>
+                      </Link></td>
+                      <td>{collectionLabel(primaryCollection(p, collections))}</td>
+                      <td className="num">{aud(p.fromPriceAUD)}</td>
+                      <td className="num">{n != null ? <span className="chip chip--ice">{n} sign-up{n === 1 ? '' : 's'}</span> : e ? pct(e.grossMarginPct) : '–'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </>
   );

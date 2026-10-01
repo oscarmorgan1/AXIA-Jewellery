@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
-import { useAssumptions, useCosts, useProducts } from '../lib/data';
-import { collectionOf, firstImage, statusOf, type Status } from '../lib/catalogue';
+import { useAssumptions, useCollections, useCosts, useProducts } from '../lib/data';
+import { collectionLabel, firstImage, primaryCollection, statusOf, type Status } from '../lib/catalogue';
 import { productEconomics } from '../lib/economics';
 import { aud, pct, timeAgo } from '../lib/format';
 import { siteUrl } from '../firebase';
@@ -13,6 +13,7 @@ type Filter = 'all' | 'live' | 'soon' | 'archived';
 export default function Products() {
   const { data: products, loading, error } = useProducts();
   const { byId: costs } = useCosts();
+  const { data: collections } = useCollections();
   const { data: assumptions } = useAssumptions();
   const [params, setParams] = useSearchParams();
   const nav = useNavigate();
@@ -28,16 +29,17 @@ export default function Products() {
       if (filter === 'live' && st !== 'Live') return false;
       if (filter === 'soon' && st !== 'Coming soon') return false;
       if (filter === 'archived' && st !== 'Archived') return false;
-      if (coll && collectionOf(p) !== coll) return false;
+      if (coll && !(p.coll || []).includes(coll)) return false;
       if (s && !`${p.name} ${p.id} ${p.width || ''} ${(p.col || []).join(' ')} ${p.badge || ''}`.toLowerCase().includes(s)) return false;
       return true;
     });
   }, [products, filter, coll, q]);
+  const counts = { all: products.filter(p => !p.archived).length, live: products.filter(p => statusOf(p) === 'Live').length, soon: products.filter(p => statusOf(p) === 'Coming soon').length, archived: products.filter(p => p.archived).length };
 
   return (
     <>
       <div className="page-head">
-        <h1>Store</h1>
+        <h1>Products</h1>
         <span className="spacer" />
         <Link to="/products/new" className="btn btn--primary"><Plus size={16} /> Add product</Link>
       </div>
@@ -45,12 +47,12 @@ export default function Products() {
         <div className="card__head">
           <div className="segmented">
             {([['all', 'All'], ['live', 'Live'], ['soon', 'Coming soon'], ['archived', 'Archived']] as [Filter, string][]).map(([k, l]) => (
-              <button key={k} className={filter === k ? 'on' : ''} onClick={() => setFilter(k)}>{l}</button>
+              <button key={k} className={filter === k ? 'on' : ''} onClick={() => setFilter(k)}>{l} <span style={{ opacity: .55 }}>{counts[k]}</span></button>
             ))}
           </div>
           <select className="select" style={{ width: 170, borderRadius: 999 }} value={coll} onChange={e => setColl(e.target.value)} aria-label="Collection">
             <option value="">All collections</option>
-            {['Cuban', 'Tennis', 'Titans', 'Pendants', 'Sets'].map(c => <option key={c}>{c}</option>)}
+            {collections.map(c => <option key={c.slug} value={c.slug}>{c.name}</option>)}
           </select>
           <span className="spacer" />
           <div className="search"><Search size={16} />
@@ -64,7 +66,7 @@ export default function Products() {
               <th>Product</th><th>Collection</th><th>Status</th><th>Colours</th><th>Sizes</th>
               <th className="num">From</th><th className="num">Gross margin</th><th>Updated</th>
             </tr></thead>
-            <tbody>
+            <tbody className="rows-anim">
               {shown.map(p => {
                 const st = statusOf(p);
                 const e = productEconomics(p, costs.get(p.id), assumptions);
@@ -76,7 +78,7 @@ export default function Products() {
                       {img ? <img className="thumb" src={siteUrl(img)} alt="" loading="lazy" /> : <span className="thumb" />}
                       <div>{p.name}{p.width ? `, ${p.width}` : ''}<small>{p.id}{p.badge ? ` · ${p.badge}` : ''}</small></div>
                     </div></td>
-                    <td>{collectionOf(p)}</td>
+                    <td>{(p.coll || []).length ? <span className="chip chip--muted chip--plain">{collectionLabel(primaryCollection(p, collections))}{(p.coll || []).length > 1 ? ` +${p.coll!.length - 1}` : ''}</span> : '–'}</td>
                     <td><span className={`chip ${STATUS_CHIP[st]}`}>{st}</span></td>
                     <td>{(p.col || []).join(', ') || '–'}</td>
                     <td>{sizes || '–'}</td>

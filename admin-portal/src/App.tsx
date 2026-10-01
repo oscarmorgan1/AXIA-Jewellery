@@ -9,10 +9,13 @@ import ProductEdit from './pages/ProductEdit';
 import Margins from './pages/Margins';
 import Orders from './pages/Orders';
 import Settings from './pages/Settings';
+import Collections from './pages/Collections';
+import Customers from './pages/Customers';
+import InboxPage from './pages/Inbox';
 
 export default function App() {
   const { user, isAdmin, loading } = useAuth();
-  if (loading) return <div className="login"><p style={{ color: 'var(--muted)' }}>Loading…</p></div>;
+  if (loading) return <div className="loading-screen"><span className="brand__mark">A</span></div>;
   if (!user) return <Login />;
   if (!isAdmin) return <NotAuthorised />;
   return (
@@ -22,6 +25,9 @@ export default function App() {
         <Route path="products" element={<Products />} />
         <Route path="products/new" element={<ProductEdit />} />
         <Route path="products/:id" element={<ProductEdit />} />
+        <Route path="collections" element={<Collections />} />
+        <Route path="customers" element={<Customers />} />
+        <Route path="inbox" element={<InboxPage />} />
         <Route path="margins" element={<Margins />} />
         <Route path="orders" element={<Orders />} />
         <Route path="settings" element={<Settings />} />
