@@ -3,8 +3,11 @@
    Loads the live product catalogue from Firestore ("products" and
    "collections", edited in the admin portal at /admin) into
    window.AXIA_PRODUCTS and window.AXIA_COLLECTIONS, then runs the
-   page's scripts. Also provides window.AXIA_DB.add() so the public
-   forms can save sign-ups and messages to Firestore.
+   page's scripts. Also loads the site settings edited in the portal
+   (the launch countdown, from site/countdown) into window.AXIA_SITE,
+   with window.AXIA_CD.run() to drive the countdown on any page, and
+   provides window.AXIA_DB.add() so the public forms can save sign-ups
+   and messages to Firestore.
 
    Page scripts that read the catalogue are marked
    <script type="text/axia-deferred"> and run here, in document order,
@@ -21,7 +24,7 @@
   var PROJECT = 'axia-jewellery';
   var API_KEY = 'AIzaSyAXFXM3znoKUCD2ZPFfB8saBwV9r4eKItA'; // public web key; access is enforced by Firestore rules
   var FALLBACK = 'assets/data/products.js?v=20260930a';
-  var CACHE_KEY = 'axia_catalogue_v2', CACHE_TTL = 60 * 1000, TIMEOUT = 4000;
+  var CACHE_KEY = 'axia_catalogue_v3', CACHE_TTL = 60 * 1000, TIMEOUT = 9000;
 
   var q = new URLSearchParams(location.search).get('catalogue');
   var local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
@@ -38,6 +41,10 @@
     { slug: 'pendants', name: 'Pendants', intro: 'The cross, on its own or on a chain.', showInShop: true, sort: 40 },
     { slug: 'titans', name: 'The Titans', intro: '18mm. The apex of AXIA.', showInShop: false, sort: 50 }
   ];
+
+  /* Countdown used until the portal's settings load, or if they can't be
+     (mode: 'timer' counts down to target, 'text' shows text, 'off' hides it). */
+  var DEFAULT_COUNTDOWN = { mode: 'text', label: 'The First Drop', text: 'Dropping soon', target: '2026-11-20T19:00:00+11:00', endedText: 'Out now' };
 
   /* Firestore REST values -> plain JSON */
   function val(v) {
@@ -80,15 +87,24 @@
     return page();
   }
 
+  function getDoc(path, signal) {
+    return fetch(docsUrl(path) + keyParam('?'), { signal: signal }).then(function (r) {
+      if (r.status === 404) return null;
+      if (!r.ok) throw new Error('Firestore ' + path + ' ' + r.status);
+      return r.json().then(function (d) { return obj(d.fields || {}); });
+    });
+  }
+
   function fetchFirestore() {
     var ctrl = 'AbortController' in window ? new AbortController() : null;
     var signal = ctrl ? ctrl.signal : undefined;
     var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, TIMEOUT);
     var cols = listAll('collections', signal).catch(function () { return []; });
-    return Promise.all([listAll('products', signal), cols]).then(function (r) {
+    var cd = getDoc('site/countdown', signal).catch(function () { return null; });
+    return Promise.all([listAll('products', signal), cols, cd]).then(function (r) {
       clearTimeout(timer);
       if (!r[0].length) throw new Error('Firestore catalogue is empty');
-      return { p: tidy(r[0]), c: tidyCollections(r[1]) };
+      return { p: tidy(r[0]), c: tidyCollections(r[1]), s: { countdown: r[2] } };
     }, function (e) { clearTimeout(timer); throw e; });
   }
 
@@ -103,7 +119,7 @@
     return new Promise(function (resolve) {
       var s = document.createElement('script');
       s.src = FALLBACK;
-      s.onload = s.onerror = function () { resolve({ p: window.AXIA_PRODUCTS || [], c: DEFAULT_COLLECTIONS.slice() }); };
+      s.onload = s.onerror = function () { resolve({ p: window.AXIA_PRODUCTS || [], c: DEFAULT_COLLECTIONS.slice(), s: {} }); };
       document.head.appendChild(s);
     });
   }
@@ -111,11 +127,11 @@
   function readCache() {
     try {
       var c = JSON.parse(sessionStorage.getItem(CACHE_KEY));
-      if (c && c.src === source && Date.now() - c.t < CACHE_TTL && Array.isArray(c.p) && Array.isArray(c.c)) return { p: c.p, c: c.c };
+      if (c && c.src === source && Date.now() - c.t < CACHE_TTL && Array.isArray(c.p) && Array.isArray(c.c)) return { p: c.p, c: c.c, s: c.s || {} };
     } catch (e) {}
     return null;
   }
-  function writeCache(d) { try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), src: source, p: d.p, c: d.c })); } catch (e) {} }
+  function writeCache(d) { try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), src: source, p: d.p, c: d.c, s: d.s })); } catch (e) {} }
 
   var cached = source === 'static' ? null : readCache();
   var catalogue = cached ? Promise.resolve(cached)
@@ -184,10 +200,42 @@
     }
   };
 
+  /* ---- Launch countdown (Admin > Settings > Countdown) ----
+     AXIA_CD.run(cb) calls cb(state) straight away and, for a running timer,
+     every second after. state.mode is 'timer' (with d, h, m, s as two-digit
+     strings), 'text' (show state.text), or 'off' (hide the countdown).
+     When a timer reaches zero it switches to 'text' with the "ended" text. */
+  function countdownSettings() {
+    var c = (window.AXIA_SITE && window.AXIA_SITE.countdown) || {}, out = {};
+    for (var k in DEFAULT_COUNTDOWN) out[k] = (c[k] !== undefined && c[k] !== null && c[k] !== '') ? c[k] : DEFAULT_COUNTDOWN[k];
+    if (c.mode) out.mode = c.mode;
+    return out;
+  }
+  window.AXIA_CD = {
+    settings: countdownSettings,
+    run: function (cb) {
+      var c = countdownSettings(), target = Date.parse(c.target), iv = null;
+      var base = { label: c.label, href: 'first-drop.html' };
+      function emit(extra) { var o = {}; for (var k in base) o[k] = base[k]; for (k in extra) o[k] = extra[k]; try { cb(o); } catch (e) { if (window.console) console.error(e); } }
+      if (c.mode === 'off') return emit({ mode: 'off' });
+      if (c.mode !== 'timer' || isNaN(target)) return emit({ mode: 'text', text: c.text });
+      var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+      function step() {
+        var diff = target - Date.now();
+        if (diff <= 0) { if (iv) clearInterval(iv); return emit({ mode: 'text', text: c.endedText, ended: true }); }
+        var t = Math.floor(diff / 1000);
+        emit({ mode: 'timer', d: pad(Math.floor(t / 86400)), h: pad(Math.floor(t % 86400 / 3600)), m: pad(Math.floor(t % 3600 / 60)), s: pad(t % 60) });
+      }
+      step();
+      if (target - Date.now() > 0) iv = setInterval(step, 1000);
+    }
+  };
+
   window.AXIA_SOURCE = source;
   window.AXIA_READY = Promise.all([catalogue, domReady]).then(function (r) {
     window.AXIA_PRODUCTS = r[0].p;
     window.AXIA_COLLECTIONS = r[0].c;
+    window.AXIA_SITE = r[0].s || {};
     return runDeferred();
   }).then(function () {
     document.dispatchEvent(new CustomEvent('axia:catalogue', { detail: { products: window.AXIA_PRODUCTS, collections: window.AXIA_COLLECTIONS, source: source } }));

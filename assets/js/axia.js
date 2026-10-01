@@ -322,35 +322,36 @@
    Skipped on the First Drop page, and on any page that already has one. */
 /* Sticky countdown banner, site-wide. Takes the give-strip's pinned top slot so the nav/announce
    offsets (var(--give-h)) already account for it. Skipped where a page has its own countdown
-   (first-drop hero, cuban's ccd, the landing's big bar). KEEP TARGET in sync with those pages. */
+   (first-drop hero, cuban's ccd, the landing's big bar). The date, text and on/off switch are
+   set in the admin portal (Settings > Countdown) and arrive through catalogue.js (AXIA_CD). */
 (function () {
   try {
     var page = (location.pathname.split('/').pop() || '').replace(/\.html$/, '');
     if (page === 'first-drop' || page === 'cuban' || page === 'index' || page === '' || page === 'about' || page === 'support' || page === 'product' || page === 'collection') return;
-    if (document.querySelector('.give-strip, .cdbar')) return;
-    var TARGET = new Date('2026-11-20T19:00:00+11:00').getTime(); /* PLACEHOLDER launch date - keep in sync with index/store/first-drop/cuban */
-    if (!TARGET) return;
-    var a = document.createElement('a');
-    a.className = 'give-strip cdbar'; a.href = 'first-drop.html';
-    /* LAUNCH TIMER NOT LIVE YET: the bar reads "Dropping soon" instead of a countdown.
-       To go live, restore the <b id="scd-d">.. timer markup and the tick() loop below. */
-    var LIVE = false;
-    if (LIVE) {
-      a.innerHTML = '<span class="cdbar__eye">The First Drop lands in</span><span class="cdbar__t"><b id="scd-d">--</b><i>d</i> <b id="scd-h">--</b><i>h</i> <b id="scd-m">--</b><i>m</i> <b id="scd-s">--</b><i>s</i></span><span class="cdbar__cta">Register &rarr;</span>';
-    } else {
-      a.innerHTML = '<span class="cdbar__eye">The First Drop</span><span class="cdbar__t">Dropping soon</span><span class="cdbar__cta">Register &rarr;</span>';
-    }
-    /* order: AXIA nav on top, announce carousel in the middle, countdown underneath */
-    var ann = document.querySelector('.announce');
-    if (ann && ann.parentNode) ann.parentNode.insertBefore(a, ann.nextSibling);
-    else document.body.insertBefore(a, document.body.firstChild);
-    document.documentElement.classList.add('has-cdbar');
-    if (LIVE) {
-      var d = a.querySelector('#scd-d'), h = a.querySelector('#scd-h'), m = a.querySelector('#scd-m'), s = a.querySelector('#scd-s');
-      var p = function(n){ return (n<10?'0':'')+n; };
-      var tick = function(){ var diff=TARGET-Date.now(); if(diff<0)diff=0; var t=Math.floor(diff/1000); d.textContent=p(Math.floor(t/86400)); h.textContent=p(Math.floor(t%86400/3600)); m.textContent=p(Math.floor(t%3600/60)); s.textContent=p(t%60); };
-      tick(); setInterval(tick, 1000);
-    }
+    if (document.querySelector('.give-strip, .cdbar') || !window.AXIA_CD) return;
+    var a = null, built = '';
+    window.AXIA_CD.run(function (st) {
+      if (st.mode === 'off') return;
+      if (!a) {
+        a = document.createElement('a');
+        a.className = 'give-strip cdbar'; a.href = st.href;
+        /* order: AXIA nav on top, announce carousel in the middle, countdown underneath */
+        var ann = document.querySelector('.announce');
+        if (ann && ann.parentNode) ann.parentNode.insertBefore(a, ann.nextSibling);
+        else document.body.insertBefore(a, document.body.firstChild);
+        document.documentElement.classList.add('has-cdbar');
+      }
+      var eye = '<span class="cdbar__eye"></span>', cta = '<span class="cdbar__cta">Register &rarr;</span>';
+      if (st.mode === 'timer') {
+        if (built !== 'timer') { a.innerHTML = eye + '<span class="cdbar__t"><b>--</b><i>d</i> <b>--</b><i>h</i> <b>--</b><i>m</i> <b>--</b><i>s</i></span>' + cta; built = 'timer'; a.querySelector('.cdbar__eye').textContent = st.label + ' lands in'; }
+        var b = a.querySelectorAll('.cdbar__t b');
+        b[0].textContent = st.d; b[1].textContent = st.h; b[2].textContent = st.m; b[3].textContent = st.s;
+      } else {
+        a.innerHTML = eye + '<span class="cdbar__t"></span>' + cta; built = 'text';
+        a.querySelector('.cdbar__eye').textContent = st.label;
+        a.querySelector('.cdbar__t').textContent = st.text;
+      }
+    });
   } catch (e) {}
 })();
 

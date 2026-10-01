@@ -8,6 +8,7 @@ rules_version = '2';
 //   collections/{slug}   public: anyone can read, only admins write
 //   signups/{id}         waitlist sign-ups: anyone can CREATE a valid entry, only admins read
 //   messages/{id}        support form: anyone can CREATE a valid entry, only admins read
+//   site/{doc}           public site settings (launch countdown): anyone reads, only admins write
 //   orders/{id}          admins only (Stripe webhooks will write via the Admin SDK)
 //
 // "Admin" means a signed-in user whose ID token carries the custom claim
@@ -90,6 +91,14 @@ service cloud.firestore {
 
     match /internal/{docId} {
       allow read, write: if isAdmin();
+    }
+
+    // Public site settings edited in the portal (e.g. site/countdown).
+    // Never put anything private here: the whole collection is world-readable.
+    match /site/{docId} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && !request.resource.data.keys().hasAny(['economics', 'factory_cost_AUD', 'factoryCostAUD', 'cost']);
     }
 
     match /orders/{orderId} {

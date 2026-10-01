@@ -35,7 +35,8 @@ export default function Settings() {
       if (Number.isNaN(n) || n < 0) return toast.show(`Check "${f.label}"`);
       out[f.key] = f.pct ? n / 100 : n;
     }
-    await setDoc(doc(db, 'internal', 'costAssumptions'), { ...out, updatedAt: serverTimestamp() }, { merge: true });
+    try { await setDoc(doc(db, 'internal', 'costAssumptions'), { ...out, updatedAt: serverTimestamp() }, { merge: true }); }
+    catch (e) { return toast.show(`Couldn’t save: ${(e as Error).message}`); }
     toast.show('Cost assumptions saved');
   }
 

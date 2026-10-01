@@ -41,6 +41,7 @@ On localhost the storefront reads the emulator. Add `?catalogue=live` to read pr
 | --- | --- | --- | --- |
 | `products/{id}` | everyone | admins | The public catalogue, same fields as `products.js`, plus `sort`, `archived`, `updatedAt`. `coll` lists the collection slugs it belongs to |
 | `collections/{slug}` | everyone | admins | Reusable groups of products. `showInShop` ones become the Shop All tabs, in `sort` order |
+| `site/countdown` | everyone | admins | The launch countdown (timer, text or hidden), edited under Website in the portal. Without it the site shows "Dropping soon" |
 | `signups/{id}` | admins | anyone can create (validated) | Waitlist registrations from the landing and First Drop pages. Shown under Customers |
 | `messages/{id}` | admins | anyone can create (validated) | Support page contact form. Shown in the Inbox |
 | `productCosts/{id}` | admins | admins | Factory cost, quoted size, notes. **Private** |
@@ -84,6 +85,10 @@ npx firebase deploy --only firestore:rules --project axia-jewellery
 npm run migrate:collections -- --prod   # adds starter collections, never overwrites your edits
 npm run deploy
 ```
+
+Any change to `firestore.rules` (for example the `site` rule that the Website countdown needs) only takes effect after `npx firebase deploy --only firestore:rules`; `npm run deploy` deploys hosting and rules together.
+
+Pages, scripts and styles are served with `Cache-Control: no-cache`, so visitors get a new deploy on their next page load instead of up to an hour later.
 
 Before later deploys, refresh the offline fallback so it matches Firestore: `npm run export:products -- --prod`.
 

@@ -272,8 +272,8 @@
 </div>
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
 
-<script src="assets/js/catalogue.js?v=20261001a"></script>
-<script type="text/axia-deferred" src="assets/js/axia.js?v=20260930a"></script>
+<script src="assets/js/catalogue.js?v=20261001b"></script>
+<script type="text/axia-deferred" src="assets/js/axia.js?v=20261001b"></script>
 <script type="text/axia-deferred">
 (function(){
   const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
@@ -344,21 +344,20 @@
 })();
 </script>
 <script type="text/axia-deferred">
-/* First Drop countdown - hidden until a date is set. Set TARGET to the launch date and
-   KEEP IT IN SYNC with index.html's TARGET. e.g. new Date('2026-11-20T19:00:00+11:00').getTime() */
+/* First Drop countdown bar. Date, text and on/off are set in the admin portal
+   (Settings > Countdown) and arrive through catalogue.js. */
 (function(){
-  var TARGET = new Date('2026-11-20T19:00:00+11:00').getTime(); /* PLACEHOLDER launch date - keep in sync with index.html; set back to null to hide */
-  var sec=document.getElementById('ccd');
-  if(!TARGET||!sec) return;
-  sec.hidden=false;
-  /* LAUNCH TIMER NOT LIVE YET: bar shows but numbers stay XX. Set LIVE = true to start counting. */
-  var LIVE=false;
-  if(LIVE){
-    var d=document.getElementById('scd-d'),h=document.getElementById('scd-h'),m=document.getElementById('scd-m'),s=document.getElementById('scd-s');
-    var p=function(n){return(n<10?'0':'')+n;};
-    var tick=function(){var diff=TARGET-Date.now();if(diff<0)diff=0;var t=Math.floor(diff/1000);d.textContent=p(Math.floor(t/86400));h.textContent=p(Math.floor(t%86400/3600));m.textContent=p(Math.floor(t%3600/60));s.textContent=p(t%60);};
-    tick();setInterval(tick,1000);
-  }
+  var sec=document.getElementById('ccd'); if(!sec||!window.AXIA_CD) return;
+  var eye=sec.querySelector('.ccd__eye'), t=sec.querySelector('.ccd__t'), built='';
+  window.AXIA_CD.run(function(st){
+    sec.hidden = st.mode==='off';
+    if(st.mode==='off') return;
+    eye.textContent = st.mode==='timer' ? st.label+' lands in' : st.label;
+    if(st.mode==='timer'){
+      if(built!=='timer'){ t.innerHTML='<b></b><i>d</i> <b></b><i>h</i> <b></b><i>m</i> <b></b><i>s</i>'; built='timer'; }
+      var b=t.querySelectorAll('b'); b[0].textContent=st.d; b[1].textContent=st.h; b[2].textContent=st.m; b[3].textContent=st.s;
+    } else { t.textContent=st.text; built='text'; }
+  });
 })();
 </script>
 </body>

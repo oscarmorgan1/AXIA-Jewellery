@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  ArrowUpRight, Bell, BadgePercent, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Receipt, Search, Settings as SettingsIcon, Users,
+  ArrowUpRight, Bell, BadgePercent, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Receipt, Search, Settings as SettingsIcon, Timer, Users,
 } from 'lucide-react';
 import { useAuth } from '../auth';
 import { siteUrl } from '../firebase';
@@ -12,7 +12,7 @@ import CommandPalette from './CommandPalette';
 const TITLES: [RegExp, string][] = [
   [/^\/$/, 'Dashboard'], [/^\/products\/new/, 'New product'], [/^\/products\//, 'Edit product'], [/^\/products/, 'Products'],
   [/^\/collections/, 'Collections'], [/^\/customers/, 'Customers'], [/^\/inbox/, 'Inbox'], [/^\/margins/, 'Margins'],
-  [/^\/orders/, 'Orders'], [/^\/settings/, 'Settings'],
+  [/^\/orders/, 'Orders'], [/^\/website/, 'Website'], [/^\/settings/, 'Settings'],
 ];
 
 export default function Layout() {
@@ -62,6 +62,7 @@ export default function Layout() {
         <NavLink to="/margins" className={link}><BadgePercent size={19} /> Margins</NavLink>
 
         <div className="sidebar__label">General</div>
+        <NavLink to="/website" className={link}><Timer size={19} /> Website</NavLink>
         <NavLink to="/settings" className={link}><SettingsIcon size={19} /> Settings</NavLink>
         <button className="nav-link" onClick={logout}><LogOut size={19} /> Log out</button>
 

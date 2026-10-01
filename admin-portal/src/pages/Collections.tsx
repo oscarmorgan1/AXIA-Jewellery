@@ -78,7 +78,7 @@ export default function Collections() {
     b.delete(doc(db, 'collections', draft.slug));
     products.filter(p => (p.coll || []).includes(draft.slug)).forEach(p =>
       b.update(doc(db, 'products', p.id), { coll: (p.coll || []).filter(x => x !== draft.slug), updatedAt: serverTimestamp() }));
-    await b.commit();
+    try { await b.commit(); } catch (e) { return setError((e as Error).message); }
     toast.show(`${draft.name} deleted`);
     close();
   }
@@ -89,13 +89,13 @@ export default function Collections() {
     const b = writeBatch(db);
     b.update(doc(db, 'collections', a.slug), { sort: c.sort ?? 0 });
     b.update(doc(db, 'collections', c.slug), { sort: a.sort ?? 0 });
-    await b.commit();
+    try { await b.commit(); } catch (e) { toast.show(`Couldn’t save: ${(e as Error).message}`); }
   }
 
   async function toggleShop(c: Collection) {
     const b = writeBatch(db);
     b.update(doc(db, 'collections', c.slug), { showInShop: !c.showInShop, updatedAt: serverTimestamp() });
-    await b.commit();
+    try { await b.commit(); } catch (e) { return toast.show(`Couldn’t save: ${(e as Error).message}`); }
     toast.show(`${c.name} ${c.showInShop ? 'hidden from' : 'added to'} the shop tabs`);
   }
 
