@@ -457,7 +457,9 @@ tr:hover .thumb { transform: scale(1.06); }
 .logoff__in--punch .logoff__logo { margin-bottom: 26px; }
 .logoff__mid { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 5vw, 56px); line-height: 1.05; letter-spacing: .02em; display: flex; color: rgba(244, 241, 234, .82); }
 .logoff__big--punch { font-size: clamp(64px, 13vw, 168px); margin-top: 14px; }
-.logoff__sub--hot { color: #F3436E; }
+.logoff__sub--in { color: #C7EAF7; text-shadow: 0 0 24px rgba(199, 234, 247, .45); }
+.logoff__bar--back i { animation-name: logoffBarBack; }
+@keyframes logoffBarBack { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 .logoff__in--punch .logoff__bar { animation-delay: .2s; }
 @keyframes logoffShake { 10%, 90% { transform: translateX(-2px); } 20%, 80% { transform: translateX(4px); } 30%, 50%, 70% { transform: translateX(-8px); } 40%, 60% { transform: translateX(8px); } }
 @media (prefers-reduced-motion: reduce) { .logoff__in--punch { animation: none; } }
