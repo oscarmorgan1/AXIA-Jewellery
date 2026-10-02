@@ -158,7 +158,7 @@ export default function Collections() {
           </div>
           <label className="field">Intro line<textarea className="textarea" style={{ minHeight: 70 }} value={draft.intro || ''} placeholder="Shown under the title when this tab is open" onChange={e => setDraft({ ...draft, intro: e.target.value })} /></label>
           <label className="check"><input type="checkbox" checked={!!draft.showInShop} onChange={e => setDraft({ ...draft, showInShop: e.target.checked })} /> Show as a tab on Shop All</label>
-          {slug && <div className="sub">Shop link: <a href={siteUrl(`collection.html?cat=${slug}`)} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>collection.html?cat={slug}</a></div>}
+          {slug && <div className="sub">Shop link: <a href={siteUrl(`collection?cat=${slug}`)} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>collection?cat={slug}</a></div>}
           <div className="field">Cover photo (optional, defaults to the first piece)
             <ImageList productId={`collections/${slug || 'new'}`} images={draft.image ? [draft.image] : []} onError={setError}
               onChange={imgs => setDraft({ ...draft, image: imgs[imgs.length - 1] || '' })} />

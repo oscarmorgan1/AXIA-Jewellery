@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail } from 'firebase/auth';
+import Logo from '../components/Logo';
 import { auth, usingEmulators } from '../firebase';
 
 const friendly = (code: string) => ({
@@ -27,7 +28,7 @@ export default function Login() {
   return (
     <div className="login">
       <div className="login__art">
-        <div className="login__wm">AXIA</div>
+        <Logo height={26} className="login__wm" />
         <div>
           <h2>Every piece, in your hands.</h2>
           <p>Products, collections, customers and margins for the AXIA store, all in one place.</p>

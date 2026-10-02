@@ -62,7 +62,7 @@ export default function Website() {
       <div className="page-head">
         <div><h1>Website</h1><p className="lede" style={{ margin: 0 }}>The launch countdown on the landing page, the Cuban and First Drop pages, and the bar across the shop.</p></div>
         <span className="spacer" />
-        <a className="btn" href={siteUrl('index.html')} target="_blank" rel="noreferrer">Open site <ArrowUpRight size={15} /></a>
+        <a className="btn" href={siteUrl('/')} target="_blank" rel="noreferrer">Open site <ArrowUpRight size={15} /></a>
       </div>
 
       {error && <div className="notice notice--error">{error.message}</div>}

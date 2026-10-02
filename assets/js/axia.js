@@ -216,14 +216,14 @@
     const catName = p => (p.coll && p.coll.includes('titans')) ? 'Titan'
       : p.cat === 'bracelet' ? 'Bracelet' : p.cat === 'pendant' ? 'Pendant' : 'Chain';
     const pages = [
-      { n: 'The Cuban', m: 'The signature collection', h: 'cuban.html', kw: 'cuban chain bracelet signature', img: 'assets/img/products/micro-pave-cuban-chain-15mm/1.jpg' },
-      { n: 'The Titans', m: '18mm · the apex', h: 'titans.html', kw: 'titan emperor requiem ascendant 18mm apex', img: 'assets/img/products/the-emperor/1.jpg' },
-      { n: 'Shop all', m: 'Every piece', h: 'collection.html', kw: 'shop all collection everything browse' },
+      { n: 'The Cuban', m: 'The signature collection', h: 'cuban', kw: 'cuban chain bracelet signature', img: 'assets/img/products/micro-pave-cuban-chain-15mm/1.jpg' },
+      { n: 'The Titans', m: '18mm · the apex', h: 'titans', kw: 'titan emperor requiem ascendant 18mm apex', img: 'assets/img/products/the-emperor/1.jpg' },
+      { n: 'Shop all', m: 'Every piece', h: 'collection', kw: 'shop all collection everything browse' },
     ];
     const items = P.map(p => ({
       n: p.name + (p.width ? ', ' + p.width : ''),
       m: [catName(p), (p.singlePrice ? '' : 'From ') + fmtASearch(p.fromPriceAUD)].join(' · '),
-      h: p.linkTo || ('product.html?id=' + p.id),
+      h: p.linkTo || ('product?id=' + p.id),
       art: p.art || 'cuban',
       img: firstPhoto(p),
       kw: [p.name, p.width, p.cat, p.cons, (p.col || []).join(' '), (p.coll || []).join(' ')].join(' ').toLowerCase()
@@ -265,7 +265,7 @@
   const closeSearch = () => { srch.classList.remove('on'); srch.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; srchInput.value = ''; };
   srchInput.addEventListener('input', e => srchRender(e.target.value));
   // Enter = browse the whole catalogue filtered by the query (not jump to one item; click a result for that)
-  srchInput.addEventListener('keydown', e => { if (e.key === 'Enter') { const q = srchInput.value.trim(); location.href = q ? 'collection.html?q=' + encodeURIComponent(q) : 'collection.html'; } });
+  srchInput.addEventListener('keydown', e => { if (e.key === 'Enter') { const q = srchInput.value.trim(); location.href = q ? 'collection?q=' + encodeURIComponent(q) : 'collection'; } });
   $$('[data-search-close]').forEach(b => b.onclick = closeSearch);
   srch.addEventListener('click', e => { if (e.target === srch) closeSearch(); });
   addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
@@ -277,7 +277,7 @@
     let sameOrigin = false;
     try { sameOrigin = !!document.referrer && new URL(document.referrer).origin === location.origin; } catch (_) {}
     if (sameOrigin && history.length > 1) history.back();
-    else location.href = b.getAttribute('data-back') || 'collection.html';
+    else location.href = b.getAttribute('data-back') || 'collection';
   }));
 
   /* ---- Account + Checkout ---- */
@@ -289,7 +289,7 @@
     e.preventDefault();
     if (!CHECKOUT_OPEN) { say('Your bag is saved. Checkout opens when the First Drop drops.'); return; }
     if (!cart.length) { say('Your bag is empty.'); return; }
-    location.href = 'checkout.html';
+    location.href = 'checkout';
   });
   // Checkout closed: make every cart-drawer note say so.
   if (!CHECKOUT_OPEN) $$('.drw__note').forEach(n => { n.textContent = 'Your bag is saved. Checkout opens when the First Drop drops.'; });
@@ -310,7 +310,7 @@
   var page = (location.pathname.split('/').pop() || 'store').replace(/\.html$/, '');
   if (page === 'first-drop' || page === 'product' || page === 'cuban') return;
   var bar = document.createElement('a');
-  bar.href = 'first-drop.html';
+  bar.href = 'first-drop';
   bar.className = 'fdbar';
   bar.setAttribute('aria-label', 'Join the First Drop');
   bar.innerHTML = '<span>Enter to win a 15mm Micro Pavé Chain</span><span class="fdbar__arw" aria-hidden="true">&rarr;</span>';
@@ -466,7 +466,7 @@
       '<p class="promo__p">Register for First Access and get in before the First Drop opens to the public.</p>' +
       '<div class="promo__coupon"><span class="promo__off">15% off</span><span class="promo__coupontxt">your first order<br><b>when you register</b></span></div>' +
       '<div class="promo__btns">' +
-        '<a class="promo__reg" href="first-drop.html">Register &amp; enter the draw</a>' +
+        '<a class="promo__reg" href="first-drop">Register &amp; enter the draw</a>' +
         '<button class="promo__no" type="button" data-promo-close data-promo-dismiss>No thanks, I’ll pay full price</button>' +
       '</div>' +
     '</div>';

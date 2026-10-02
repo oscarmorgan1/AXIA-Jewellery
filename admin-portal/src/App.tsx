@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth';
 import Layout from './components/Layout';
+import Logo from './components/Logo';
 import Login from './pages/Login';
 import NotAuthorised from './pages/NotAuthorised';
 import Dashboard from './pages/Dashboard';
@@ -16,7 +17,7 @@ import Website from './pages/Website';
 
 export default function App() {
   const { user, isAdmin, loading } = useAuth();
-  if (loading) return <div className="loading-screen"><span className="brand__mark">A</span></div>;
+  if (loading) return <div className="loading-screen"><Logo height={34} className="logo--loading" /></div>;
   if (!user) return <Login />;
   if (!isAdmin) return <NotAuthorised />;
   return (

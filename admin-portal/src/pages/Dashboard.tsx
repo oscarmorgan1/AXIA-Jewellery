@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, BadgePercent, Gem, Inbox as InboxIcon, Mail, Package, PenLine, Sparkles, UserPlus, Users } from 'lucide-react';
+import { Activity, BadgePercent, Eye, Gem, Inbox as InboxIcon, Mail, Package, PenLine, Sparkles, UserPlus, Users } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import CountUp from '../components/CountUp';
 import Donut from '../components/Donut';
 import { BarChart } from '../components/Charts';
-import { useAssumptions, useCollections, useCosts, useMessages, useProducts, useSignups } from '../lib/data';
+import { sydneyDay, useAssumptions, useCollections, useCosts, useMessages, useProducts, useSignups, useVisits } from '../lib/data';
 import { collectionLabel, firstImage, primaryCollection, statusOf } from '../lib/catalogue';
 import { productEconomics } from '../lib/economics';
 import { aud, pct } from '../lib/format';
@@ -26,13 +26,15 @@ function ago(d?: Date) {
 }
 
 export default function Dashboard() {
-  const { data: products, loading } = useProducts();
+  const { data: products } = useProducts();
   const { data: collections } = useCollections();
   const { byId: costs } = useCosts();
   const { data: assumptions } = useAssumptions();
   const { data: signups } = useSignups();
   const { data: messages } = useMessages();
+  const { data: visits } = useVisits();
   const [range, setRange] = useState<'daily' | 'weekly'>('daily');
+  const [metric, setMetric] = useState<'visitors' | 'signups'>('visitors');
 
   const s = useMemo(() => {
     const active = products.filter(p => !p.archived);
@@ -45,12 +47,32 @@ export default function Dashboard() {
     // sign-ups chart
     const today = startOfDay(new Date());
     const buckets = range === 'daily'
-      ? Array.from({ length: 14 }, (_, i) => { const t = today - (13 - i) * DAY; return { from: t, to: t + DAY, label: new Date(t).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }).replace(' ', ' ') }; })
+      ? Array.from({ length: 14 }, (_, i) => { const t = today - (13 - i) * DAY; return { from: t, to: t + DAY, label: new Date(t).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }).replace(' ', '\u00a0') }; })
       : Array.from({ length: 8 }, (_, i) => { const t = today - (7 - i) * 7 * DAY - 6 * DAY; return { from: t, to: t + 7 * DAY, label: new Date(t).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) }; });
-    const series = buckets.map(b => ({
-      label: range === 'daily' ? b.label.split(' ')[0] : b.label,
-      value: signups.filter(x => { const t = x.createdAt?.toDate().getTime() ?? 0; return t >= b.from && t < b.to; }).length,
-    }));
+    // visits are keyed by Sydney day; each bucket covers the Sydney days of its span
+    const daysOf = (b: { from: number; to: number }) => { const out = new Set<string>(); for (let t = b.from + DAY / 2; t < b.to; t += DAY) out.add(sydneyDay(new Date(t))); return out; };
+    const uniq = (vs: typeof visits) => new Set(vs.map(v => v.vid)).size;
+    const series = buckets.map(b => {
+      const days = daysOf(b);
+      return {
+        label: range === 'daily' ? b.label.split('\u00a0')[0] : b.label,
+        value: metric === 'visitors'
+          ? uniq(visits.filter(v => days.has(v.day)))
+          : signups.filter(x => { const t = x.createdAt?.toDate().getTime() ?? 0; return t >= b.from && t < b.to; }).length,
+      };
+    });
+    const spanFrom = buckets[0].from, spanTo = buckets[buckets.length - 1].to;
+    const spanDays = daysOf({ from: spanFrom, to: spanTo });
+    const inSpan = visits.filter(v => spanDays.has(v.day));
+    const spanVisitors = uniq(inSpan);
+    const spanSignups = new Set(signups.filter(x => { const t = x.createdAt?.toDate().getTime() ?? 0; return t >= spanFrom && t < spanTo; }).map(x => x.email.toLowerCase())).size;
+    const srcCount = new Map<string, Set<string>>();
+    inSpan.forEach(v => { const k = v.ref || 'Direct or typed in'; if (!srcCount.has(k)) srcCount.set(k, new Set()); srcCount.get(k)!.add(v.vid); });
+    const sources = [...srcCount.entries()].map(([label, set]) => ({ label, n: set.size })).sort((a, b) => b.n - a.n).slice(0, 4);
+    const todayKey = sydneyDay(new Date());
+    const week = new Set(Array.from({ length: 7 }, (_, i) => sydneyDay(new Date(Date.now() - i * DAY))));
+    const visitors7 = uniq(visits.filter(v => week.has(v.day)));
+    const visitorsToday = uniq(visits.filter(v => v.day === todayKey));
 
     // collections donut (live pieces per shop collection)
     const shopCols = collections.filter(c => c.showInShop);
@@ -74,10 +96,11 @@ export default function Dashboard() {
 
     return {
       active, live, emails, newThisWeek, series, donut, wanted, fallbackTop, feed,
+      spanVisitors, spanSignups, sources, visitors7, visitorsToday,
       unread: messages.filter(m => m.status !== 'done').length,
       avgGross: avg(econ.map(e => e!.grossMarginPct)),
     };
-  }, [products, collections, costs, assumptions, signups, messages, range]);
+  }, [products, collections, costs, assumptions, signups, messages, visits, range, metric]);
 
   const hello = new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening';
 
@@ -89,13 +112,13 @@ export default function Dashboard() {
           <p className="lede" style={{ margin: 0 }}>Here’s what’s happening across AXIA.</p>
         </div>
         <span className="spacer" />
-        <span className={`env-badge${usingEmulators ? '' : ' env-badge--live'}`}>{usingEmulators ? 'Local emulators' : 'Live data'}</span>
+        {usingEmulators && <span className="env-badge">Local emulators</span>}
         <Link to="/products/new" className="btn btn--primary"><Sparkles size={16} /> New product</Link>
       </div>
 
       <div className="grid-4 stagger">
-        <StatCard tone="dark" label="Products on sale" icon={<Gem size={22} />}
-          value={loading ? '…' : <CountUp value={s.live.length} />} foot={<><b>{s.active.length - s.live.length}</b> not on sale yet</>} />
+        <StatCard tone="dark" label="Visitors, last 7 days" icon={<Eye size={22} />}
+          value={<CountUp value={s.visitors7} />} foot={<><b>{s.visitorsToday}</b> so far today</>} />
         <StatCard tone="ice" label="Customers" icon={<Users size={22} />}
           value={<CountUp value={s.emails.size} />} foot={<><b>+{s.newThisWeek}</b> this week</>} />
         <StatCard tone={s.unread ? 'magenta' : ''} label="Unread messages" icon={<InboxIcon size={22} />}
@@ -107,14 +130,32 @@ export default function Dashboard() {
       <div className="grid-2">
         <div className="card">
           <div className="card__head">
-            <div className="card__title"><Activity size={18} /><h2>Waitlist sign-ups</h2></div>
+            <div className="card__title"><Activity size={18} /><h2>Traffic</h2></div>
             <span className="spacer" />
+            <div className="segmented">
+              <button className={metric === 'visitors' ? 'on' : ''} onClick={() => setMetric('visitors')}>Visitors</button>
+              <button className={metric === 'signups' ? 'on' : ''} onClick={() => setMetric('signups')}>Sign-ups</button>
+            </div>
             <div className="segmented">
               <button className={range === 'daily' ? 'on' : ''} onClick={() => setRange('daily')}>Daily</button>
               <button className={range === 'weekly' ? 'on' : ''} onClick={() => setRange('weekly')}>Weekly</button>
             </div>
           </div>
-          <BarChart key={range} data={s.series} format={n => `${n} sign-up${n === 1 ? '' : 's'}`} />
+          <div className="card__sub" style={{ marginTop: -6 }}>
+            <b>{s.spanVisitors}</b> unique visitor{s.spanVisitors === 1 ? '' : 's'} and <b>{s.spanSignups}</b> new sign-up{s.spanSignups === 1 ? '' : 's'} in the last {range === 'daily' ? '14 days' : '8 weeks'}
+            {s.spanVisitors > 0 && <> · <b>{Math.round((s.spanSignups / s.spanVisitors) * 1000) / 10}%</b> signed up</>}
+          </div>
+          <BarChart key={range + metric} data={s.series} format={n => metric === 'visitors' ? `${n} visitor${n === 1 ? '' : 's'}` : `${n} sign-up${n === 1 ? '' : 's'}`} />
+          {metric === 'visitors' && s.sources.length > 0 && (
+            <div className="rank" style={{ marginTop: 8 }}>
+              {s.sources.map((x, i) => (
+                <div className="rank__row" key={x.label}>
+                  <i style={{ background: PALETTE[i % PALETTE.length] }} /><span>{x.label}</span>
+                  <span>{x.n} visitor{x.n === 1 ? '' : 's'}</span><b>{Math.round((x.n / Math.max(1, s.spanVisitors)) * 100)}%</b>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <div className="card">
           <div className="card__head">

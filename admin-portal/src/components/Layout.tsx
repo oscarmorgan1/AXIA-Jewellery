@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  ArrowUpRight, Bell, BadgePercent, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Receipt, Search, Settings as SettingsIcon, Timer, Users,
+  ArrowUpRight, Bell, Globe, BadgePercent, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Receipt, Search, Settings as SettingsIcon, Timer, Users,
 } from 'lucide-react';
 import { useAuth } from '../auth';
 import { siteUrl } from '../firebase';
 import { useCollections, useMessages, useProducts, useSignups } from '../lib/data';
+import Logo from './Logo';
 import { useTheme } from '../lib/theme';
 import CommandPalette from './CommandPalette';
 
@@ -46,8 +47,8 @@ export default function Layout() {
     <div className="shell">
       <aside className="sidebar">
         <NavLink to="/" className="brand">
-          <span className="brand__mark">A</span>
-          <span><span className="brand__name">AXIA</span><span className="brand__sub">Admin</span></span>
+          <Logo height={21} />
+          <span className="brand__sub">Admin</span>
         </NavLink>
 
         <div className="sidebar__label">Main</div>
@@ -70,11 +71,7 @@ export default function Layout() {
           <div className="theme-row"><Moon size={19} /> Dark mode
             <button className="switch" role="switch" aria-checked={theme === 'dark'} aria-label="Dark mode" onClick={toggle} />
           </div>
-          <div className="store-card">
-            <b>Your storefront</b>
-            <p>Changes you save here show on the site straight away.</p>
-            <a href={siteUrl('index.html')} target="_blank" rel="noreferrer">Open site <ArrowUpRight size={14} /></a>
-          </div>
+          <a className="live-site" href={siteUrl('/')} target="_blank" rel="noreferrer"><Globe size={17} /> View live site <ArrowUpRight size={15} /></a>
         </div>
       </aside>
 

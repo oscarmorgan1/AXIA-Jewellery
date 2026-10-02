@@ -7,7 +7,7 @@
    (the launch countdown, from site/countdown) into window.AXIA_SITE,
    with window.AXIA_CD.run() to drive the countdown on any page, and
    provides window.AXIA_DB.add() so the public forms can save sign-ups
-   and messages to Firestore.
+   and messages to Firestore. Counts unique daily visitors (see trackVisit).
 
    Page scripts that read the catalogue are marked
    <script type="text/axia-deferred"> and run here, in document order,
@@ -180,10 +180,10 @@
     return out + Date.now().toString(36);
   }
   window.AXIA_DB = {
-    add: function (collection, data) {
+    add: function (collection, data, id) {
       var fields = {};
       Object.keys(data).forEach(function (k) { if (data[k] !== undefined) fields[k] = enc(data[k]); });
-      var name = 'projects/' + PROJECT + '/databases/(default)/documents/' + collection + '/' + randomId();
+      var name = 'projects/' + PROJECT + '/databases/(default)/documents/' + collection + '/' + (id || randomId());
       var body = { writes: [{
         update: { name: name, fields: fields },
         currentDocument: { exists: false },
@@ -215,7 +215,7 @@
     settings: countdownSettings,
     run: function (cb) {
       var c = countdownSettings(), target = Date.parse(c.target), iv = null;
-      var base = { label: c.label, href: 'first-drop.html' };
+      var base = { label: c.label, href: 'first-drop' };
       function emit(extra) { var o = {}; for (var k in base) o[k] = base[k]; for (k in extra) o[k] = extra[k]; try { cb(o); } catch (e) { if (window.console) console.error(e); } }
       if (c.mode === 'off') return emit({ mode: 'off' });
       if (c.mode !== 'timer' || isNaN(target)) return emit({ mode: 'text', text: c.text });
@@ -230,6 +230,32 @@
       if (target - Date.now() > 0) iv = setInterval(step, 1000);
     }
   };
+
+  /* ---- Unique visitors ----
+     Each browser gets a random anonymous id (no cookies, nothing personal) and
+     is counted once per day (Sydney time) in "visits/{day}_{id}", which only
+     admins can read. Skipped for bots, for admins (the portal sets
+     axia_no_track on sign-in) and when ?catalogue=static is forced. */
+  function trackVisit() {
+    try {
+      if (source === 'static' || navigator.webdriver || /bot|crawl|spider|slurp|lighthouse|headless|preview/i.test(navigator.userAgent)) return;
+      var ls = window.localStorage;
+      if (ls.getItem('axia_no_track')) return;
+      var day = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' });
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || ls.getItem('axia_vday') === day) return;
+      var vid = ls.getItem('axia_vid');
+      if (!/^[A-Za-z0-9]{12,32}$/.test(vid || '')) { vid = randomId().slice(0, 20); ls.setItem('axia_vid', vid); }
+      ls.setItem('axia_vday', day);
+      var ref = '';
+      try { var r = document.referrer && new URL(document.referrer); if (r && r.host !== location.host) ref = r.host.replace(/^www\./, '').slice(0, 100); } catch (e) {}
+      var w = Math.min(screen.width, screen.height), touch = matchMedia('(pointer: coarse)').matches;
+      window.AXIA_DB.add('visits', {
+        day: day, vid: vid, page: (location.pathname || '/').slice(0, 200), ref: ref,
+        device: !touch ? 'desktop' : w < 600 ? 'mobile' : 'tablet'
+      }, day + '_' + vid).catch(function () {});
+    } catch (e) {}
+  }
+  if ('requestIdleCallback' in window) requestIdleCallback(trackVisit, { timeout: 4000 }); else setTimeout(trackVisit, 1500);
 
   window.AXIA_SOURCE = source;
   window.AXIA_READY = Promise.all([catalogue, domReady]).then(function (r) {

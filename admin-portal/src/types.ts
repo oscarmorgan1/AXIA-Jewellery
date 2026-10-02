@@ -131,3 +131,14 @@ export interface Countdown {
   endedText: string;
   updatedAt?: { toDate(): Date };
 }
+
+/** visits/{day}_{vid}: one anonymous entry per browser per day (Sydney time). */
+export interface Visit {
+  id: string;
+  day: string;
+  vid: string;
+  page?: string;
+  ref?: string;
+  device?: 'mobile' | 'tablet' | 'desktop';
+  createdAt?: { toDate(): Date };
+}
