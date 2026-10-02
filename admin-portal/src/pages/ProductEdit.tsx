@@ -146,7 +146,7 @@ export default function ProductEdit() {
     } catch (e) { setError(`JSON: ${(e as Error).message}`); }
   }
 
-  const productUrl = draft.linkTo ? siteUrl(draft.linkTo) : siteUrl(`product.html?id=${encodeURIComponent(id)}`);
+  const productUrl = draft.linkTo ? siteUrl(draft.linkTo) : siteUrl(`product?id=${encodeURIComponent(id)}`);
   const colourGroups = Object.entries(draft.imagesByColor || {});
 
   return (
@@ -279,7 +279,7 @@ export default function ProductEdit() {
               ))}
               <label className="check" style={{ marginTop: 6 }}><input type="checkbox" checked={!!draft.mto} onChange={e => set({ mto: e.target.checked })} /> Made to order</label>
               <label className="field" style={{ marginTop: 6 }}>Redirect product page to
-                <input className="input" value={draft.linkTo ?? ''} placeholder="e.g. titans.html" onChange={e => set({ linkTo: e.target.value || undefined })} />
+                <input className="input" value={draft.linkTo ?? ''} placeholder="e.g. titans" onChange={e => set({ linkTo: e.target.value || undefined })} />
               </label>
               {!isNew && <div className="card__sub">Last saved {timeAgo(draft.updatedAt)}</div>}
             </div>

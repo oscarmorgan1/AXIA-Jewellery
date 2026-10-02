@@ -19,7 +19,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => onIdTokenChanged(auth, async u => {
     setUser(u);
-    setIsAdmin(u ? (await u.getIdTokenResult()).claims.admin === true : false);
+    const admin = u ? (await u.getIdTokenResult()).claims.admin === true : false;
+    setIsAdmin(admin);
+    // The storefront shares this origin in production: don't count admins as visitors.
+    if (admin) try { localStorage.setItem('axia_no_track', '1'); } catch { /* storage blocked */ }
     setLoading(false);
   }), []);
 

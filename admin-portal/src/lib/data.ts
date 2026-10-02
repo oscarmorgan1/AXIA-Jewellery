@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { collection, doc, onSnapshot, type DocumentData } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, where, type DocumentData } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Collection, CostAssumptions, Message, Order, Product, ProductCost, Signup, Countdown } from '../types';
+import type { Collection, CostAssumptions, Message, Order, Product, ProductCost, Signup, Countdown, Visit } from '../types';
 import { DEFAULT_ASSUMPTIONS } from './economics';
 
 interface Live<T> { data: T; loading: boolean; error: Error | null }
@@ -52,6 +52,20 @@ export function useCountdown(): Live<Countdown> & { saved: boolean } {
     snap => setState({ data: { ...DEFAULT_COUNTDOWN, ...(snap.data() as Partial<Countdown> | undefined) }, loading: false, error: null, saved: snap.exists() }),
     error => setState(s => ({ ...s, loading: false, error })),
   ), []);
+  return state;
+}
+
+/** Sydney calendar day, YYYY-MM-DD, matching how the storefront records visits. */
+export const sydneyDay = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' });
+
+/** Unique-visitor entries for the last `days` days. */
+export function useVisits(days = 120): Live<Visit[]> {
+  const [state, setState] = useState<Live<Visit[]>>({ data: [], loading: true, error: null });
+  useEffect(() => onSnapshot(
+    query(collection(db, 'visits'), where('day', '>=', sydneyDay(new Date(Date.now() - days * 86400000)))),
+    snap => setState({ data: snap.docs.map(d => ({ ...(d.data() as Visit), id: d.id })), loading: false, error: null }),
+    error => setState(s => ({ ...s, loading: false, error })),
+  ), [days]);
   return state;
 }
 
