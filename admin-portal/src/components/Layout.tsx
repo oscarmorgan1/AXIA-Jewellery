@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   ArrowUpRight, Bell, Globe, BadgePercent, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Receipt, Search, Settings as SettingsIcon, Timer, Users,
@@ -7,6 +7,7 @@ import { useAuth } from '../auth';
 import { siteUrl } from '../firebase';
 import { useCollections, useMessages, useProducts, useSignups } from '../lib/data';
 import Logo from './Logo';
+import LogOff from './LogOff';
 import { useTheme } from '../lib/theme';
 import CommandPalette from './CommandPalette';
 
@@ -18,6 +19,9 @@ const TITLES: [RegExp, string][] = [
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const [leaving, setLeaving] = useState(false);
+  const finishLogOff = useCallback(() => { logout(); }, [logout]);
+  const cancelLogOff = useCallback(() => setLeaving(false), []);
   const { theme, toggle } = useTheme();
   const loc = useLocation();
   const { data: products } = useProducts();
@@ -65,7 +69,7 @@ export default function Layout() {
         <div className="sidebar__label">General</div>
         <NavLink to="/website" className={link}><Timer size={19} /> Website</NavLink>
         <NavLink to="/settings" className={link}><SettingsIcon size={19} /> Settings</NavLink>
-        <button className="nav-link" onClick={logout}><LogOut size={19} /> Log out</button>
+        <button className="nav-link" onClick={() => setLeaving(true)}><LogOut size={19} /> Log off</button>
 
         <div className="sidebar__foot">
           <div className="theme-row"><Moon size={19} /> Dark mode
@@ -94,6 +98,7 @@ export default function Layout() {
       </div>
 
       <CommandPalette open={palette} onClose={() => setPalette(false)} products={products} collections={collections} signups={signups} />
+      {leaving && <LogOff onDone={finishLogOff} onCancel={cancelLogOff} />}
     </div>
   );
 }

@@ -15,7 +15,7 @@ export default function NotAuthorised() {
           onClick={async () => { setChecking(true); await refresh(); setChecking(false); }}>
           {checking ? 'Checking…' : 'I’ve been granted access, check again'}
         </button>
-        <button className="btn" style={{ justifyContent: 'center' }} onClick={logout}>Sign out</button>
+        <button className="btn" style={{ justifyContent: 'center' }} onClick={logout}>Log off</button>
       </div>
     </div>
   );
