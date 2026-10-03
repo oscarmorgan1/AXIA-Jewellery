@@ -178,7 +178,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid-2" style={{ gridTemplateColumns: 'minmax(0,1fr) minmax(0,1.4fr)' }}>
+      <div className="grid-2 grid-2--flip">
         <div className="card">
           <div className="card__head"><div className="card__title"><Activity size={18} /><h2>Recent activity</h2></div><span className="spacer" /><Link to="/customers" className="btn btn--sm">See all</Link></div>
           {s.feed.length ? (
@@ -201,7 +201,7 @@ export default function Dashboard() {
           </div>
           <div className="table-wrap">
             <table className="table">
-              <thead><tr><th>Product</th><th>Collection</th><th className="num">From</th><th className="num">{s.wanted.length ? 'Interest' : 'Margin'}</th></tr></thead>
+              <thead><tr><th>Product</th><th className="hide-sm">Collection</th><th className="num">From</th><th className="num">{s.wanted.length ? 'Interest' : 'Margin'}</th></tr></thead>
               <tbody className="rows-anim">
                 {(s.wanted.length ? s.wanted.map(x => ({ p: x.p!, n: x.n as number | null })) : s.fallbackTop.map(p => ({ p, n: null }))).map(({ p, n }) => {
                   const img = firstImage(p);
@@ -212,7 +212,7 @@ export default function Dashboard() {
                         {img ? <img className="thumb" src={siteUrl(img)} alt="" loading="lazy" /> : <span className="thumb" />}
                         <div>{p.name}<small>{p.width || p.id}</small></div>
                       </Link></td>
-                      <td>{collectionLabel(primaryCollection(p, collections))}</td>
+                      <td className="hide-sm">{collectionLabel(primaryCollection(p, collections))}</td>
                       <td className="num">{aud(p.fromPriceAUD)}</td>
                       <td className="num">{n != null ? <span className="chip chip--ice">{n} sign-up{n === 1 ? '' : 's'}</span> : e ? pct(e.grossMarginPct) : '–'}</td>
                     </tr>

@@ -209,6 +209,7 @@ h1, h2, h3 { margin: 0; font-family: var(--font-display); letter-spacing: -0.015
 .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .grid-2 { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 18px; }
 .grid-2--even { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-2--flip { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
 
 .stat { display: flex; align-items: center; gap: 16px; padding: 18px 20px; }
 .stat__icon { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; flex: none; background: var(--soft); color: var(--ink); transition: transform .35s var(--ease); }
@@ -430,6 +431,13 @@ tr:hover .thumb { transform: scale(1.06); }
   .page-head h1 { font-size: 26px; }
   .login { grid-template-columns: 1fr; }
   .login__art { min-height: 220px; padding: 28px; }
+}
+@media (max-width: 600px) {
+  .hide-sm { display: none; }
+  .prod-cell { min-width: 0; gap: 10px; }
+  .table th, .table td { padding-left: 10px; padding-right: 10px; }
+  .table th:first-child, .table td:first-child { padding-left: 18px; }
+  .table th:last-child, .table td:last-child { padding-right: 18px; }
 }
 @keyframes menuIn { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .sidebar, .scrim { transition: none; } .sidebar--open .nav-link { animation: none; } }
