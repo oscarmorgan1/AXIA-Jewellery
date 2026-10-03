@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  ArrowUpRight, Bell, Globe, BadgePercent, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Receipt, Search, Settings as SettingsIcon, Timer, Users,
+  ArrowUpRight, Bell, Globe, BadgePercent, Menu, X, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Receipt, Search, Settings as SettingsIcon, Timer, Users,
 } from 'lucide-react';
 import { useAuth } from '../auth';
 import { siteUrl } from '../firebase';
@@ -29,6 +29,17 @@ export default function Layout() {
   const { data: signups } = useSignups();
   const { data: messages } = useMessages();
   const [palette, setPalette] = useState(false);
+  const [menu, setMenu] = useState(false);
+
+  // mobile menu: close on navigation and Esc, and stop the page scrolling behind it
+  useEffect(() => { setMenu(false); }, [loc.pathname]);
+  useEffect(() => {
+    if (!menu) return;
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenu(false); };
+    addEventListener('keydown', k);
+    document.body.style.overflow = 'hidden';
+    return () => { removeEventListener('keydown', k); document.body.style.overflow = ''; };
+  }, [menu]);
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -49,11 +60,15 @@ export default function Layout() {
 
   return (
     <div className="shell">
-      <aside className="sidebar">
-        <NavLink to="/" className="brand">
-          <Logo height={21} />
-          <span className="brand__sub">Admin</span>
-        </NavLink>
+      <div className={`scrim${menu ? ' scrim--on' : ''}`} onClick={() => setMenu(false)} aria-hidden="true" />
+      <aside className={`sidebar${menu ? ' sidebar--open' : ''}`} id="admin-menu">
+        <div className="brand-row">
+          <NavLink to="/" className="brand">
+            <Logo height={21} />
+            <span className="brand__sub">Admin</span>
+          </NavLink>
+          <button className="icon-btn menu-close" onClick={() => setMenu(false)} aria-label="Close menu"><X size={18} /></button>
+        </div>
 
         <div className="sidebar__label">Main</div>
         <NavLink to="/" end className={link}><LayoutGrid size={19} /> Dashboard</NavLink>
@@ -69,7 +84,7 @@ export default function Layout() {
         <div className="sidebar__label">General</div>
         <NavLink to="/website" className={link}><Timer size={19} /> Website</NavLink>
         <NavLink to="/settings" className={link}><SettingsIcon size={19} /> Settings</NavLink>
-        <button className="nav-link" onClick={() => setLeaving(true)}><LogOut size={19} /> Log off</button>
+        <button className="nav-link" onClick={() => { setMenu(false); setLeaving(true); }}><LogOut size={19} /> Log off</button>
 
         <div className="sidebar__foot">
           <div className="theme-row"><Moon size={19} /> Dark mode
@@ -81,6 +96,8 @@ export default function Layout() {
 
       <div className="main">
         <header className="header">
+          <button className="icon-btn menu-btn" onClick={() => setMenu(true)} aria-label="Open menu" aria-expanded={menu} aria-controls="admin-menu"><Menu size={19} /></button>
+          <NavLink to="/" className="header__logo" aria-label="Dashboard"><Logo height={17} /></NavLink>
           <div className="header__title">AXIA / <b>{title}</b></div>
           <span className="spacer" />
           <button className="search-trigger" onClick={() => setPalette(true)} aria-label="Search">
