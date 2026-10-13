@@ -224,7 +224,7 @@ export default function OrderDetail() {
           <div className="card">
             <div className="card__head"><h2>Customer</h2></div>
             <dl className="kv kv--left">
-              <dt>Name</dt><dd>{order.customer?.name || '–'}</dd>
+              <dt>Name</dt><dd>{order.customer?.email ? <Link to={`/customers/${encodeURIComponent(order.customer.email.toLowerCase())}`}>{order.customer?.name || order.customer.email}</Link> : order.customer?.name || '–'}</dd>
               <dt>Email</dt><dd>{order.customer?.email ? <a href={`mailto:${order.customer.email}`}>{order.customer.email}</a> : '–'}</dd>
               <dt>Phone</dt><dd>{order.customer?.phone ? <a href={`tel:${order.customer.phone}`}>{order.customer.phone}</a> : '–'}</dd>
             </dl>

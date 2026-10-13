@@ -14,6 +14,7 @@ import Promos from './pages/Promos';
 import Settings from './pages/Settings';
 import Collections from './pages/Collections';
 import Customers from './pages/Customers';
+import CustomerDetail from './pages/CustomerDetail';
 import InboxPage from './pages/Inbox';
 import Website from './pages/Website';
 
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="products/:id" element={<ProductEdit />} />
         <Route path="collections" element={<Collections />} />
         <Route path="customers" element={<Customers />} />
+        <Route path="customers/:id" element={<CustomerDetail />} />
         <Route path="inbox" element={<InboxPage />} />
         <Route path="margins" element={<Margins />} />
         <Route path="orders" element={<Orders />} />
