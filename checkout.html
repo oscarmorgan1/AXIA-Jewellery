@@ -97,13 +97,22 @@
     .co-aside{position:static;order:-1}
     .fgrid,.card-row{grid-template-columns:1fr}
   }
+  .co-wrap[hidden],.co-msg[hidden]{display:none}
+  .co-note{font-size:var(--t-body-s);color:var(--ink-secondary);margin-bottom:var(--s-3)}
+  .co-list .ci:last-child{border-bottom:0}
+  .ci__gift{display:inline-block;margin-top:4px;font-size:.62rem;letter-spacing:var(--ls-mid);text-transform:uppercase;color:var(--ice-ink)}
+  .co-err{font-size:var(--t-body-s);color:var(--magenta);margin-top:var(--s-3);min-height:1em}
+  .btn--pay[disabled]{opacity:.6;cursor:progress}
+  .co-ship li{display:flex;justify-content:space-between;gap:1rem;padding:6px 0;font-size:var(--t-body-s);color:var(--ink-secondary)}
+  .co-ship ul{list-style:none;margin:0;padding:0}
+  .co-ship b{color:var(--ink);font-weight:600}
 </style>
 </head>
 <body>
 <header class="co-head">
   <div class="co-head__in">
     <a class="co-brand" href="store" aria-label="AXIA home"><img src="assets/img/axia-logo.png" alt="AXIA"></a>
-    <span class="co-secure"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> Checkout preview</span>
+    <span class="co-secure"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> Secure checkout</span>
   </div>
 </header>
 
@@ -114,67 +123,35 @@
   <a class="btn btn--cart" href="collection">Shop the collection</a>
 </div>
 
-<!-- CHECKOUT -->
+<!-- CHECKOUT: review the bag, then pay on Stripe's secure page -->
 <div class="co-wrap" id="coWrap" hidden>
   <div class="co-main">
-    <form id="coForm" novalidate>
-      <div class="co-sec">
-        <div class="co-sec__h"><h2>Contact</h2><span class="step">Step 1 of 3</span></div>
-        <div class="field col2"><label for="email">Email</label><input id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" required></div>
-      </div>
-
-      <div class="co-sec">
-        <div class="co-sec__h"><h2>Delivery</h2><span class="step">Step 2 of 3</span></div>
-        <div class="fgrid">
-          <div class="field"><label for="fn">First name</label><input id="fn" name="fn" autocomplete="given-name" required></div>
-          <div class="field"><label for="ln">Last name</label><input id="ln" name="ln" autocomplete="family-name" required></div>
-          <div class="field col2"><label for="addr">Address</label><input id="addr" name="addr" autocomplete="address-line1" placeholder="Street address" required></div>
-          <div class="field col2"><label for="addr2">Apartment, suite (optional)</label><input id="addr2" name="addr2" autocomplete="address-line2"></div>
-          <div class="field"><label for="city">Suburb / City</label><input id="city" name="city" autocomplete="address-level2" required></div>
-          <div class="field"><label for="state">State</label>
-            <select id="state" name="state" required>
-              <option value="" selected disabled>Select</option>
-              <option>NSW</option><option>VIC</option><option>QLD</option><option>WA</option><option>SA</option><option>TAS</option><option>ACT</option><option>NT</option>
-            </select>
-          </div>
-          <div class="field"><label for="post">Postcode</label><input id="post" name="post" inputmode="numeric" autocomplete="postal-code" required></div>
-          <div class="field"><label for="phone">Phone</label><input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="04XX XXX XXX" required></div>
-        </div>
-      </div>
-
-      <div class="co-sec">
-        <div class="co-sec__h"><h2>Shipping</h2></div>
-        <label class="ship-opt on"><input type="radio" name="ship" value="0" checked><span class="m"><span class="t">Standard shipping</span><br><span class="s">3-6 business days after your piece is made</span></span><span class="p">Free</span></label>
-        <label class="ship-opt"><input type="radio" name="ship" value="25"><span class="m"><span class="t">Express shipping</span><br><span class="s">1-2 business days after dispatch</span></span><span class="p">A$25</span></label>
-      </div>
-
-      <div class="co-sec">
-        <div class="co-sec__h"><h2>Payment</h2><span class="step">Step 3 of 3</span></div>
-        <label class="pay-opt on"><input type="radio" name="pay" value="card" checked><span class="m"><span class="t">Credit or debit card</span><br><span class="s">Visa, Mastercard, Amex</span></span></label>
-        <div class="card-fields" id="cardFields">
-          <div class="field col2"><label for="ccnum">Card number</label><input id="ccnum" inputmode="numeric" autocomplete="off" placeholder="1234 5678 9012 3456" maxlength="19"></div>
-          <div class="card-row">
-            <div class="field"><label for="ccexp">Expiry (MM/YY)</label><input id="ccexp" inputmode="numeric" autocomplete="off" placeholder="MM/YY" maxlength="5"></div>
-            <div class="field"><label for="cccvc">CVC</label><input id="cccvc" inputmode="numeric" autocomplete="off" placeholder="123" maxlength="4"></div>
-          </div>
-          <div class="field col2"><label for="ccname">Name on card</label><input id="ccname" autocomplete="off"></div>
-        </div>
-        <button type="submit" class="btn btn--cart btn--pay" id="payBtn">Pay now</button>
-        <p class="paynote"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> Preview checkout. No payment is processed and no order is placed.</p>
-        <a class="co-back" href="store"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg> Return to store</a>
-      </div>
-    </form>
+    <div class="co-sec">
+      <div class="co-sec__h"><h2>Your order</h2></div>
+      <div class="co-list" id="coItems"></div>
+    </div>
+    <div class="co-sec co-ship">
+      <div class="co-sec__h"><h2>Delivery</h2></div>
+      <p class="co-note">Every piece is hand-set and made to order. Allow approximately 3-5 weeks before dispatch. We ship within Australia.</p>
+      <ul>
+        <li><span><b>Standard shipping</b> · 3-6 business days after dispatch</span><b>Free</b></li>
+        <li><span><b>Express shipping</b> · 1-2 business days after dispatch</span><b>A$25</b></li>
+      </ul>
+    </div>
+    <div class="co-sec">
+      <p class="co-note">You'll enter your delivery address, choose shipping, add a discount code and pay on the next page, run by our payment partner Stripe.</p>
+      <button type="button" class="btn btn--cart btn--pay" id="payBtn">Continue to payment</button>
+      <p class="co-err" id="coErr" role="alert"></p>
+      <p class="paynote"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> Card details are entered on Stripe's secure page and never touch our servers.</p>
+      <a class="co-back" href="store"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg> Return to store</a>
+    </div>
   </div>
-
   <aside class="co-aside">
     <div class="co-card">
       <h2>Order summary</h2>
-      <div id="coItems"></div>
-      <div class="disc"><input id="discCode" placeholder="Discount code" autocomplete="off"><button type="button" id="discApply">Apply</button></div>
-      <p class="disc-msg" id="discMsg"></p>
       <div class="co-row"><span>Subtotal</span><span class="v" id="sumSub">A$0</span></div>
-      <div class="co-row" id="rowDisc" hidden><span>Discount</span><span class="v" id="sumDisc">-A$0</span></div>
-      <div class="co-row"><span>Shipping</span><span class="v" id="sumShip">Free</span></div>
+      <div class="co-row"><span>Shipping</span><span class="v">From free</span></div>
+      <div class="co-row"><span>Discount codes</span><span class="v">Next step</span></div>
       <div class="co-total"><span class="l">Total</span><span><span class="cur">AUD</span><span class="v" id="sumTot">A$0</span></span></div>
       <div class="co-assure">
         <span><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5z"/></svg> Lifetime warranty</span>
@@ -184,100 +161,80 @@
   </aside>
 </div>
 
-<!-- CONFIRMATION -->
+<!-- CONFIRMATION (Stripe sends buyers back here with ?session_id=...) -->
 <div class="co-msg" id="coDone" hidden>
   <div class="tick"><svg viewBox="0 0 24 24"><path d="m5 13 4 4 10-11"/></svg></div>
   <h1>Order confirmed</h1>
-  <p>Thank you. A confirmation has been sent to <span id="doneEmail">you</span>.</p>
-  <p>Order <span class="ordno" id="doneNo">AX000000</span></p>
+  <p id="doneLine">Thank you. A confirmation is on its way to <span id="doneEmail">your inbox</span>.</p>
+  <p id="doneNoWrap" hidden>Order <span class="ordno" id="doneNo"></span></p>
   <div class="co-done-sum" id="doneSum"></div>
   <a class="btn btn--cart" href="store">Continue shopping</a>
 </div>
 
 <script>
 (function(){
-  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+  const $=s=>document.querySelector(s);
   const KEY='axia_cart';
-  const fmtA=n=>'A$'+Math.round(n).toLocaleString('en-AU');
+  const fmtA=n=>'A$'+Number(n).toLocaleString('en-AU',{maximumFractionDigits:2});
+  const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let cart=[]; try{cart=JSON.parse(localStorage.getItem(KEY))||[];}catch(e){}
-  let discount=0; // fraction
+  const thumb=it=> it.img ? '<img src="'+esc(it.img)+'" alt="" loading="lazy">' : '<span class="ci__mono">A</span>';
+  const sessionId=new URLSearchParams(location.search).get('session_id');
 
-  const monoTile='<span class="ci__mono">A</span>';
-  const thumb=it=> it.img ? '<img src="'+it.img+'" alt="" loading="lazy">' : monoTile;
-
+  if(sessionId){ confirmation(sessionId); return; }
   if(!cart.length){ $('#coEmpty').hidden=false; return; }
   $('#coWrap').hidden=false;
 
-  function subtotal(){ return cart.reduce((a,i)=>a+i.price*(i.q||1),0); }
-  function shipCost(){ const s=document.querySelector('input[name=ship]:checked'); return s?+s.value:0; }
+  const subtotal=cart.reduce((a,i)=>a+i.price*(i.q||1),0);
+  let giftLen=''; try{ giftLen=localStorage.getItem('axia_gift_len')||''; }catch(e){}
+  $('#coItems').innerHTML=cart.map(it=>
+    '<div class="ci"><div class="ci__m">'+thumb(it)+((it.q||1)>1?'<span class="ci__q">'+it.q+'</span>':'')+'</div>'+
+    '<div class="ci__t"><div class="ci__n">'+esc(it.name)+'</div>'+(it.opt?'<div class="ci__o">'+esc(it.opt)+'</div>':'')+'</div>'+
+    '<div class="ci__p">'+fmtA(it.price*(it.q||1))+'</div></div>').join('')+
+    // Free gift over A$999, matching the bag drawer. The server checks this again.
+    (subtotal>999?'<div class="ci"><div class="ci__m"><img src="assets/img/products/tennis-bracelet-4mm/1.jpg" alt="" loading="lazy"></div><div class="ci__t"><div class="ci__n">Classic Tennis Bracelet</div><div class="ci__o">'+(giftLen?esc(giftLen)+' · ':'')+'Free with orders over A$999</div><span class="ci__gift">Free gift</span></div><div class="ci__p">Free</div></div>':'');
+  $('#sumSub').textContent=fmtA(subtotal);
+  $('#sumTot').textContent=fmtA(subtotal);
 
-  function renderItems(){
-    $('#coItems').innerHTML=cart.map(it=>
-      '<div class="ci"><div class="ci__m">'+thumb(it)+((it.q||1)>1?'<span class="ci__q">'+it.q+'</span>':'')+'</div>'+
-      '<div class="ci__t"><div class="ci__n">'+it.name+'</div>'+(it.opt?'<div class="ci__o">'+it.opt+'</div>':'')+'</div>'+
-      '<div class="ci__p">'+fmtA(it.price*(it.q||1))+'</div></div>').join('');
-  }
-  function renderTotals(){
-    const sub=subtotal(), disc=Math.round(sub*discount), ship=shipCost();
-    const tot=sub-disc+ship;
-    $('#sumSub').textContent=fmtA(sub);
-    $('#rowDisc').hidden=!disc; $('#sumDisc').textContent='-'+fmtA(disc);
-    $('#sumShip').textContent=ship?fmtA(ship):'Free';
-    $('#sumTot').textContent=fmtA(tot);
-    // GST line and pay-in-4 removed pre-launch: not GST-registered yet, and no BNPL provider is live.
-  }
-  function syncShip(){ $$('.ship-opt').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked)); renderTotals(); }
-  function syncPay(){
-    $$('.pay-opt').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));
-    const card=document.querySelector('input[name=pay]:checked').value==='card';
-    $('#cardFields').style.display=card?'':'none';
-  }
-  $$('input[name=ship]').forEach(r=>r.onchange=syncShip);
-  $$('input[name=pay]').forEach(r=>r.onchange=syncPay);
-
-  // discount codes. FIRST15 = the First Access welcome code emailed to registrants.
-  const CODES={'FIRST15':0.15,'AXIA10':0.10,'FOUNDING':0.10};
-  $('#discApply').onclick=()=>{
-    const code=($('#discCode').value||'').trim().toUpperCase();
-    const m=$('#discMsg');
-    if(CODES[code]){ discount=CODES[code]; m.textContent='Code '+code+' applied ('+(discount*100)+'% off).'; m.className='disc-msg ok'; }
-    else { discount=0; m.textContent=code?'That code is not valid.':'Enter a code.'; m.className='disc-msg no'; }
-    renderTotals();
-  };
-
-  // light input formatting
-  $('#ccnum').oninput=e=>{ e.target.value=e.target.value.replace(/\D/g,'').replace(/(.{4})/g,'$1 ').trim(); };
-  $('#ccexp').oninput=e=>{ let v=e.target.value.replace(/\D/g,'').slice(0,4); if(v.length>2)v=v.slice(0,2)+'/'+v.slice(2); e.target.value=v; };
-
-  function validate(){
-    let ok=true;
-    const req=['email','fn','ln','addr','city','state','post','phone'];
-    req.forEach(id=>{ const el=$('#'+id); const bad=!el.value.trim()||(id==='email'&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(el.value)); el.classList.toggle('err',bad); if(bad)ok=false; });
-    if(document.querySelector('input[name=pay]:checked').value==='card'){
-      ['ccnum','ccexp','cccvc','ccname'].forEach(id=>{ const el=$('#'+id); const bad=!el.value.trim(); el.classList.toggle('err',bad); if(bad)ok=false; });
+  $('#payBtn').addEventListener('click',async()=>{
+    const btn=$('#payBtn'), err=$('#coErr');
+    btn.disabled=true; btn.textContent='Opening secure payment…'; err.textContent='';
+    try{
+      const items=cart.map(i=>({id:i.id,width:i.width,length:i.length,colour:i.colour,engraving:i.engraving,q:i.q||1,price:i.price}));
+      const r=await fetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items,giftLength:giftLen})});
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok||!d.url) throw new Error(d.error||'Something went wrong starting checkout. Please try again.');
+      location.href=d.url;
+    }catch(e){
+      err.textContent=e.message;
+      btn.disabled=false; btn.textContent='Continue to payment';
     }
-    return ok;
-  }
-
-  $('#coForm').addEventListener('submit',e=>{
-    e.preventDefault();
-    if(!validate()){ const f=document.querySelector('.err'); if(f)f.scrollIntoView({block:'center',behavior:'smooth'}); return; }
-    // build confirmation (PREVIEW: nothing is sent anywhere, no payment taken)
-    const sub=subtotal(), disc=Math.round(sub*discount), ship=shipCost(), tot=sub-disc+ship;
-    const no='AX'+String(Date.now()).slice(-6);
-    $('#doneNo').textContent=no;
-    $('#doneEmail').textContent=$('#email').value.trim();
-    $('#doneSum').innerHTML=cart.map(it=>'<div class="co-row"><span>'+it.name+(it.opt?' · '+it.opt:'')+'</span><span class="v">'+fmtA(it.price*(it.q||1))+'</span></div>').join('')+
-      (disc?'<div class="co-row"><span>Discount</span><span class="v">-'+fmtA(disc)+'</span></div>':'')+
-      '<div class="co-row"><span>Shipping</span><span class="v">'+(ship?fmtA(ship):'Free')+'</span></div>'+
-      '<div class="co-total"><span class="l">Total</span><span class="v">'+fmtA(tot)+'</span></div>';
-    try{ localStorage.setItem(KEY,'[]'); }catch(e){}
-    $('#coWrap').hidden=true; $('.co-head').style.display='';
-    $('#coDone').hidden=false;
-    window.scrollTo(0,0);
   });
 
-  renderItems(); renderTotals(); syncShip(); syncPay();
+  async function confirmation(id){
+    $('#coDone').hidden=false;
+    try{
+      const r=await fetch('/api/checkout/session?id='+encodeURIComponent(id));
+      if(!r.ok) throw new Error();
+      const o=await r.json();
+      if(o.status!=='complete'){ // back from Stripe without paying: show the bag again
+        history.replaceState(null,'',location.pathname); location.reload(); return;
+      }
+      try{ localStorage.setItem(KEY,'[]'); }catch(e){}
+      if(!o.paid) $('#doneLine').innerHTML='Thank you. We\'ll email <span id="doneEmail">you</span> as soon as your payment clears.';
+      if(o.email) $('#doneEmail').textContent=o.email;
+      $('#doneNo').textContent='#'+o.orderNumber; $('#doneNoWrap').hidden=false;
+      $('#doneSum').innerHTML=o.items.map(i=>'<div class="co-row"><span>'+esc(i.name)+(i.qty>1?' × '+i.qty:'')+'</span><span class="v">'+fmtA(i.amountAUD)+'</span></div>').join('')+
+        (o.gift?'<div class="co-row"><span>'+esc(o.gift.name)+(o.gift.length?' · '+esc(o.gift.length):'')+'</span><span class="v">Free gift</span></div>':'')+
+        (o.discountAUD?'<div class="co-row"><span>Discount</span><span class="v">-'+fmtA(o.discountAUD)+'</span></div>':'')+
+        '<div class="co-row"><span>Shipping</span><span class="v">'+(o.shippingAUD?fmtA(o.shippingAUD):'Free')+'</span></div>'+
+        '<div class="co-total"><span class="l">Total paid</span><span class="v">'+fmtA(o.totalAUD)+'</span></div>';
+    }catch(e){
+      $('#doneLine').textContent='Thank you. Your payment went through and a confirmation email is on its way.';
+      try{ localStorage.setItem(KEY,'[]'); }catch(e){}
+    }
+    window.scrollTo(0,0);
+  }
 })();
 </script>
 </body>

@@ -64,7 +64,8 @@ export default function Settings() {
               <dt>Signed in as</dt><dd>{user?.email}</dd>
               <dt>Firebase project</dt><dd>axia-jewellery</dd>
               <dt>Data</dt><dd>{usingEmulators ? 'Local emulators' : 'Live'}</dd>
-              <dt>Payments</dt><dd>Stripe (not connected yet)</dd>
+              <dt>Payments</dt><dd>Stripe Checkout</dd>
+              <dt>Order emails</dt><dd>Resend</dd>
             </dl>
           </div>
           {plan?.units && (
