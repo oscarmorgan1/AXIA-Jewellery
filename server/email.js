@@ -95,7 +95,7 @@ function address(order) {
   return lines ? `${sectionTitle('Shipping to')}<p style="margin:0;${font};font-size:14px;line-height:1.6;color:${C.ink}">${lines}</p>` : '';
 }
 
-function layout({ siteUrl, preheader, heading, body }) {
+function layout({ siteUrl, preheader, heading, body, reason = 'You’re receiving this email because you placed an order with AXIA.' }) {
   const help = `${siteUrl}/support`;
   const link = (href, t) => `<a href="${esc(href)}" style="color:${C.ice};text-decoration:underline">${t}</a>`;
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${esc(heading)}</title></head>
@@ -118,7 +118,7 @@ function layout({ siteUrl, preheader, heading, body }) {
   <tr><td style="padding:26px 34px 8px;${font};font-size:11px;line-height:1.6;color:${C.soft};text-align:center">
     ${link(help, 'Help centre')} &nbsp;·&nbsp; ${link(`${help}#shipping`, 'Shipping')} &nbsp;·&nbsp; ${link(`${help}#sizing`, 'Sizing')} &nbsp;·&nbsp; ${link(`${help}#care`, 'Care')}<br>
     Hand-set in 925 sterling silver with VVS D-colour moissanite.<br>
-    You’re receiving this email because you placed an order with AXIA.
+    ${esc(reason)}
   </td></tr>
 </table></td></tr></table></body></html>`;
 }
@@ -190,6 +190,26 @@ export function statusEmail(order, status, siteUrl, { tracking, note } = {}) {
   ].join('\n');
 
   return { subject: t.subject(order.orderNumber), html: layout({ siteUrl, preheader: t.intro.slice(0, 110), heading: t.heading, body }), text };
+}
+
+/**
+ * A personal message from the AXIA team (an Inbox reply or a note to a customer),
+ * in the same branded layout. `quote` is the customer's original message, if any.
+ */
+export function messageEmail({ name, subject, body, siteUrl, quote, orderNumber }) {
+  const first = String(name || '').trim().split(/\s+/)[0];
+  const paras = String(body).trim().split(/\n{2,}/).map(t => p(esc(t).replace(/\n/g, '<br>'))).join('');
+  const quoted = quote ? `${sectionTitle('Your message')}<div style="border-left:3px solid ${C.line};padding:4px 0 4px 14px;${font};font-size:13.5px;line-height:1.6;color:${C.soft}">${esc(quote.text).replace(/\n/g, '<br>')}${quote.at ? `<br><span style="font-size:12px">Sent ${esc(quote.at)}</span>` : ''}</div>` : '';
+  const html = layout({
+    siteUrl, preheader: String(body).trim().slice(0, 110), heading: subject,
+    reason: 'You’re receiving this email because you contacted or ordered from AXIA.',
+    body: `${first ? p(`Hi ${esc(first)},`) : ''}${paras}${p('Warm regards,<br><b>The AXIA team</b>')}`
+      + (orderNumber ? p(`<span style="font-size:13px;color:${C.soft}">Order #${esc(orderNumber)}</span>`) : '')
+      + quoted + `<div style="margin-top:22px">${button(`${siteUrl}/support`, 'Visit the help centre')}</div>`,
+  });
+  const text = [first ? `Hi ${first},` : '', String(body).trim(), 'Warm regards,\nThe AXIA team', orderNumber ? `Order #${orderNumber}` : '',
+    quote ? `--- Your message ---\n${quote.text}` : '', `Help centre: ${siteUrl}/support`].filter(Boolean).join('\n\n');
+  return { subject, html, text };
 }
 
 /**

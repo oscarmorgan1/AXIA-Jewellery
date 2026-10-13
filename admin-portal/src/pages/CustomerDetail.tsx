@@ -1,12 +1,13 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Mail, MessageSquare, Phone, Save, Trash2, UserPlus } from 'lucide-react';
+import { ArrowLeft, Mail, MessageSquare, Phone, Save, Send, Trash2, UserPlus } from 'lucide-react';
 import { doc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import { adminApi } from '../lib/api';
 import { aud } from '../lib/format';
 import { usePeople } from '../lib/customers';
 import { useToast } from '../components/Toast';
+import ComposeEmail from '../components/ComposeEmail';
 import { OrdersTable } from './Orders';
 import { SOURCE, fmtDate, initials } from './Customers';
 
@@ -17,6 +18,7 @@ export default function CustomerDetail() {
   const p = people.find(x => x.id === email);
   const [notes, setNotes] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [composing, setComposing] = useState(false);
   const toast = useToast();
   const nav = useNavigate();
   useEffect(() => { if (p && notes === null && p.record) setNotes(p.notes); }, [p, notes]);
@@ -32,6 +34,8 @@ export default function CustomerDetail() {
     }
     return [...m.values()].sort((a, b) => b.qty - a.qty);
   }, [p]);
+
+  const sent = [...(p?.record?.emails || [])].filter(e => e.type === 'message' || e.type === 'reply').reverse();
 
   if (loading) return <div className="card empty">Loading…</div>;
   if (!p) return <div className="card empty"><b>Customer not found</b><Link className="btn" to="/customers">Back to customers</Link></div>;
@@ -66,7 +70,7 @@ export default function CustomerDetail() {
         {p.sales.length > 1 && <span className="chip chip--plain chip--muted">Repeat</span>}
         <span className="spacer" />
         {p.phone && <a className="btn" href={`tel:${p.phone}`}><Phone size={16} /> Call</a>}
-        <a className="btn btn--primary" href={`mailto:${p.email}`}><Mail size={16} /> Email</a>
+        <button className="btn btn--primary" onClick={() => setComposing(true)}><Mail size={16} /> Message</button>
       </div>
       <p className="card__sub" style={{ marginTop: -8 }}>First seen {fmtDate(p.first)} · last seen {fmtDate(p.last)}</p>
 
@@ -89,10 +93,18 @@ export default function CustomerDetail() {
             <div className="card__head"><h2>Order history</h2></div>
             <OrdersTable orders={p.orders} empty="They haven’t ordered yet." />
           </div>
-          {(p.signups.length > 0 || p.messages.length > 0) && (
+          {(p.signups.length > 0 || p.messages.length > 0 || sent.length > 0) && (
             <div className="card">
               <div className="card__head"><h2>Activity</h2></div>
               <div className="feed">
+                {sent.map((e, i) => (
+                  <div className="feed__item" key={'s' + i} style={{ alignItems: 'flex-start' }}>
+                    <span className="feed__icon stat__icon--dark"><Send size={16} /></span>
+                    <div className="feed__body"><b>You {e.type === 'reply' ? 'replied' : 'wrote'}: {e.subject}</b>
+                      <small style={{ whiteSpace: 'pre-wrap', display: 'block' }}>{(e.body || '').slice(0, 240)}</small>
+                      <small style={{ display: 'block' }}>{e.sentAt ? new Date(e.sentAt).toLocaleString('en-AU') : ''} · {e.by} · Resend <code>{e.resendId || 'not sent'}</code></small></div>
+                  </div>
+                ))}
                 {p.signups.map(e => (
                   <div className="feed__item" key={e.id}>
                     <span className="feed__icon stat__icon--ice"><UserPlus size={17} /></span>
@@ -143,6 +155,7 @@ export default function CustomerDetail() {
           )}
         </div>
       </div>
+      {composing && <ComposeEmail target={{ to: p.email, name: p.name }} onClose={() => setComposing(false)} onSent={m => { setComposing(false); toast.show(m); reload(); }} />}
       {toast.node}
     </>
   );

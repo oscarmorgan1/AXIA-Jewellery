@@ -47,3 +47,33 @@ export function salesByProduct(orders: Order[]): Map<string, ProductSales> {
   }
   return m;
 }
+
+/**
+ * Orders mentioned in free text such as an inquiry: "#XYZQWE", "xyzqwe", "AXIA-XYZQWE",
+ * "order no. xyz qwe" or a full Stripe session id. Everything but letters and digits
+ * is stripped and the result compared with each order's 6-character number.
+ */
+export function findOrderRefs(texts: (string | undefined)[], orders: Order[]): Order[] {
+  const byNo = new Map(orders.map(o => [orderNo(o).toUpperCase(), o]));
+  const found = new Map<string, Order>();
+  const take = (cand: string) => {
+    const c = cand.toUpperCase();
+    const o = byNo.get(c) || (c.length > 6 ? byNo.get(c.slice(-6)) : undefined);
+    if (o) found.set(o.id, o);
+  };
+  for (const t of texts) {
+    if (!t) continue;
+    // whole field squashed together ("xyz qwe", "#XYZ-QWE"), then word by word
+    if (t.length <= 40) take(t.replace(/[^A-Za-z0-9]/g, '').replace(/^(AXIA|ORDER|NO)+/i, ''));
+    const words = t.split(/[^A-Za-z0-9]+/).filter(Boolean);
+    words.forEach((w, i) => {
+      if (w.length >= 6) take(w.replace(/^(AXIA|ORDER|NO)+/i, ''));
+      // a number typed with a space or dash in it ("XYZ QWE", "XY-ZQ-WE")
+      const two = w + (words[i + 1] || ''), three = two + (words[i + 2] || '');
+      if (two.length === 6) take(two);
+      else if (three.length === 6) take(three);
+    });
+    for (const o of orders) if (t.includes(o.id)) found.set(o.id, o);
+  }
+  return [...found.values()];
+}

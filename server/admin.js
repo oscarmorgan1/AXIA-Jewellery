@@ -8,7 +8,8 @@ import express from 'express';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { db, stripe } from './services.js';
-import { STATUS_EMAILS, statusEmail, sendEmail } from './email.js';
+import { createHash } from 'node:crypto';
+import { STATUS_EMAILS, statusEmail, messageEmail, sendEmail } from './email.js';
 import { emailEntry, historyEntry, push, upsertCustomer, customerId } from './orders.js';
 
 /** Statuses an admin can set. `refunded` only comes from Stripe, with the money. */
@@ -159,7 +160,7 @@ async function listCustomers(backfill = true) {
   }
   return customers.docs.map(d => {
     const v = d.data();
-    return { ...v, id: d.id, firstOrderAt: millis(v.firstOrderAt), lastOrderAt: millis(v.lastOrderAt), createdAt: millis(v.createdAt), updatedAt: millis(v.updatedAt) };
+    return { ...v, id: d.id, emails: (v.emails || []).map(e => ({ ...e, sentAt: millis(e.sentAt) })), firstOrderAt: millis(v.firstOrderAt), lastOrderAt: millis(v.lastOrderAt), createdAt: millis(v.createdAt), updatedAt: millis(v.updatedAt) };
   });
 }
 
@@ -168,6 +169,48 @@ async function saveCustomerNotes(req) {
   if (!(await ref.get()).exists) throw new HttpError(404, 'Customer not found');
   await ref.update({ notes: str(req.body.notes, 5000), updatedAt: FieldValue.serverTimestamp() });
   return { ok: true };
+}
+
+// ---- Messages: reply to an Inbox inquiry or write to a customer, sent through
+// Resend. Each email is logged with its Resend ID on the inquiry (replies),
+// the order (if about one) and the customer record.
+
+const EMAIL = /^[^@\s/]+@[^@\s/]+\.[^@\s/]+$/;
+
+async function sendMessage(req) {
+  const to = customerId(str(req.body.to, 200));
+  if (!EMAIL.test(to)) throw new HttpError(400, 'That email address doesn’t look right');
+  const subject = str(req.body.subject, 200);
+  const body = typeof req.body.body === 'string' ? req.body.body.trim().slice(0, 10000) : '';
+  if (!subject) throw new HttpError(400, 'Add a subject');
+  if (body.length < 2) throw new HttpError(400, 'Write a message');
+
+  const inquiryRef = req.body.inquiryId ? db.collection('messages').doc(str(req.body.inquiryId, 200)) : null;
+  const orderRef = req.body.orderId ? db.collection('orders').doc(str(req.body.orderId, 300)) : null;
+  const [inquiry, order] = await Promise.all([inquiryRef && inquiryRef.get(), orderRef && orderRef.get()]);
+  if (inquiryRef && !inquiry.exists) throw new HttpError(404, 'Inquiry not found');
+  if (orderRef && !order.exists) throw new HttpError(404, 'Order not found');
+
+  const q = inquiry && inquiry.data();
+  const o = order && order.data();
+  const mail = messageEmail({
+    name: str(req.body.name, 100) || (o && o.customer && o.customer.name) || (q && q.name) || '',
+    subject, body, siteUrl: siteOrigin(req, o),
+    orderNumber: o ? o.orderNumber || orderRef.id.slice(-6).toUpperCase() : '',
+    quote: q ? { text: q.message, at: q.createdAt ? q.createdAt.toDate().toLocaleString('en-AU', { timeZone: 'Australia/Sydney' }) : '' } : null,
+  });
+  // Same message to the same person within 10 seconds is a double click, not a second email.
+  const key = `message/${createHash('sha256').update([to, subject, body].join('\n')).digest('hex').slice(0, 32)}/${Math.floor(Date.now() / 10000)}`;
+  const sent = await sendEmail({ to, ...mail, idempotencyKey: key });
+  if (!sent) throw new HttpError(503, 'Email isn’t set up (RESEND_API_KEY or ORDER_EMAIL_FROM is missing), so nothing was sent');
+  const entry = { ...emailEntry(q ? 'reply' : 'message', to, subject, sent), body, by: req.admin.email || req.admin.uid,
+    ...(inquiryRef ? { inquiryId: inquiryRef.id } : {}), ...(orderRef ? { orderId: orderRef.id } : {}) };
+
+  const writes = [db.collection('customers').doc(to).set({ email: to, emails: push(entry), updatedAt: FieldValue.serverTimestamp() }, { merge: true })];
+  if (inquiryRef) writes.push(inquiryRef.update({ replies: push(entry), ...(req.body.markDone !== false ? { status: 'done' } : {}) }));
+  if (orderRef) writes.push(orderRef.update({ emails: push(entry), updatedAt: FieldValue.serverTimestamp() }));
+  await Promise.all(writes);
+  return { resendId: entry.resendId, status: entry.status };
 }
 
 const handle = fn => async (req, res) => {
@@ -187,6 +230,7 @@ export function adminRoutes() {
   router.post('/api/admin/orders/:id/status', handle(changeStatus));
   router.get('/api/admin/customers', handle(() => listCustomers()));
   router.post('/api/admin/customers/:id/notes', handle(saveCustomerNotes));
+  router.post('/api/admin/messages/send', handle(sendMessage));
   router.get('/api/admin/promos', handle(listPromos));
   router.post('/api/admin/promos', handle(createPromo));
   router.post('/api/admin/promos/:id/active', handle(setPromoActive));

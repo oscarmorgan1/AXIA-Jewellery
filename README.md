@@ -142,6 +142,10 @@ Open an order in the portal to see everything about it and change its status: Ne
 
 Every order creates or updates a customer record. Customers in the portal joins those records with orders, waitlist sign-ups and Inbox messages by email, so each person has one page with their open orders, order history, total spent, pieces bought, codes used, sign-ups, messages and private notes. The header search (Ctrl K) covers orders (number, name, email, phone, engraving, tracking, code), customers, products, collections, promo codes and messages.
 
+### Replies and messages
+
+Reply to an Inbox inquiry, or message a customer from their page or from an order, without leaving the portal. You see exactly what will be sent before it goes. Emails go through Resend (`POST /api/admin/messages/send`) in the AXIA layout, and replies to them land at `ORDER_EMAIL_REPLY_TO`. Each one is logged with its Resend ID on the inquiry (`replies`), on the order if it's about one, and on the customer record. Inquiries link the order they mention, whatever the format (`#XYZQWE`, `axia-xyzqwe`, `xyz qwe`), plus any other orders from the same email.
+
 ### Promo codes
 
 Promo codes are made under Promo codes in the portal. Each one becomes a Stripe coupon (percent off, applied once) plus a promotion code, so customers enter it on the Stripe checkout page. Affiliate codes carry the affiliate's name, and the page totals orders, sales and discount per code and per affiliate from paid orders. Codes made while the test key is in use exist only in Stripe test mode, so recreate them after switching to live keys.
