@@ -9,7 +9,7 @@
     "dev": "firebase emulators:exec --project axia-jewellery --ui \"npm run seed && npm run admin:dev\"",
     "emulators": "firebase emulators:start --project axia-jewellery",
     "start": "node server/index.js",
-    "serve": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 PORT=5050 node --env-file-if-exists=.env server/index.js",
+    "serve": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 PORT=5050 node --env-file-if-exists=.env server/index.js",
     "seed": "node scripts/seed.mjs",
     "set-admin": "node scripts/set-admin.mjs",
     "export:products": "node scripts/export-products.mjs",

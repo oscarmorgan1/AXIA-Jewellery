@@ -10,6 +10,7 @@ import { aud, pct, timeAgo } from '../lib/format';
 import ImageList from '../components/ImageList';
 import VariantsTable from '../components/VariantsTable';
 import { useToast } from '../components/Toast';
+import ProductSales from '../components/ProductSales';
 import type { Product, ProductCost, WidthOption } from '../types';
 
 const BLANK: Product = {
@@ -284,6 +285,8 @@ export default function ProductEdit() {
               {!isNew && <div className="card__sub">Last saved {timeAgo(draft.updatedAt)}</div>}
             </div>
           </div>
+
+          {!isNew && <ProductSales id={routeId!} />}
 
           <div className="card">
             <div className="private-note"><Lock size={14} /> Private. Never shown on the storefront.</div>

@@ -69,13 +69,53 @@ export interface CostAssumptions {
   returnsReservePct: number;
 }
 
+type Stamp = { toDate(): Date };
+
+export interface OrderItem {
+  id: string; name: string; qty: number; priceAUD: number;
+  options?: string; width?: string; length?: string; colour?: string; engraving?: string; image?: string;
+}
+
+export interface OrderEmail { type: string; to: string; subject: string; resendId: string | null; status: 'sent' | 'skipped'; sentAt?: Stamp }
+export interface OrderHistory { status: string; at?: Stamp; by: string; emailed?: boolean; note?: string; tracking?: Tracking }
+export interface Tracking { carrier?: string; number?: string; url?: string }
+
 export interface Order {
   id: string;
-  createdAt?: { toDate(): Date };
-  customer?: { name?: string; email?: string };
-  items?: { id: string; name: string; qty: number; priceAUD: number }[];
+  orderNumber?: string;
+  createdAt?: Stamp;
+  updatedAt?: Stamp;
+  customer?: { name?: string; email?: string; phone?: string };
+  shipping?: {
+    name?: string; method?: string; amountAUD?: number;
+    address?: { line1?: string; line2?: string | null; city?: string; state?: string; postal_code?: string; country?: string } | null;
+  };
+  items?: OrderItem[];
+  gift?: { id: string; name: string; length?: string } | null;
+  subtotalAUD?: number;
+  discountAUD?: number;
+  promotionCode?: string;
+  promotionCodeId?: string;
   totalAUD?: number;
-  status?: 'pending' | 'paid' | 'fulfilled' | 'refunded' | 'cancelled' | string;
+  status?: 'pending' | 'paid' | 'in_progress' | 'shipped' | 'fulfilled' | 'refunded' | 'cancelled' | string;
+  tracking?: Tracking;
+  emails?: OrderEmail[];
+  statusHistory?: OrderHistory[];
+  stripe?: { sessionId?: string; paymentIntent?: string; livemode?: boolean };
+}
+
+/** Promo code (server API; stored in Firestore `promoCodes`, mirrored in Stripe). */
+export interface PromoCode {
+  id: string;
+  code: string;
+  kind: 'standard' | 'affiliate';
+  percentOff: number;
+  affiliate: { name: string; email?: string } | null;
+  active: boolean;
+  maxRedemptions: number | null;
+  expiresAt: number | null;
+  createdAt: number | null;
+  stripe: { couponId: string; promotionCodeId: string; livemode: boolean };
 }
 
 /** Public collection document (Firestore `collections/{slug}`). Products join via `coll`. */

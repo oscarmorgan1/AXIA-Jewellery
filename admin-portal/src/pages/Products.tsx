@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
-import { useAssumptions, useCollections, useCosts, useProducts } from '../lib/data';
+import { useAssumptions, useCollections, useCosts, useOrders, useProducts } from '../lib/data';
+import { salesByProduct } from '../lib/orders';
 import { collectionLabel, firstImage, primaryCollection, statusOf, type Status } from '../lib/catalogue';
 import { productEconomics } from '../lib/economics';
 import { aud, pct, timeAgo } from '../lib/format';
@@ -15,6 +16,8 @@ export default function Products() {
   const { byId: costs } = useCosts();
   const { data: collections } = useCollections();
   const { data: assumptions } = useAssumptions();
+  const { data: orders } = useOrders();
+  const sales = useMemo(() => salesByProduct(orders), [orders]);
   const [params, setParams] = useSearchParams();
   const nav = useNavigate();
   const [filter, setFilter] = useState<Filter>('all');
@@ -64,7 +67,7 @@ export default function Products() {
           <table className="table">
             <thead><tr>
               <th>Product</th><th>Collection</th><th>Status</th><th>Colours</th><th>Sizes</th>
-              <th className="num">From</th><th className="num">Gross margin</th><th>Updated</th>
+              <th className="num">From</th><th className="num">Sold</th><th className="num">Revenue</th><th className="num">Gross margin</th><th>Updated</th>
             </tr></thead>
             <tbody className="rows-anim">
               {shown.map(p => {
@@ -83,6 +86,8 @@ export default function Products() {
                     <td>{(p.col || []).join(', ') || '–'}</td>
                     <td>{sizes || '–'}</td>
                     <td className="num">{aud(p.fromPriceAUD)}</td>
+                    <td className="num">{sales.get(p.id)?.units || '–'}</td>
+                    <td className="num">{sales.get(p.id) ? aud(sales.get(p.id)!.revenueAUD) : '–'}</td>
                     <td className="num">{e ? <span className={`chip ${e.grossMarginPct >= 50 ? 'chip--good' : e.grossMarginPct >= 40 ? 'chip--warn' : 'chip--bad'}`}>{pct(e.grossMarginPct)}</span> : '–'}</td>
                     <td>{timeAgo(p.updatedAt)}</td>
                   </tr>

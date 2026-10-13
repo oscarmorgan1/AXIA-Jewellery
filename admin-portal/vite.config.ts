@@ -7,5 +7,6 @@ export default defineConfig({
   base: '/admin/',
   plugins: [react()],
   build: { outDir: '../admin', emptyOutDir: true, chunkSizeWarningLimit: 1200 },
-  server: { port: 5173, host: '127.0.0.1' },
+  // In dev, /api goes to the local server (`npm run serve`, port 5050).
+  server: { port: 5173, host: '127.0.0.1', proxy: { '/api': 'http://127.0.0.1:5050' } },
 });
