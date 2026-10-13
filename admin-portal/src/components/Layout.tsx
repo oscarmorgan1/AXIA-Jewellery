@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  ArrowUpRight, Bell, Globe, BadgePercent, Menu, X, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Receipt, Search, Settings as SettingsIcon, Timer, Users,
+  ArrowUpRight, Bell, Globe, BadgePercent, Menu, X, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Receipt, Search, Settings as SettingsIcon, TicketPercent, Timer, Users,
 } from 'lucide-react';
 import { useAuth } from '../auth';
 import { siteUrl } from '../firebase';
-import { useCollections, useMessages, useProducts, useShop, useSignups } from '../lib/data';
+import { useCollections, useMessages, useOrders, useProducts, useShop, useSignups } from '../lib/data';
 import Logo from './Logo';
 import LogOff from './LogOff';
 import { useTheme } from '../lib/theme';
@@ -14,7 +14,7 @@ import CommandPalette from './CommandPalette';
 const TITLES: [RegExp, string][] = [
   [/^\/$/, 'Dashboard'], [/^\/products\/new/, 'New product'], [/^\/products\//, 'Edit product'], [/^\/products/, 'Products'],
   [/^\/collections/, 'Collections'], [/^\/customers/, 'Customers'], [/^\/inbox/, 'Inbox'], [/^\/margins/, 'Margins'],
-  [/^\/orders/, 'Orders'], [/^\/website/, 'Website'], [/^\/settings/, 'Settings'],
+  [/^\/orders\//, 'Order'], [/^\/orders/, 'Orders'], [/^\/promos/, 'Promo codes'], [/^\/website/, 'Website'], [/^\/settings/, 'Settings'],
 ];
 
 export default function Layout() {
@@ -29,6 +29,7 @@ export default function Layout() {
   const { data: signups } = useSignups();
   const shop = useShop();
   const { data: messages } = useMessages();
+  const { data: orders } = useOrders();
   const [palette, setPalette] = useState(false);
   const [menu, setMenu] = useState(false);
 
@@ -53,6 +54,7 @@ export default function Layout() {
 
   const liveProducts = products.filter(p => !p.archived).length;
   const customers = new Set(signups.map(s => s.email.toLowerCase())).size;
+  const openOrders = orders.filter(o => o.status === 'paid' || o.status === 'in_progress').length;
   const unread = messages.filter(m => m.status !== 'done').length;
   const title = TITLES.find(([r]) => r.test(loc.pathname))?.[1] ?? '';
   const name = user?.displayName || user?.email?.split('@')[0] || 'Admin';
@@ -75,7 +77,8 @@ export default function Layout() {
         <NavLink to="/" end className={link}><LayoutGrid size={19} /> Dashboard</NavLink>
         <NavLink to="/customers" className={link}><Users size={19} /> Customers {customers > 0 && <span className="pill">{customers}</span>}</NavLink>
         <NavLink to="/inbox" className={link}><Inbox size={19} /> Inbox {unread > 0 && <span className="pill pill--hot">{unread}</span>}</NavLink>
-        <NavLink to="/orders" className={link}><Receipt size={19} /> Orders</NavLink>
+        <NavLink to="/orders" className={link}><Receipt size={19} /> Orders {openOrders > 0 && <span className="pill pill--hot">{openOrders}</span>}</NavLink>
+        <NavLink to="/promos" className={link}><TicketPercent size={19} /> Promo codes</NavLink>
 
         <div className="sidebar__label">Catalogue</div>
         <NavLink to="/products" className={link}><Package size={19} /> Products <span className="pill">{liveProducts}</span></NavLink>

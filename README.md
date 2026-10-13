@@ -53,7 +53,8 @@ On localhost the storefront reads the emulator. Add `?catalogue=live` to read pr
 | `productCosts/{id}` | admins | admins | Factory cost, quoted size, notes. **Private** |
 | `internal/costAssumptions` | admins | admins | Payment fee, packaging, returns reserve |
 | `internal/firstDropPlan` | admins | admins | Internal unit plan |
-| `orders/{id}` | admins | admins | Paid Stripe orders, keyed by Checkout session id. Written by the webhook with the Admin SDK |
+| `orders/{id}` | admins | admins | Paid Stripe orders, keyed by Checkout session id. Written by the webhook and the admin API with the Admin SDK. Holds each line's engraving, the promo code used, `statusHistory`, and `emails` (every customer email with its Resend ID) |
+| `promoCodes/{id}` | nobody | nobody | Promo codes, keyed by Stripe promotion code id. Only the server reads and writes them (portal goes through `/api/admin/promos`) |
 
 "Admin" means a Firebase Auth user with the custom claim `admin: true`. The rules also refuse any cost or economics field on a public product.
 
@@ -131,6 +132,14 @@ Copy its signing secret (`whsec_...`) into `stripe-webhook-secret`.
 ### Resend
 
 Verify the sending domain in Resend (Domains > Add domain, then add the DNS records it shows). The sender and reply-to addresses are plain settings in `apphosting.yaml` (`ORDER_EMAIL_FROM`, `ORDER_EMAIL_REPLY_TO`).
+
+### Order status and customer emails
+
+Open an order in the portal to see everything about it and change its status: New, In progress, Shipped (with carrier, tracking number and link), Fulfilled or Cancelled. The portal shows exactly which email will go to which address and asks you to confirm before anything is saved. Changes go through `POST /api/admin/orders/:id/status`, which needs the signed-in admin's Firebase ID token. Each email sent (confirmation and status updates) is logged on the order with its Resend ID. Cancelling doesn't refund; do that in Stripe, which then marks the order Refunded.
+
+### Promo codes
+
+Promo codes are made under Promo codes in the portal. Each one becomes a Stripe coupon (percent off, applied once) plus a promotion code, so customers enter it on the Stripe checkout page. Affiliate codes carry the affiliate's name, and the page totals orders, sales and discount per code and per affiliate from paid orders. Codes made while the test key is in use exist only in Stripe test mode, so recreate them after switching to live keys.
 
 ### Going live with payments
 

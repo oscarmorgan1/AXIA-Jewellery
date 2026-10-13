@@ -9,7 +9,8 @@ import express from 'express';
 import { FieldValue } from 'firebase-admin/firestore';
 import { db, stripe } from './services.js';
 import { orderNumber } from './checkout.js';
-import { sendConfirmation } from './email.js';
+import { confirmationEmail, sendEmail } from './email.js';
+import { emailEntry, historyEntry, push } from './orders.js';
 
 const cents = n => (n || 0) / 100;
 
@@ -20,7 +21,7 @@ async function buildOrder(sessionId) {
   const cd = s.customer_details || {};
   const ship = (s.collected_information && s.collected_information.shipping_details) || s.shipping_details || {};
   const rate = s.shipping_cost && s.shipping_cost.shipping_rate;
-  const promo = (s.discounts || []).map(d => d.promotion_code && d.promotion_code.code).find(Boolean) || '';
+  const promoObj = (s.discounts || []).map(d => d.promotion_code).find(pc => pc && typeof pc === 'object') || null;
   const items = (s.line_items ? s.line_items.data : []).map(li => {
     const product = (li.price && typeof li.price.product === 'object' && li.price.product) || {};
     const m = product.metadata || {};
@@ -31,6 +32,7 @@ async function buildOrder(sessionId) {
       width: m.width || '', length: m.length || '', colour: m.colour || '', engraving: m.engraving || '',
       qty: li.quantity || 1,
       priceAUD: cents(li.price && li.price.unit_amount),
+      image: (product.images || [])[0] || '',
     };
   });
   const paid = s.payment_status === 'paid' || s.payment_status === 'no_payment_required';
@@ -48,7 +50,8 @@ async function buildOrder(sessionId) {
     gift: s.metadata && s.metadata.gift ? { id: s.metadata.gift, name: s.metadata.giftName || '', length: s.metadata.giftLength || '' } : null,
     subtotalAUD: cents(s.amount_subtotal),
     discountAUD: cents(s.total_details && s.total_details.amount_discount),
-    promotionCode: promo,
+    promotionCode: (promoObj && promoObj.code) || '',
+    promotionCodeId: (promoObj && promoObj.id) || '',
     totalAUD: cents(s.amount_total),
     currency: (s.currency || 'aud').toUpperCase(),
     stripe: {
@@ -64,22 +67,31 @@ async function recordCheckout(sessionId, siteUrl) {
   const ref = db.collection('orders').doc(sessionId);
   const existing = await ref.get();
   if (!existing.exists) {
-    await ref.create({ ...order, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+    await ref.create({
+      ...order, siteUrl, emails: [], statusHistory: [historyEntry(order.status, 'stripe')],
+      createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
+    });
   } else {
     // A later event (e.g. a delayed payment clearing) only moves the status forward.
     const prev = existing.data().status;
-    if (prev === 'pending' && order.status === 'paid') await ref.update({ status: 'paid', updatedAt: FieldValue.serverTimestamp() });
+    if (prev === 'pending' && order.status === 'paid') {
+      await ref.update({ status: 'paid', statusHistory: push(historyEntry('paid', 'stripe')), updatedAt: FieldValue.serverTimestamp() });
+    }
   }
   const sent = existing.exists && existing.data().emailSentAt;
   if (order.status === 'paid' && !sent && order.customer.email) {
-    if (await sendConfirmation(order, siteUrl)) await ref.update({ emailSentAt: FieldValue.serverTimestamp() });
+    const mail = confirmationEmail(order, siteUrl);
+    const result = await sendEmail({ to: order.customer.email, ...mail, idempotencyKey: `order-confirmation/${sessionId}` });
+    if (result) {
+      await ref.update({ emailSentAt: FieldValue.serverTimestamp(), emails: push(emailEntry('confirmation', order.customer.email, mail.subject, result)) });
+    }
   }
 }
 
 async function setStatusByPaymentIntent(paymentIntent, status) {
   if (!paymentIntent) return;
   const snap = await db.collection('orders').where('stripe.paymentIntent', '==', paymentIntent).limit(1).get();
-  if (!snap.empty) await snap.docs[0].ref.update({ status, updatedAt: FieldValue.serverTimestamp() });
+  if (!snap.empty) await snap.docs[0].ref.update({ status, statusHistory: push(historyEntry(status, 'stripe')), updatedAt: FieldValue.serverTimestamp() });
 }
 
 export function webhookRoutes() {
@@ -104,7 +116,7 @@ export function webhookRoutes() {
           break;
         case 'checkout.session.async_payment_failed': {
           const ref = db.collection('orders').doc(obj.id);
-          if ((await ref.get()).exists) await ref.update({ status: 'cancelled', updatedAt: FieldValue.serverTimestamp() });
+          if ((await ref.get()).exists) await ref.update({ status: 'cancelled', statusHistory: push(historyEntry('cancelled', 'stripe')), updatedAt: FieldValue.serverTimestamp() });
           break;
         }
         case 'charge.refunded':
