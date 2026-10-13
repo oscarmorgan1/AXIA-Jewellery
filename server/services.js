@@ -20,3 +20,9 @@ export async function getProduct(id) {
   const snap = await db.collection('products').doc(id).get();
   return snap.exists ? { id: snap.id, ...snap.data() } : null;
 }
+
+/** The Open shop switch in the admin portal (Website > Shop). Closed unless switched on. */
+export async function isShopOpen() {
+  const snap = await db.collection('site').doc('shop').get();
+  return snap.exists && snap.get('open') === true;
+}

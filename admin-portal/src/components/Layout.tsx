@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../auth';
 import { siteUrl } from '../firebase';
-import { useCollections, useMessages, useProducts, useSignups } from '../lib/data';
+import { useCollections, useMessages, useProducts, useShop, useSignups } from '../lib/data';
 import Logo from './Logo';
 import LogOff from './LogOff';
 import { useTheme } from '../lib/theme';
@@ -27,6 +27,7 @@ export default function Layout() {
   const { data: products } = useProducts();
   const { data: collections } = useCollections();
   const { data: signups } = useSignups();
+  const shop = useShop();
   const { data: messages } = useMessages();
   const [palette, setPalette] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -100,6 +101,7 @@ export default function Layout() {
           <NavLink to="/" className="header__logo" aria-label="Dashboard"><Logo height={17} /></NavLink>
           <div className="header__title">AXIA / <b>{title}</b></div>
           <span className="spacer" />
+          {!shop.loading && <NavLink to="/website" className={`chip header__shop ${shop.data.open ? 'chip--good' : 'chip--warn'}`} title="Open or close the shop">{shop.data.open ? 'Shop open' : 'Shop closed'}</NavLink>}
           <button className="search-trigger" onClick={() => setPalette(true)} aria-label="Search">
             <Search size={16} /><span>Search anything</span><kbd>{isMac ? '⌘' : 'Ctrl'} K</kbd>
           </button>

@@ -21,7 +21,7 @@ const canEngrave = p => p.art === 'cuban' || p.art === 'cubanBracelet';
 
 /**
  * Turns the browser's bag into priced lines.
- * @param {Array} items  [{ id, width?, length?, colour?, engraving?, q?, price? }]
+ * @param {Array} items  [{ id, width?, length?, colour?, engraving?, q? }]
  * @param {(id: string) => Promise<object|null>} getProduct  loads products/{id}
  * @param {{ giftLength?: string }} [extra]  the free bracelet's length, picked in the bag
  */
@@ -41,25 +41,13 @@ export async function priceCart(items, getProduct, extra = {}) {
     const p = id && (await load(id));
     if (!isBuyable(p)) throw new CartError('A piece in your bag is no longer available. Please remove it and try again.');
 
+    // Only the choice comes from the browser (width, length, colour, engraving,
+    // quantity). Any price it sends is ignored: the price is the Firestore one.
     const widths = Array.isArray(p.widths) && p.widths.length ? p.widths : null;
-    const wantWidth = str(raw.width);
-    const wantLength = str(raw.length);
-    const claimed = Number(raw.price);
-
-    // Pick the width and length. Bags saved before checkout went live only
-    // carry the price they were shown, so those match on that price instead.
-    let width = null, variant = null;
-    const pools = widths
-      ? widths.filter(w => !wantWidth || w.width === wantWidth).map(w => ({ width: w.width, variants: w.variants || [] }))
-      : [{ width: p.width || null, variants: p.variants || [] }];
-    for (const pool of pools) {
-      const v = p.singlePrice && !widths
-        ? pool.variants[0]
-        : wantLength
-          ? pool.variants.find(x => x.length === wantLength)
-          : pool.variants.find(x => x.priceAUD === claimed);
-      if (v) { width = pool.width; variant = v; break; }
-    }
+    const pick = widths ? widths.find(w => w.width === str(raw.width)) : { width: p.width || null, variants: p.variants || [] };
+    const variants = (pick && pick.variants) || [];
+    const variant = p.singlePrice ? variants[0] : variants.find(x => x.length === str(raw.length));
+    const width = widths ? (pick ? pick.width : null) : (p.width || null);
     if (!variant || !(variant.priceAUD > 0)) {
       throw new CartError(`We couldn't match the size you picked for ${p.name}. Please remove it from your bag and add it again.`);
     }

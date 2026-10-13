@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { ArrowUpRight, EyeOff, Save, Timer, Type, Undo2 } from 'lucide-react';
+import { ArrowUpRight, EyeOff, Lock, Save, ShoppingBag, Timer, Type, Undo2 } from 'lucide-react';
 import { db, siteUrl } from '../firebase';
-import { DEFAULT_COUNTDOWN, useCountdown } from '../lib/data';
+import { DEFAULT_COUNTDOWN, useCountdown, useShop } from '../lib/data';
 import { useToast } from '../components/Toast';
 import type { Countdown } from '../types';
 
@@ -22,6 +22,49 @@ function toLocalInput(iso: string) {
 function parts(target: number, now: number) {
   const t = Math.max(0, Math.floor((target - now) / 1000));
   return { d: pad(Math.floor(t / 86400)), h: pad(Math.floor((t % 86400) / 3600)), m: pad(Math.floor((t % 3600) / 60)), s: pad(t % 60), done: t === 0 };
+}
+
+/** The Open shop switch. While closed, the bag still works but checkout is refused (the server checks too). */
+function ShopCard() {
+  const { data, loading, error } = useShop();
+  const [busy, setBusy] = useState(false);
+  const toast = useToast();
+
+  async function setOpen(open: boolean) {
+    if (open && !window.confirm('Open the shop? Customers will be able to check out and pay straight away.')) return;
+    setBusy(true);
+    try {
+      await setDoc(doc(db, 'site', 'shop'), { open, updatedAt: serverTimestamp() });
+      toast.show(open ? 'The shop is open. Checkout works on the next page load.' : 'The shop is closed. Bags are kept, checkout is off.');
+    } catch (e) {
+      toast.show(`Couldn’t save: ${(e as Error).message}`);
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <div className="card">
+      <div className="card__head">
+        <div>
+          <h2>Shop</h2>
+          <div className="card__sub">
+            {data.open
+              ? 'Open: “Add to bag” and checkout work, and payments go through Stripe.'
+              : 'Closed: buttons say “Reserve your spot” and checkout is switched off.'}
+            {data.updatedAt ? ` Changed ${data.updatedAt.toDate().toLocaleString('en-AU')}.` : ''}
+          </div>
+        </div>
+        <span className="spacer" />
+        {!loading && <span className={`chip ${data.open ? 'chip--good' : 'chip--warn'}`}>{data.open ? 'Open' : 'Closed'}</span>}
+      </div>
+      {error && <div className="notice notice--error">{error.message}</div>}
+      <div style={{ display: 'flex', gap: 10 }}>
+        {data.open
+          ? <button className="btn" onClick={() => setOpen(false)} disabled={busy || loading}><Lock size={15} /> {busy ? 'Closing…' : 'Close shop'}</button>
+          : <button className="btn btn--primary" onClick={() => setOpen(true)} disabled={busy || loading}><ShoppingBag size={15} /> {busy ? 'Opening…' : 'Open shop'}</button>}
+      </div>
+      {toast.node}
+    </div>
+  );
 }
 
 export default function Website() {
@@ -60,10 +103,12 @@ export default function Website() {
   return (
     <>
       <div className="page-head">
-        <div><h1>Website</h1><p className="lede" style={{ margin: 0 }}>The launch countdown on the landing page, the Cuban and First Drop pages, and the bar across the shop.</p></div>
+        <div><h1>Website</h1><p className="lede" style={{ margin: 0 }}>Whether the shop is open, and the launch countdown on the landing page, the Cuban and First Drop pages, and the bar across the shop.</p></div>
         <span className="spacer" />
         <a className="btn" href={siteUrl('/')} target="_blank" rel="noreferrer">Open site <ArrowUpRight size={15} /></a>
       </div>
+
+      <ShopCard />
 
       {error && <div className="notice notice--error">{error.message}</div>}
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { collection, doc, onSnapshot, query, where, type DocumentData } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Collection, CostAssumptions, Message, Order, Product, ProductCost, Signup, Countdown, Visit } from '../types';
+import type { Collection, CostAssumptions, Message, Order, Product, ProductCost, Signup, Countdown, ShopSettings, Visit } from '../types';
 import { DEFAULT_ASSUMPTIONS } from './economics';
 
 interface Live<T> { data: T; loading: boolean; error: Error | null }
@@ -50,6 +50,17 @@ export function useCountdown(): Live<Countdown> & { saved: boolean } {
   useEffect(() => onSnapshot(
     doc(db, 'site', 'countdown'),
     snap => setState({ data: { ...DEFAULT_COUNTDOWN, ...(snap.data() as Partial<Countdown> | undefined) }, loading: false, error: null, saved: snap.exists() }),
+    error => setState(s => ({ ...s, loading: false, error })),
+  ), []);
+  return state;
+}
+
+/** The Open shop switch (`site/shop`). Missing means closed. */
+export function useShop(): Live<ShopSettings> {
+  const [state, setState] = useState<Live<ShopSettings>>({ data: { open: false }, loading: true, error: null });
+  useEffect(() => onSnapshot(
+    doc(db, 'site', 'shop'),
+    snap => setState({ data: { ...(snap.data() as Partial<ShopSettings> | undefined), open: snap.get('open') === true }, loading: false, error: null }),
     error => setState(s => ({ ...s, loading: false, error })),
   ), []);
   return state;

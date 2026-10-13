@@ -136,6 +136,7 @@
   }));
 
   /* ---- Cart ---- */
+  const shopOpen = () => !!(window.AXIA_SITE && window.AXIA_SITE.shop && window.AXIA_SITE.shop.open);
   const KEY = 'axia_cart';
   let cart = []; try { cart = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) {}
   const ov = $('#ov'), drw = $('#drw'), cc = $('#cc');
@@ -200,11 +201,11 @@
     if (host) { const c = $('.chip.is-active', host); if (c) opt = c.textContent.trim(); }
     const d = btn.dataset;
     cart.push({ id: d.id || '', name: d.name, price: +d.price, opt, img: d.img || '', width: d.width || '', length: d.length || '', colour: d.colour || '', engraving: d.engraving || '', q: 1 });
-    save(); say('Reserved'); openC();
+    save(); say(shopOpen() ? 'Added to bag' : 'Reserved'); openC();
   });
 
   // public API for page-level scripts (collection, product)
-  window.AXIA = { openCart: openC, closeCart: closeC, toast: say, addToCart(it) { cart.push({ q: 1, ...it }); save(); say('Reserved'); openC(); } };
+  window.AXIA = { openCart: openC, closeCart: closeC, toast: say, addToCart(it) { cart.push({ q: 1, ...it }); save(); say(shopOpen() ? 'Added to bag' : 'Reserved'); openC(); } };
 
   /* ---- Search overlay (built from the live catalogue) ---- */
   const fmtASearch = n => 'A$' + Number(n).toLocaleString('en-AU');
@@ -282,8 +283,10 @@
   }));
 
   /* ---- Account + Checkout ---- */
-  // Checkout is CLOSED until the First Drop goes live. Flip to true to open checkout.html.
-  const CHECKOUT_OPEN = false;
+  // Checkout opens when the shop is switched on in the admin portal (Website > Shop, saved
+  // in site/shop). The server checks the same switch before taking any payment.
+  const CHECKOUT_OPEN = shopOpen();
+  if (CHECKOUT_OPEN) $$('[data-buy-label]').forEach(l => { l.textContent = 'Add to bag'; });
   $$('[aria-label="Account"]').forEach(b => b.onclick = e => { e.preventDefault(); say('Accounts open when the First Drop drops. Join the list to get in first.'); });
   /* Only the cart drawer's Checkout button - never a form submit (e.g. the register button also uses .btn--block). */
   $$('.btn--cart.btn--block:not([type="submit"])').forEach(b => b.onclick = e => {
