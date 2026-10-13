@@ -13,8 +13,10 @@ import { Resend } from 'resend';
 const app = initializeApp(process.env.FIRESTORE_EMULATOR_HOST ? { projectId: 'axia-jewellery' } : undefined);
 export const db = getFirestore(app);
 
-export const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
-export const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+// Trimmed: a key pasted with a trailing newline would otherwise break every request.
+const secret = name => (process.env[name] || '').trim();
+export const stripe = secret('STRIPE_SECRET_KEY') ? new Stripe(secret('STRIPE_SECRET_KEY')) : null;
+export const resend = secret('RESEND_API_KEY') ? new Resend(secret('RESEND_API_KEY')) : null;
 
 export async function getProduct(id) {
   const snap = await db.collection('products').doc(id).get();

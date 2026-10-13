@@ -85,7 +85,7 @@ async function setStatusByPaymentIntent(paymentIntent, status) {
 export function webhookRoutes() {
   const router = express.Router();
   router.post('/api/stripe/webhook', express.raw({ type: 'application/json', limit: '1mb' }), async (req, res) => {
-    const secret = process.env.STRIPE_WEBHOOK_SECRET;
+    const secret = (process.env.STRIPE_WEBHOOK_SECRET || '').trim();
     if (!stripe || !secret) return res.status(503).send('Stripe is not configured');
     let event;
     try {

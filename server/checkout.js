@@ -22,6 +22,14 @@ function siteOrigin(req) {
 // Stripe metadata can't hold empty values, so leave those keys out.
 const compact = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== '' && v != null));
 
+// A short, safe label for what failed (no keys or customer data), shown in the
+// browser console so a failed checkout can be diagnosed without the server logs.
+function errorReason(err) {
+  if (!err) return 'unknown';
+  if (err.type && String(err.type).startsWith('Stripe')) return ['stripe', err.type, err.code, err.param].filter(Boolean).join(':');
+  return [err.name || 'Error', err.code].filter(x => x != null && x !== '').join(':'); // e.g. Error:7 is Firestore PERMISSION_DENIED
+}
+
 export function checkoutRoutes() {
   const router = express.Router();
 
@@ -72,7 +80,7 @@ export function checkoutRoutes() {
     } catch (err) {
       if (err instanceof CartError) return res.status(409).json({ error: err.message });
       console.error('checkout: could not create session', err);
-      res.status(500).json({ error: 'Something went wrong starting checkout. Please try again.' });
+      res.status(500).json({ error: 'Something went wrong starting checkout. Please try again.', reason: errorReason(err) });
     }
   });
 
