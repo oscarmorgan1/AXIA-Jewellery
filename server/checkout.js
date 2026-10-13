@@ -2,7 +2,7 @@
 // GET  /api/checkout/session?id=cs_...  what the confirmation page shows.
 import express from 'express';
 import { priceCart, CartError } from './pricing.js';
-import { stripe, getProduct } from './services.js';
+import { stripe, getProduct, isShopOpen } from './services.js';
 
 export const SHIPPING = [
   { id: 'standard', name: 'Standard shipping', amountAUD: 0, min: 3, max: 6 },
@@ -28,6 +28,7 @@ export function checkoutRoutes() {
   router.post('/api/checkout', express.json({ limit: '32kb' }), async (req, res) => {
     if (!stripe) return res.status(503).json({ error: "Checkout isn't switched on yet. Please try again soon." });
     try {
+      if (!(await isShopOpen())) return res.status(403).json({ error: "The shop isn't open yet. Your bag is saved for when it is." });
       const { lines, gift } = await priceCart(req.body && req.body.items, getProduct, { giftLength: req.body && req.body.giftLength });
       const origin = siteOrigin(req);
       const session = await stripe.checkout.sessions.create({

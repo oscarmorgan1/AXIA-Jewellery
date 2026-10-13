@@ -4,7 +4,8 @@
    "collections", edited in the admin portal at /admin) into
    window.AXIA_PRODUCTS and window.AXIA_COLLECTIONS, then runs the
    page's scripts. Also loads the site settings edited in the portal
-   (the launch countdown, from site/countdown) into window.AXIA_SITE,
+   (the launch countdown, from site/countdown, and whether the shop is
+   open, from site/shop) into window.AXIA_SITE,
    with window.AXIA_CD.run() to drive the countdown on any page, and
    provides window.AXIA_DB.add() so the public forms can save sign-ups
    and messages to Firestore. Counts unique daily visitors (see trackVisit).
@@ -24,7 +25,7 @@
   var PROJECT = 'axia-jewellery';
   var API_KEY = 'AIzaSyAXFXM3znoKUCD2ZPFfB8saBwV9r4eKItA'; // public web key; access is enforced by Firestore rules
   var FALLBACK = 'assets/data/products.js?v=20260930a';
-  var CACHE_KEY = 'axia_catalogue_v3', CACHE_TTL = 60 * 1000, TIMEOUT = 9000;
+  var CACHE_KEY = 'axia_catalogue_v4', CACHE_TTL = 60 * 1000, TIMEOUT = 9000;
 
   var q = new URLSearchParams(location.search).get('catalogue');
   var local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
@@ -101,10 +102,11 @@
     var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, TIMEOUT);
     var cols = listAll('collections', signal).catch(function () { return []; });
     var cd = getDoc('site/countdown', signal).catch(function () { return null; });
-    return Promise.all([listAll('products', signal), cols, cd]).then(function (r) {
+    var shop = getDoc('site/shop', signal).catch(function () { return null; });
+    return Promise.all([listAll('products', signal), cols, cd, shop]).then(function (r) {
       clearTimeout(timer);
       if (!r[0].length) throw new Error('Firestore catalogue is empty');
-      return { p: tidy(r[0]), c: tidyCollections(r[1]), s: { countdown: r[2] } };
+      return { p: tidy(r[0]), c: tidyCollections(r[1]), s: { countdown: r[2], shop: r[3] } };
     }, function (e) { clearTimeout(timer); throw e; });
   }
 

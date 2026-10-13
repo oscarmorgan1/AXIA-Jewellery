@@ -230,6 +230,7 @@ h1, h2, h3 { margin: 0; font-family: var(--font-display); letter-spacing: -0.015
 .chip--good { background: var(--good-soft); color: var(--good); }
 .chip--bad { background: var(--bad-soft); color: var(--bad); }
 .chip--warn { background: var(--warn-soft); color: var(--warn); }
+.header__shop { text-decoration: none; margin-right: 10px; }
 .chip--muted { background: var(--soft); color: var(--muted); }
 .chip--ice { background: var(--accent-soft); color: var(--ice-ink); }
 :root[data-theme="dark"] .chip--ice { color: var(--ice); }
