@@ -594,7 +594,9 @@
     if($('#stickyPrice'))$('#stickyPrice').textContent=fmtA(pr);
     const nm=fullName(), os=optString();
     let cimg=''; try{ const a=curImages(); cimg=(a&&(a[Math.min(imgIndex,a.length-1)]||a[0]))||''; }catch(e){}
-    $$('[data-add]').forEach(b=>{b.dataset.id=p.id;b.dataset.name=nm;b.dataset.price=pr;b.dataset.opt=os;b.dataset.img=cimg;});
+    $$('[data-add]').forEach(b=>{b.dataset.id=p.id;b.dataset.name=nm;b.dataset.price=pr;b.dataset.opt=os;b.dataset.img=cimg;
+      // the exact choice, so checkout can price it on the server
+      b.dataset.width=widthLabel()||'';b.dataset.length=variant().length||'';b.dataset.colour=colour;b.dataset.engraving=canEngrave?engraving:'';});
     if($('#valLength'))$('#valLength').textContent=variant().length;
     if($('#valColour'))$('#valColour').textContent=colour;
     if(canEngrave){ const im=$('#claspImg'), c=claspFor();

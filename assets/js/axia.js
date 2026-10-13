@@ -198,7 +198,8 @@
     const host = btn.closest('[data-product]');
     let opt = btn.dataset.opt || '';
     if (host) { const c = $('.chip.is-active', host); if (c) opt = c.textContent.trim(); }
-    cart.push({ id: btn.dataset.id || '', name: btn.dataset.name, price: +btn.dataset.price, opt, img: btn.dataset.img || '', q: 1 });
+    const d = btn.dataset;
+    cart.push({ id: d.id || '', name: d.name, price: +d.price, opt, img: d.img || '', width: d.width || '', length: d.length || '', colour: d.colour || '', engraving: d.engraving || '', q: 1 });
     save(); say('Reserved'); openC();
   });
 

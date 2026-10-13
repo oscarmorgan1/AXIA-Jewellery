@@ -2,9 +2,14 @@
   "name": "axia-jewellery",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "firebase emulators:exec --project axia-jewellery --ui \"npm run seed && npm run admin:dev\"",
     "emulators": "firebase emulators:start --project axia-jewellery",
+    "start": "node server/index.js",
+    "serve": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 PORT=5050 node --env-file-if-exists=.env server/index.js",
     "seed": "node scripts/seed.mjs",
     "set-admin": "node scripts/set-admin.mjs",
     "export:products": "node scripts/export-products.mjs",
@@ -15,8 +20,13 @@
     "postinstall": "npm --prefix admin-portal install",
     "migrate:collections": "node scripts/migrate-collections.mjs"
   },
+  "dependencies": {
+    "express": "^5.3.0",
+    "firebase-admin": "^13.10.0",
+    "resend": "^6.32.1",
+    "stripe": "^23.0.0"
+  },
   "devDependencies": {
-    "firebase-admin": "^13.5.0",
     "firebase-tools": "^14.19.0"
   }
 }

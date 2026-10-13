@@ -45,12 +45,12 @@ export default function Orders() {
       <div className="page-head"><h1>Orders</h1></div>
       <div className="card">
         <div className="card__head">
-          <div><h2>All orders</h2><div className="card__sub">Checkout is still a preview, so no orders are recorded yet. Stripe checkout will write paid orders here.</div></div>
+          <div><h2>All orders</h2><div className="card__sub">Paid Stripe orders land here automatically, and refunds made in Stripe update their status.</div></div>
           <span className="spacer" />
           <div className="search"><Search size={16} /><input placeholder="Search" value={q} onChange={e => setQ(e.target.value)} /></div>
         </div>
         {error && <div className="notice notice--error">{error.message}</div>}
-        {loading ? <div className="empty">Loading…</div> : <OrdersTable orders={shown} empty="Orders will appear here once Stripe checkout is connected." />}
+        {loading ? <div className="empty">Loading…</div> : <OrdersTable orders={shown} empty="Orders appear here as soon as a customer pays." />}
       </div>
     </>
   );

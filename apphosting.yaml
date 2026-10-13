@@ -1,0 +1,44 @@
+# Firebase App Hosting settings for the AXIA site (backend connected to GitHub,
+# so every merge to main builds with `npm run build` and runs `npm start`).
+#
+# Secrets live in Cloud Secret Manager, never in this repo. Create each one
+# BEFORE merging a change that references it, or the rollout fails:
+#   npx firebase apphosting:secrets:set <name> --project axia-jewellery
+# (say yes when it offers to grant your backend access). See README "Payments and email".
+
+runConfig:
+  minInstances: 0
+  maxInstances: 4
+
+env:
+  # Stripe secret key: sk_test_... until cutover, then sk_live_...
+  - variable: STRIPE_SECRET_KEY
+    secret: stripe-secret-key
+    availability: [RUNTIME]
+
+  # Signing secret of the webhook endpoint registered in Stripe (whsec_...)
+  - variable: STRIPE_WEBHOOK_SECRET
+    secret: stripe-webhook-secret
+    availability: [RUNTIME]
+
+  # Resend API key (re_...)
+  - variable: RESEND_API_KEY
+    secret: resend-api-key
+    availability: [RUNTIME]
+
+  # Sender for order confirmations. The domain must be verified in Resend.
+  - variable: ORDER_EMAIL_FROM
+    value: "AXIA <orders@axiajewellery.com>"
+    availability: [RUNTIME]
+
+  # Where customer replies to the confirmation email go.
+  - variable: ORDER_EMAIL_REPLY_TO
+    value: "support@axiajewellery.com"
+    availability: [RUNTIME]
+
+  # Public address used in Stripe return links and email links. Leave unset to
+  # use whatever domain the request came in on (the hosted.app URL now, the
+  # .com once it's connected). Uncomment after cutover if you want it pinned.
+  # - variable: PUBLIC_SITE_URL
+  #   value: "https://axiajewellery.com"
+  #   availability: [RUNTIME]
