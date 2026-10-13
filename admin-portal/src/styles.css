@@ -535,3 +535,14 @@ tr:hover .thumb { transform: scale(1.06); }
 .promo-order { display: grid; grid-template-columns: 90px 110px minmax(0, 1fr) 100px; gap: 12px; padding: 6px 0; font-size: 13.5px; border-bottom: 1px dashed var(--line); }
 .sale-line { display: grid; grid-template-columns: 70px 1fr 40px 70px; gap: 8px; font-size: 13.5px; padding: 5px 0; border-bottom: 1px dashed var(--line); }
 .sale-line .num { text-align: right; }
+.email-preview { border: 1px solid var(--line-strong); border-radius: 14px; padding: 18px 20px; background: var(--soft); font-size: 14px; line-height: 1.6; }
+.email-preview p { margin: 0 0 10px; }
+.email-preview__subject { font-weight: 700; font-size: 15px; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+.email-preview blockquote { margin: 12px 0 0; padding-left: 12px; border-left: 3px solid var(--line-strong); color: var(--muted); white-space: pre-wrap; font-size: 13px; }
+.thread { display: flex; flex-direction: column; gap: 10px; }
+.thread__msg { border-radius: 14px; padding: 12px 14px; font-size: 14px; line-height: 1.55; white-space: pre-wrap; background: var(--soft); }
+.thread__msg--out { background: var(--accent-soft); margin-left: 28px; }
+.thread__meta { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; white-space: normal; }
+.linked-order { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 12px; font-size: 14px; color: inherit; text-decoration: none; }
+.linked-order:hover { border-color: var(--accent); background: var(--accent-soft); }
+.linked-order .spacer { flex: 1; }

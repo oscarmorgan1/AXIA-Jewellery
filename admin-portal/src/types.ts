@@ -76,7 +76,7 @@ export interface OrderItem {
   options?: string; width?: string; length?: string; colour?: string; engraving?: string; image?: string;
 }
 
-export interface OrderEmail { type: string; to: string; subject: string; resendId: string | null; status: 'sent' | 'skipped'; sentAt?: Stamp }
+export interface OrderEmail { type: string; to: string; subject: string; resendId: string | null; status: 'sent' | 'skipped'; sentAt?: Stamp; body?: string; by?: string; inquiryId?: string; orderId?: string }
 export interface OrderHistory { status: string; at?: Stamp; by: string; emailed?: boolean; note?: string; tracking?: Tracking }
 export interface Tracking { carrier?: string; number?: string; url?: string }
 
@@ -158,6 +158,8 @@ export interface Message {
   order?: string;
   message: string;
   status: 'new' | 'done' | string;
+  /** Replies sent from the portal, with their Resend IDs. */
+  replies?: OrderEmail[];
   createdAt?: Ts;
 }
 
@@ -201,4 +203,6 @@ export interface CustomerRecord {
   firstOrderAt?: number | null;
   lastOrderAt?: number | null;
   createdAt?: number | null;
+  /** Messages and replies sent to them from the portal (sentAt in millis). */
+  emails?: (Omit<OrderEmail, 'sentAt'> & { sentAt: number | null })[];
 }

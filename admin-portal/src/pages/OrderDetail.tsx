@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Gift, Mail, PenLine, Truck } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Gift, Mail, PenLine, Send, Truck } from 'lucide-react';
 import { siteUrl } from '../firebase';
 import { useOrders } from '../lib/data';
 import { adminApi } from '../lib/api';
@@ -8,6 +8,7 @@ import { aud } from '../lib/format';
 import { STATUS_LABEL, STATUS_OPTIONS, itemCount, orderNo } from '../lib/orders';
 import Drawer from '../components/Drawer';
 import { useToast } from '../components/Toast';
+import ComposeEmail from '../components/ComposeEmail';
 import { statusChip } from './Orders';
 import type { Order, Tracking } from '../types';
 
@@ -16,7 +17,7 @@ const img = (src?: string) => !src ? '' : /^https?:/.test(src) ? src : siteUrl('
 
 const EMAIL_LABEL: Record<string, string> = {
   confirmation: 'Order confirmation', 'status:in_progress': 'In progress', 'status:shipped': 'Shipped',
-  'status:fulfilled': 'Delivered', 'status:cancelled': 'Cancelled',
+  'status:fulfilled': 'Delivered', 'status:cancelled': 'Cancelled', message: 'Message from you', reply: 'Reply to inquiry',
 };
 
 /** Pick a new status, then confirm exactly what (if anything) gets emailed before it's saved. */
@@ -111,6 +112,7 @@ export default function OrderDetail() {
   const { id = '' } = useParams();
   const { data, loading, error } = useOrders();
   const [changing, setChanging] = useState(false);
+  const [composing, setComposing] = useState(false);
   const toast = useToast();
   const order = data.find(o => o.id === id);
 
@@ -134,6 +136,7 @@ export default function OrderDetail() {
         {test && <span className="chip chip--muted">Test</span>}
         <span className="spacer" />
         {stripeUrl && <a className="btn" href={stripeUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Stripe</a>}
+        {order.customer?.email && <button className="btn" onClick={() => setComposing(true)}><Send size={16} /> Message customer</button>}
         {!['pending', 'refunded'].includes(order.status || 'pending') && <button className="btn btn--primary" onClick={() => setChanging(true)}>Change status</button>}
       </div>
       <p className="card__sub" style={{ marginTop: -8 }}>Placed {when(order.createdAt)} · {itemCount(order)} items · {aud(order.totalAUD, 2)}</p>
@@ -256,6 +259,8 @@ export default function OrderDetail() {
         </div>
       </div>
 
+      {composing && order.customer?.email && <ComposeEmail target={{ to: order.customer.email, name: order.customer.name, subject: `About your AXIA order #${orderNo(order)}`, orderId: order.id, orderNumber: orderNo(order) }}
+        onClose={() => setComposing(false)} onSent={m => { setComposing(false); toast.show(m); }} />}
       {changing && <StatusDrawer order={order} onClose={() => setChanging(false)} onDone={m => { setChanging(false); toast.show(m); }} />}
       {toast.node}
     </>
