@@ -188,3 +188,17 @@ export interface Visit {
   device?: 'mobile' | 'tablet' | 'desktop';
   createdAt?: { toDate(): Date };
 }
+
+/** Customer record (server API; Firestore `customers/{email}`), made on every order. */
+export interface CustomerRecord {
+  id: string;
+  email: string;
+  name?: string;
+  phone?: string;
+  address?: NonNullable<NonNullable<Order['shipping']>['address']> | null;
+  orderIds?: string[];
+  notes?: string;
+  firstOrderAt?: number | null;
+  lastOrderAt?: number | null;
+  createdAt?: number | null;
+}

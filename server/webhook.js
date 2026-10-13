@@ -6,11 +6,11 @@
 // repeat: the order document is keyed by the session id and the email is only
 // marked sent once Resend accepts it.
 import express from 'express';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { db, stripe } from './services.js';
 import { orderNumber } from './checkout.js';
 import { confirmationEmail, sendEmail } from './email.js';
-import { emailEntry, historyEntry, push } from './orders.js';
+import { emailEntry, historyEntry, push, upsertCustomer, customerId } from './orders.js';
 
 const cents = n => (n || 0) / 100;
 
@@ -68,7 +68,7 @@ async function recordCheckout(sessionId, siteUrl) {
   const existing = await ref.get();
   if (!existing.exists) {
     await ref.create({
-      ...order, siteUrl, emails: [], statusHistory: [historyEntry(order.status, 'stripe')],
+      ...order, customerId: customerId(order.customer.email), siteUrl, emails: [], statusHistory: [historyEntry(order.status, 'stripe')],
       createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
     });
   } else {
@@ -78,6 +78,8 @@ async function recordCheckout(sessionId, siteUrl) {
       await ref.update({ status: 'paid', statusHistory: push(historyEntry('paid', 'stripe')), updatedAt: FieldValue.serverTimestamp() });
     }
   }
+  // Every order creates or updates its customer record (repeat events are harmless).
+  await upsertCustomer(db, sessionId, order, (existing.exists && existing.data().createdAt) || Timestamp.now());
   const sent = existing.exists && existing.data().emailSentAt;
   if (order.status === 'paid' && !sent && order.customer.email) {
     const mail = confirmationEmail(order, siteUrl);

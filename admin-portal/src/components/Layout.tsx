@@ -13,7 +13,7 @@ import CommandPalette from './CommandPalette';
 
 const TITLES: [RegExp, string][] = [
   [/^\/$/, 'Dashboard'], [/^\/products\/new/, 'New product'], [/^\/products\//, 'Edit product'], [/^\/products/, 'Products'],
-  [/^\/collections/, 'Collections'], [/^\/customers/, 'Customers'], [/^\/inbox/, 'Inbox'], [/^\/margins/, 'Margins'],
+  [/^\/collections/, 'Collections'], [/^\/customers\//, 'Customer'], [/^\/customers/, 'Customers'], [/^\/inbox/, 'Inbox'], [/^\/margins/, 'Margins'],
   [/^\/orders\//, 'Order'], [/^\/orders/, 'Orders'], [/^\/promos/, 'Promo codes'], [/^\/website/, 'Website'], [/^\/settings/, 'Settings'],
 ];
 
@@ -53,7 +53,7 @@ export default function Layout() {
   }, []);
 
   const liveProducts = products.filter(p => !p.archived).length;
-  const customers = new Set(signups.map(s => s.email.toLowerCase())).size;
+  const customers = new Set([...signups.map(s => s.email.toLowerCase()), ...orders.map(o => (o.customer?.email || '').toLowerCase()).filter(Boolean)]).size;
   const openOrders = orders.filter(o => o.status === 'paid' || o.status === 'in_progress').length;
   const unread = messages.filter(m => m.status !== 'done').length;
   const title = TITLES.find(([r]) => r.test(loc.pathname))?.[1] ?? '';
@@ -119,7 +119,7 @@ export default function Layout() {
         <div className="page" key={loc.pathname}><Outlet /></div>
       </div>
 
-      <CommandPalette open={palette} onClose={() => setPalette(false)} products={products} collections={collections} signups={signups} />
+      <CommandPalette open={palette} onClose={() => setPalette(false)} products={products} collections={collections} signups={signups} orders={orders} messages={messages} />
       {leaving && <LogOff onDone={finishLogOff} onCancel={cancelLogOff} />}
     </div>
   );

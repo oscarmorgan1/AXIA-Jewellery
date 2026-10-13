@@ -9,7 +9,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { db, stripe } from './services.js';
 import { STATUS_EMAILS, statusEmail, sendEmail } from './email.js';
-import { emailEntry, historyEntry, push } from './orders.js';
+import { emailEntry, historyEntry, push, upsertCustomer, customerId } from './orders.js';
 
 /** Statuses an admin can set. `refunded` only comes from Stripe, with the money. */
 export const ADMIN_STATUSES = ['paid', 'in_progress', 'shipped', 'fulfilled', 'cancelled'];
@@ -139,6 +139,37 @@ async function listPromos() {
   });
 }
 
+// ---- Customers: one record per email, made by the webhook on every order.
+// Listing also creates records for any order placed before customers existed.
+
+const millis = t => (t && t.toMillis ? t.toMillis() : null);
+
+async function listCustomers(backfill = true) {
+  const [customers, orders] = await Promise.all([db.collection('customers').get(), db.collection('orders').select('customer', 'shipping', 'createdAt').get()]);
+  const known = new Map(customers.docs.map(d => [d.id, new Set(d.get('orderIds') || [])]));
+  const missing = orders.docs.filter(o => {
+    const id = customerId(o.get('customer.email'));
+    return id && !id.includes('/') && !(known.get(id) && known.get(id).has(o.id));
+  });
+  if (backfill && missing.length) {
+    // Oldest first, so the newest order's details win.
+    missing.sort((a, b) => (millis(a.get('createdAt')) || 0) - (millis(b.get('createdAt')) || 0));
+    for (const o of missing) await upsertCustomer(db, o.id, o.data(), o.get('createdAt') || undefined);
+    return listCustomers(false);
+  }
+  return customers.docs.map(d => {
+    const v = d.data();
+    return { ...v, id: d.id, firstOrderAt: millis(v.firstOrderAt), lastOrderAt: millis(v.lastOrderAt), createdAt: millis(v.createdAt), updatedAt: millis(v.updatedAt) };
+  });
+}
+
+async function saveCustomerNotes(req) {
+  const ref = db.collection('customers').doc(customerId(str(req.params.id, 200)));
+  if (!(await ref.get()).exists) throw new HttpError(404, 'Customer not found');
+  await ref.update({ notes: str(req.body.notes, 5000), updatedAt: FieldValue.serverTimestamp() });
+  return { ok: true };
+}
+
 const handle = fn => async (req, res) => {
   try {
     res.json(await fn(req));
@@ -154,6 +185,8 @@ export function adminRoutes() {
   const router = express.Router();
   router.use('/api/admin', express.json({ limit: '32kb' }), requireAdmin);
   router.post('/api/admin/orders/:id/status', handle(changeStatus));
+  router.get('/api/admin/customers', handle(() => listCustomers()));
+  router.post('/api/admin/customers/:id/notes', handle(saveCustomerNotes));
   router.get('/api/admin/promos', handle(listPromos));
   router.post('/api/admin/promos', handle(createPromo));
   router.post('/api/admin/promos/:id/active', handle(setPromoActive));
