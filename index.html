@@ -433,7 +433,7 @@
     <div class="done" id="done">
       <div class="tick"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
       <h3>You're on the list</h3>
-      <p>Here's 15% off your first order: <strong>FIRST15</strong>. Enter it at checkout when the drop opens. We'll let you know the moment it does.</p>
+      <p>Here's 15% off your first order: <strong>FREE15</strong>. We've emailed it to you too. Enter it at checkout when the drop opens, and we'll let you know the moment it does.</p>
     </div>
   </div>
 </section>
@@ -494,7 +494,7 @@
   </div>
 </div>
 
-<script src="assets/js/catalogue.js?v=20261002a"></script>
+<script src="assets/js/catalogue.js?v=20261021a"></script>
 <script type="text/axia-deferred">
 /* ============================================================
    AXIA - First Drop landing
@@ -746,7 +746,6 @@ lbCta.addEventListener('click',function(){
    in the admin portal under Customers. Nothing is emailed from the site.
    Also keeps a local record so axiaWaitlist() works offline.
 */
-var INBOX = 'axiajewellery@gmail.com';
 
 var form = document.getElementById('form');
 var note = document.getElementById('note');
@@ -807,10 +806,10 @@ form.addEventListener('submit', function(e){
   submitBtn.disabled = true; submitBtn.textContent = 'Joining…';
 
   function succeed(){ submitBtn.disabled = false; submitBtn.textContent = orig; form.style.display = 'none'; doneEl.classList.add('show'); }
-  function failNow(){ submitBtn.disabled = false; submitBtn.textContent = orig; showErr('Something stopped that from sending. Please try again, or email ' + INBOX + '.'); }
+  function failNow(){ submitBtn.disabled = false; submitBtn.textContent = orig; showErr('Something stopped that from sending. Please try again in a moment.'); }
 
   var pick = (DROP || []).filter(function(p){ return fullName(p) === product; })[0];
-  window.AXIA_DB.add('signups', {
+  window.AXIA_DB.signup({
     firstName: firstName.slice(0, 80), email: email.toLowerCase().slice(0, 200), mobile: mobile.slice(0, 30),
     instagram: instagram.slice(0, 60), productId: pick ? pick.id : '', productName: product.slice(0, 160),
     emailConsent: true, smsConsent: cSms.checked, source: 'landing', page: location.pathname.slice(0, 200)

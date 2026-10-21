@@ -216,6 +216,7 @@
         <div class="tick"><svg viewBox="0 0 24 24"><path d="m5 13 4 4 10-11"/></svg></div>
         <h2>You're on the AXIA First Access list.</h2>
         <p>Members receive early access before the public release. We'll contact <span id="okEmail">you</span>, and text you if you opted in, the moment the first drop opens.</p>
+        <p>Check your inbox: we've sent you <strong>15% off your first order</strong> with the code <strong>FREE15</strong>.</p>
         <p style="margin-top:var(--s-5)"><a class="link-u" href="collection">Browse the collection <span class="arw">→</span></a></p>
       </div>
     </div>
@@ -268,7 +269,7 @@
 </div>
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
 
-<script src="assets/js/catalogue.js?v=20261002a"></script>
+<script src="assets/js/catalogue.js?v=20261021a"></script>
 <script type="text/axia-deferred" src="assets/js/axia.js?v=20261002a"></script>
 <script type="text/axia-deferred">
 (function(){
@@ -333,7 +334,6 @@
   /* ---- Submit: validate, save the registration to the AXIA database, record demand, show success ---- */
   // Registrations are saved to Firestore ("signups") and show in the admin portal under Customers.
   // Nothing is emailed from the site. We ALSO keep a local demand tally so axiaInterest() still works offline.
-  const INBOX='axiajewellery@gmail.com';
   function record(entry){
     try{
       const wl=JSON.parse(localStorage.getItem('axia_waitlist')||'[]'); wl.push(entry); localStorage.setItem('axia_waitlist',JSON.stringify(wl));
@@ -369,14 +369,14 @@
     const orig=submitBtn.textContent; submitBtn.disabled=true; submitBtn.textContent='Joining…';
     let ok=true;
     try{
-      await window.AXIA_DB.add('signups',{
+      await window.AXIA_DB.signup({
         firstName:firstName.slice(0,80), email:email.toLowerCase().slice(0,200), mobile:mobile.slice(0,30),
         instagram:instagram.slice(0,60), productId:String(productId).slice(0,120), productName:productName.slice(0,160),
         size:String(size).slice(0,40), emailConsent, smsConsent:entry.smsConsent, source:'first-drop', page:location.pathname.slice(0,200)
       });
     }catch(ex){ ok=false; if(window.console) console.error(ex); }
     submitBtn.disabled=false; submitBtn.textContent=orig;
-    if(!ok){ fail('Something stopped that from sending. Please try again, or email '+INBOX+'.'); return; }
+    if(!ok){ fail('Something stopped that from sending. Please try again in a moment.'); return; }
     $('#okEmail').textContent=email;
     $('#formView').style.display='none';
     const okv=$('#successView'); okv.classList.add('on'); okv.scrollIntoView({block:'center'});

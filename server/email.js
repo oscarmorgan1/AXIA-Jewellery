@@ -6,6 +6,11 @@ import { resend } from './services.js';
 const C = { ink: '#111315', soft: '#5b5e63', line: '#e6e2d9', bone: '#fbfaf6', page: '#f4f1ea', ice: '#2a6076', iceBg: '#eef6f9', accent: '#f3436e' };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const aud = n => 'A$' + Number(n || 0).toLocaleString('en-AU', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
+// Links in emails always point at the public site, whatever address the server
+// is reached on (e.g. the temporary hosted.app URL). Images still load from the
+// serving address, so they work before and after the domain cutover.
+const brandUrl = () => (process.env.EMAIL_LINK_URL || 'https://axiajewellery.com').trim().replace(/\/$/, '');
+
 const font = "font-family:'Helvetica Neue',Helvetica,Arial,sans-serif";
 
 /** The stages a customer sees, in order. */
@@ -96,14 +101,14 @@ function address(order) {
 }
 
 function layout({ siteUrl, preheader, heading, body, reason = 'You’re receiving this email because you placed an order with AXIA.' }) {
-  const help = `${siteUrl}/support`;
+  const help = `${brandUrl()}/support`;
   const link = (href, t) => `<a href="${esc(href)}" style="color:${C.ice};text-decoration:underline">${t}</a>`;
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${esc(heading)}</title></head>
 <body style="margin:0;padding:0;background:${C.page}">
 <span style="display:none!important;visibility:hidden;opacity:0;height:0;width:0;overflow:hidden">${esc(preheader)}</span>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.page}"><tr><td align="center" style="padding:32px 14px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px">
-  <tr><td align="center" style="padding:6px 0 24px"><a href="${esc(siteUrl)}"><img src="${esc(siteUrl)}/assets/img/axia-logo.png" alt="AXIA" height="26" style="display:block;height:26px;border:0"></a></td></tr>
+  <tr><td align="center" style="padding:6px 0 24px"><a href="${esc(brandUrl())}"><img src="${esc(siteUrl)}/assets/img/axia-logo.png" alt="AXIA" height="26" style="display:block;height:26px;border:0"></a></td></tr>
   <tr><td style="background:${C.bone};border:1px solid ${C.line};border-radius:6px;padding:36px 34px">
     <h1 style="margin:0 0 12px;${font};font-size:26px;line-height:1.15;letter-spacing:.01em;text-transform:uppercase;color:${C.ink}">${esc(heading)}</h1>
     ${body}
@@ -143,7 +148,7 @@ export function confirmationEmail(order, siteUrl) {
       <tr><td width="26" style="vertical-align:top;color:${C.ice};font-weight:700">2</td><td style="padding-bottom:8px"><b>Checked and boxed.</b> <span style="color:${C.soft}">Each piece is tested and packed in its AXIA box with its GRA certificate.</span></td></tr>
       <tr><td width="26" style="vertical-align:top;color:${C.ice};font-weight:700">3</td><td><b>Shipped to you.</b> <span style="color:${C.soft}">You’ll get tracking details by email the day it leaves us.</span></td></tr>
     </table>`,
-    button(`${siteUrl}/support`, 'Visit the help centre'),
+    button(`${brandUrl()}/support`, 'Visit the help centre'),
   ].join('');
 
   const text = [
@@ -152,7 +157,7 @@ export function confirmationEmail(order, siteUrl) {
     ...(order.gift ? [`${order.gift.name}${order.gift.length ? ' (' + order.gift.length + ')' : ''}: free gift`] : []),
     '', `Total paid: ${aud(order.totalAUD)} AUD`, '',
     'Every piece is hand-set and made to order, so allow approximately 3 to 5 weeks before it ships.',
-    `Help centre: ${siteUrl}/support`,
+    `Help centre: ${brandUrl()}/support`,
   ].join('\n');
 
   return {
@@ -178,15 +183,15 @@ export function statusEmail(order, status, siteUrl, { tracking, note } = {}) {
     sectionTitle(`Order #${order.orderNumber}`),
     itemsTable(order, siteUrl),
     status === 'shipped' ? address(order) : '',
-    status === 'fulfilled' ? `${sectionTitle('Looking after it')}${p(`Wipe it with the included cloth and keep it in its box when you’re not wearing it. More tips in our <a href="${esc(siteUrl)}/support#care" style="color:${C.ice}">care guide</a>.`, C.soft)}` : '',
-    button(`${siteUrl}/support`, 'Visit the help centre'),
+    status === 'fulfilled' ? `${sectionTitle('Looking after it')}${p(`Wipe it with the included cloth and keep it in its box when you’re not wearing it. More tips in our <a href="${esc(brandUrl())}/support#care" style="color:${C.ice}">care guide</a>.`, C.soft)}` : '',
+    button(`${brandUrl()}/support`, 'Visit the help centre'),
   ].join('');
 
   const text = [
     t.heading, '', t.intro, ...(note ? ['', note] : []),
     ...(trackingBlock ? ['', `Tracking: ${tracking.carrier || ''} ${tracking.number || ''} ${tracking.url || ''}`.trim()] : []),
     '', `Order #${order.orderNumber}`, ...order.items.map(i => `${i.name}${i.qty > 1 ? ' x ' + i.qty : ''}`),
-    '', `Help centre: ${siteUrl}/support`,
+    '', `Help centre: ${brandUrl()}/support`,
   ].join('\n');
 
   return { subject: t.subject(order.orderNumber), html: layout({ siteUrl, preheader: t.intro.slice(0, 110), heading: t.heading, body }), text };
@@ -205,11 +210,38 @@ export function messageEmail({ name, subject, body, siteUrl, quote, orderNumber 
     reason: 'You’re receiving this email because you contacted or ordered from AXIA.',
     body: `${first ? p(`Hi ${esc(first)},`) : ''}${paras}${p('Warm regards,<br><b>The AXIA team</b>')}`
       + (orderNumber ? p(`<span style="font-size:13px;color:${C.soft}">Order #${esc(orderNumber)}</span>`) : '')
-      + quoted + `<div style="margin-top:22px">${button(`${siteUrl}/support`, 'Visit the help centre')}</div>`,
+      + quoted + `<div style="margin-top:22px">${button(`${brandUrl()}/support`, 'Visit the help centre')}</div>`,
   });
   const text = [first ? `Hi ${first},` : '', String(body).trim(), 'Warm regards,\nThe AXIA team', orderNumber ? `Order #${orderNumber}` : '',
-    quote ? `--- Your message ---\n${quote.text}` : '', `Help centre: ${siteUrl}/support`].filter(Boolean).join('\n\n');
+    quote ? `--- Your message ---\n${quote.text}` : '', `Help centre: ${brandUrl()}/support`].filter(Boolean).join('\n\n');
   return { subject, html, text };
+}
+
+/** Welcome email for a new sign-up, with their first-order code. */
+export function welcomeEmail({ name, code, percentOff, siteUrl }) {
+  const first = String(name || '').trim().split(/\s+/)[0];
+  const shop = `${brandUrl()}/shop`;
+  const codeBox = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:22px 0 6px"><tr><td align="center" style="background:${C.iceBg};border:1px dashed ${C.ice};border-radius:6px;padding:22px 14px">
+    <p style="margin:0 0 6px;${font};font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:${C.ice}">Your code</p>
+    <p style="margin:0;${font};font-size:30px;font-weight:700;letter-spacing:.14em;color:${C.ink}">${esc(code)}</p>
+    <p style="margin:8px 0 0;${font};font-size:13px;color:${C.soft}">${esc(percentOff)}% off your first order. Enter it at checkout.</p>
+  </td></tr></table>`;
+  const body = [
+    p(`${first ? `Hi ${esc(first)}, welcome` : 'Welcome'} to AXIA. You’re on the list, so you’ll hear about every drop before anyone else.`),
+    p(`As a thank you, here’s ${esc(percentOff)}% off your first piece.`),
+    codeBox,
+    button(shop, 'Shop AXIA'),
+    sectionTitle('Why AXIA'),
+    p('Every piece is hand-set in 925 sterling silver with VVS D-colour moissanite that passes a diamond tester, and comes with a GRA certificate, a lifetime warranty and free 30-day size exchanges.', C.soft),
+  ].join('');
+  const html = layout({
+    siteUrl, preheader: `Here’s ${percentOff}% off your first order: ${code}`, heading: 'Welcome to AXIA', body,
+    reason: 'You’re receiving this email because you signed up at axiajewellery.com. Reply to this email any time to opt out.',
+  });
+  const text = [`${first ? `Hi ${first}, welcome` : 'Welcome'} to AXIA. You’re on the list, so you’ll hear about every drop before anyone else.`,
+    `As a thank you, here’s ${percentOff}% off your first piece. Your code: ${code} (enter it at checkout).`,
+    `Shop: ${shop}`, `Help centre: ${brandUrl()}/support`].join('\n\n');
+  return { subject: `Welcome to AXIA: ${percentOff}% off your first order`, html, text };
 }
 
 /**

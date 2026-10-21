@@ -10,6 +10,9 @@ import StatCard from '../components/StatCard';
 import { useToast } from '../components/Toast';
 import type { Order, PromoCode } from '../types';
 
+/** The code the sign-up welcome email gives out (server WELCOME_CODE). */
+const WELCOME_CODE = 'FREE15';
+
 interface Usage { orders: Order[]; salesAUD: number; discountAUD: number }
 const blankUsage = (): Usage => ({ orders: [], salesAUD: 0, discountAUD: 0 });
 const day = (ms: number | null) => ms ? new Date(ms).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
@@ -126,6 +129,11 @@ export default function Promos() {
         <button className="btn btn--primary" onClick={() => setCreating(true)}><Plus size={16} /> New code</button>
         <p className="lede">Codes live in Stripe and work at checkout. Sales are counted from paid orders that used each code.</p>
       </div>
+      {promos && !promos.some(p => p.code === WELCOME_CODE && p.active) && (
+        <div className="notice notice--warn" style={{ marginBottom: 20 }}>
+          The welcome email gives everyone who signs up the code <b>{WELCOME_CODE}</b>, but it isn’t active here yet. Create it with <b>New code</b> (Standard, 15% off) so it works at checkout.
+        </div>
+      )}
       {error && <div className="notice notice--error">{error}</div>}
 
       <div className="grid-4 stagger" style={{ marginBottom: 20 }}>

@@ -105,7 +105,7 @@ Checkout only works while the shop is open: **Website > Shop > Open shop** in th
 
 Checkout uses **Stripe Checkout** (Stripe's hosted payment page). `checkout.html` shows the bag, then `POST /api/checkout` prices every piece from Firestore. The browser only sends which piece, width, length, colour, engraving and quantity; any price it sends is ignored and sends the buyer to Stripe, which collects the address, shipping choice (free standard or A$25 express), discount code and card. Stripe then calls `POST /api/stripe/webhook`, which writes the order to `orders/` (shown in the portal) and emails a confirmation through **Resend**. Refunds made in the Stripe dashboard mark the order Refunded.
 
-Discount codes are Stripe **promotion codes**: create them in the Stripe dashboard under Product catalogue > Coupons (for example `FIRST15` for 15% off). The old codes written into the checkout page are gone.
+Discount codes are Stripe **promotion codes**: create them in the Stripe dashboard under Product catalogue > Coupons (for example `FREE15` for 15% off). The old codes written into the checkout page are gone.
 
 ### Secrets
 
@@ -141,6 +141,12 @@ Open an order in the portal to see everything about it and change its status: Ne
 ### Customers and search
 
 Every order creates or updates a customer record. Customers in the portal joins those records with orders, waitlist sign-ups and Inbox messages by email, so each person has one page with their open orders, order history, total spent, pieces bought, codes used, sign-ups, messages and private notes. The header search (Ctrl K) covers orders (number, name, email, phone, engraving, tracking, code), customers, products, collections, promo codes and messages.
+
+### Welcome email
+
+Sign-ups from the landing and First Drop pages go through `POST /api/signup`, which saves them to `signups/` and emails a one-time welcome with the first-order code (`FREE15`, 15% off; change with the `WELCOME_CODE` and `WELCOME_PERCENT_OFF` variables). The email's Resend ID is logged on the sign-up (`welcomeEmail`) and the customer record, and shows in the customer's activity. Create the code itself under Promo codes so it works at checkout; the Promo codes page warns while it's missing. If the server can't be reached, the forms fall back to saving straight to Firestore, without the email.
+
+Links in every email point at `https://axiajewellery.com` (override with `EMAIL_LINK_URL`), never the temporary App Hosting address.
 
 ### Replies and messages
 
