@@ -22,28 +22,6 @@ function siteOrigin(req) {
 // Stripe metadata can't hold empty values, so leave those keys out.
 const compact = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== '' && v != null));
 
-// A short, safe label for what failed (no keys or customer data), shown in the
-// browser console so a failed checkout can be diagnosed without the server logs.
-function errorReason(err) {
-  if (!err) return 'unknown';
-  if (err.type && String(err.type).startsWith('Stripe')) return ['stripe', err.type, err.code, err.param].filter(Boolean).join(':');
-  return [err.name || 'Error', err.code].filter(x => x != null && x !== '').join(':'); // e.g. Error:7 is Firestore PERMISSION_DENIED
-}
-
-// Stripe's own message (it masks keys itself). On an authentication failure, also
-// a masked view of the key this server was given (start, end and length only), so
-// it can be compared with the one in the Stripe dashboard.
-function errorDetail(err) {
-  if (!err || !err.type || !String(err.type).startsWith('Stripe')) return {};
-  const out = { detail: err.message };
-  if (err.type === 'StripeAuthenticationError') {
-    const k = process.env.STRIPE_SECRET_KEY || '';
-    const t = k.trim();
-    out.keySeen = t ? `${t.slice(0, 12)}…${t.slice(-6)} (${t.length} chars${t.length !== k.length ? ', had spaces/newlines' : ''})` : 'none';
-  }
-  return out;
-}
-
 export function checkoutRoutes() {
   const router = express.Router();
 
@@ -94,7 +72,7 @@ export function checkoutRoutes() {
     } catch (err) {
       if (err instanceof CartError) return res.status(409).json({ error: err.message });
       console.error('checkout: could not create session', err);
-      res.status(500).json({ error: 'Something went wrong starting checkout. Please try again.', reason: errorReason(err), ...errorDetail(err) });
+      res.status(500).json({ error: 'Something went wrong starting checkout. Please try again.' });
     }
   });
 

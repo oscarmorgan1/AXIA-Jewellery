@@ -19,6 +19,11 @@ export function staticSite(root) {
   const adminDir = path.join(root, 'admin');
   const sendPage = (res, file) => res.set('Cache-Control', NO_CACHE).sendFile(file);
 
+  // Crawlers ask for these on every visit; answering saves a stream of 404s.
+  router.get('/robots.txt', (req, res) => res.set('Cache-Control', WEEK).type('text')
+    .send('User-agent: *\nDisallow: /admin\nDisallow: /api/\nDisallow: /checkout\nDisallow: /unsubscribe\n'));
+  router.get('/favicon.ico', (req, res) => res.set('Cache-Control', WEEK).redirect(301, '/assets/img/favicon.svg'));
+
   router.use('/assets', express.static(path.join(root, 'assets'), {
     index: false, redirect: false, dotfiles: 'ignore',
     setHeaders: (res, file) => res.set('Cache-Control', MEDIA.test(file) ? WEEK : NO_CACHE),
