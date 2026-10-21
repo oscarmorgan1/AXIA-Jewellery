@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { collection, doc, onSnapshot, query, where, type DocumentData } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Collection, CostAssumptions, Message, Order, Product, ProductCost, Signup, Countdown, ShopSettings, Visit } from '../types';
+import type { Collection, CostAssumptions, Message, Order, Product, ProductCost, Signup, Countdown, ShopSettings, SiteMedia, Visit } from '../types';
 import { DEFAULT_ASSUMPTIONS } from './economics';
 
 interface Live<T> { data: T; loading: boolean; error: Error | null }
@@ -61,6 +61,17 @@ export function useShop(): Live<ShopSettings> {
   useEffect(() => onSnapshot(
     doc(db, 'site', 'shop'),
     snap => setState({ data: { ...(snap.data() as Partial<ShopSettings> | undefined), open: snap.get('open') === true }, loading: false, error: null }),
+    error => setState(s => ({ ...s, loading: false, error })),
+  ), []);
+  return state;
+}
+
+/** Site videos chosen in the portal (`site/media`). Missing slots use the built-in video. */
+export function useSiteMedia(): Live<SiteMedia> {
+  const [state, setState] = useState<Live<SiteMedia>>({ data: {}, loading: true, error: null });
+  useEffect(() => onSnapshot(
+    doc(db, 'site', 'media'),
+    snap => setState({ data: (snap.data() as SiteMedia | undefined) || {}, loading: false, error: null }),
     error => setState(s => ({ ...s, loading: false, error })),
   ), []);
   return state;

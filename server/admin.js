@@ -9,6 +9,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { db, stripe } from './services.js';
 import { createHash } from 'node:crypto';
+import { videoUploadUrl, processVideo, resetVideo } from './media.js';
 import { STATUS_EMAILS, statusEmail, messageEmail, sendEmail } from './email.js';
 import { emailEntry, historyEntry, push, upsertCustomer, customerId } from './orders.js';
 
@@ -217,7 +218,7 @@ const handle = fn => async (req, res) => {
   try {
     res.json(await fn(req));
   } catch (err) {
-    if (err instanceof HttpError) return res.status(err.status).json({ error: err.message });
+    if (err instanceof HttpError || (err && err.status >= 400 && err.status < 500 && !err.type)) return res.status(err.status).json({ error: err.message });
     console.error(`admin: ${req.method} ${req.path} failed`, err);
     const stripeMsg = err && err.type && String(err.type).startsWith('Stripe') ? err.message : '';
     res.status(500).json({ error: stripeMsg ? `Stripe: ${stripeMsg}` : `Something went wrong: ${err.message || err}` });
@@ -231,6 +232,11 @@ export function adminRoutes() {
   router.get('/api/admin/customers', handle(() => listCustomers()));
   router.post('/api/admin/customers/:id/notes', handle(saveCustomerNotes));
   router.post('/api/admin/messages/send', handle(sendMessage));
+  router.post('/api/admin/media/upload-url', handle(req => videoUploadUrl({
+    slot: str(req.body.slot, 20), contentType: str(req.body.contentType, 100), size: Number(req.body.size), origin: req.get('origin'),
+  })));
+  router.post('/api/admin/media/video', handle(req => processVideo({ slot: str(req.body.slot, 20), path: req.body.path, by: req.admin.email || req.admin.uid })));
+  router.post('/api/admin/media/reset', handle(req => resetVideo(str(req.body.slot, 20))));
   router.get('/api/admin/promos', handle(listPromos));
   router.post('/api/admin/promos', handle(createPromo));
   router.post('/api/admin/promos/:id/active', handle(setPromoActive));

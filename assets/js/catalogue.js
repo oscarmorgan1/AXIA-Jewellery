@@ -216,6 +216,53 @@
     }
   };
 
+  /* ---- Site videos (Admin > Website > Videos) ----
+     <video data-media="landing" data-src="..." data-src-mobile="..."> starts with no
+     src, so nothing downloads until we know which file to use: the one set in the
+     portal (site/media) or the built-in one, the 720p version on phones or data
+     saver, and only once the video is near the screen. */
+  (function () {
+    var MEDIA_KEY = 'axia_media_v1';
+    function settings() {
+      try { var c = JSON.parse(sessionStorage.getItem(MEDIA_KEY)); if (c && Date.now() - c.t < CACHE_TTL) return Promise.resolve(c.m); } catch (e) {}
+      var ctrl = 'AbortController' in window ? new AbortController() : null;
+      var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 2500);
+      return getDoc('site/media', ctrl && ctrl.signal).then(function (m) {
+        clearTimeout(timer);
+        try { sessionStorage.setItem(MEDIA_KEY, JSON.stringify({ t: Date.now(), m: m || {} })); } catch (e) {}
+        return m || {};
+      }, function () { clearTimeout(timer); return {}; });
+    }
+    function small() {
+      var c = navigator.connection || {};
+      return (window.matchMedia && matchMedia('(max-width: 760px)').matches) || c.saveData || /(^|-)2g$/.test(c.effectiveType || '');
+    }
+    function start(v, m) {
+      var set = m && m[v.getAttribute('data-media')];
+      var src = set && set.src ? (small() && set.mobileSrc ? set.mobileSrc : set.src)
+        : (small() && v.getAttribute('data-src-mobile')) || v.getAttribute('data-src');
+      if (set && set.poster) v.poster = set.poster;
+      if (!src || v.getAttribute('src') === src) return;
+      v.preload = 'auto';
+      v.src = src;
+      if (v.autoplay) { var pl = v.play(); if (pl && pl.catch) pl.catch(function () {}); }
+    }
+    function run() {
+      var vids = [].slice.call(document.querySelectorAll('video[data-media]'));
+      if (!vids.length) return;
+      settings().then(function (m) {
+        vids.forEach(function (v) {
+          if (!('IntersectionObserver' in window)) return start(v, m);
+          var io = new IntersectionObserver(function (es) {
+            if (es.some(function (e) { return e.isIntersecting; })) { io.disconnect(); start(v, m); }
+          }, { rootMargin: '600px 0px' });
+          io.observe(v);
+        });
+      });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+  })();
+
   /* ---- Launch countdown (Admin > Settings > Countdown) ----
      AXIA_CD.run(cb) calls cb(state) straight away and, for a running timer,
      every second after. state.mode is 'timer' (with d, h, m, s as two-digit
