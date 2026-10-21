@@ -6,6 +6,7 @@
 // `site/media` document, which the storefront reads to pick the video.
 import { randomUUID } from 'node:crypto';
 import { execFile } from 'node:child_process';
+import http from 'node:http';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -32,19 +33,37 @@ export async function videoUploadUrl({ slot, contentType, size, origin }) {
   return { uploadUrl, path: file };
 }
 
-// ffmpeg reads the original straight from Storage (with range requests), so a
-// large phone video never has to sit on the server's disk, which on App Hosting
-// is memory.
-async function sourceUrl(file) {
-  const storage = file.bucket.storage;
-  const url = `${storage.apiEndpoint}/storage/v1/b/${file.bucket.name}/o/${encodeURIComponent(file.name)}?alt=media`;
-  const token = await storage.authClient.getAccessToken().then(t => (typeof t === 'string' ? t : t && t.token)).catch(() => null);
-  return { url, input: token ? ['-headers', `Authorization: Bearer ${token}\r\n`] : [] };
+// ffmpeg reads the original from Storage through a short-lived local server
+// that answers its range requests with the Storage SDK, so a large phone video
+// never has to sit on the server's disk (which on App Hosting is memory), and
+// ffmpeg itself needs no TLS certificates or Google credentials.
+async function serveForFfmpeg(file) {
+  const [meta] = await file.getMetadata();
+  const size = Number(meta.size);
+  const server = http.createServer((req, res) => {
+    const m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+    let start = 0, end = size - 1;
+    if (m && (m[1] || m[2])) {
+      if (m[1]) { start = +m[1]; if (m[2]) end = Math.min(+m[2], size - 1); } else start = Math.max(0, size - +m[2]);
+      if (start > end) { res.writeHead(416, { 'Content-Range': `bytes */${size}` }); return res.end(); }
+      res.writeHead(206, { 'Content-Range': `bytes ${start}-${end}/${size}`, 'Content-Length': end - start + 1, 'Accept-Ranges': 'bytes', 'Content-Type': 'application/octet-stream' });
+    } else {
+      res.writeHead(200, { 'Content-Length': size, 'Accept-Ranges': 'bytes', 'Content-Type': 'application/octet-stream' });
+    }
+    if (req.method === 'HEAD' || size === 0) return res.end();
+    const stream = file.createReadStream({ start, end, validation: false });
+    stream.on('error', err => { console.error('media: storage read failed', err.message); res.destroy(err); });
+    res.on('close', () => stream.destroy());
+    stream.pipe(res);
+  });
+  await new Promise((resolve, reject) => server.listen(0, '127.0.0.1', resolve).on('error', reject));
+  return { url: `http://127.0.0.1:${server.address().port}/original`, close: () => server.close() };
 }
 
 async function probe(input) {
   // ffmpeg prints stream info to stderr and exits non-zero without an output; that's fine here.
   const { stderr } = await run(ffmpegPath, ['-hide_banner', ...input]).catch(e => e);
+  if (!/Video:/.test(stderr || '')) console.error('media: ffmpeg could not read the video:', String(stderr || '').slice(-600));
   const dur = /Duration: (\d+):(\d+):([\d.]+)/.exec(stderr || '');
   const dim = /Video:.*?(\d{2,5})x(\d{2,5})/.exec(stderr || '');
   return {
@@ -90,11 +109,12 @@ export async function processVideo({ slot, path: uploaded, by }) {
   }
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'axia-video-'));
   const src = bucket().file(uploaded);
+  let source = null;
   try {
-    const { url, input } = await sourceUrl(src);
-    const info = await probe([...input, '-i', url]);
+    source = await serveForFfmpeg(src);
+    const info = await probe(['-i', source.url]);
     if (!info.width) throw Object.assign(new Error('That file doesn’t look like a video we can read'), { status: 400 });
-    const out = await transcode([...input, '-i', url], dir);
+    const out = await transcode(['-i', source.url], dir);
     const base = `media/${slot}/${Date.now()}`;
     const [hd, sd, poster] = await Promise.all([
       publish(out.hd, `${base}-1080.mp4`, 'video/mp4'),
@@ -111,6 +131,7 @@ export async function processVideo({ slot, path: uploaded, by }) {
     await db.doc('site/media').set({ [slot]: entry }, { merge: true });
     return { ...entry, updatedAt: Date.now() };
   } finally {
+    if (source) source.close();
     await fs.rm(dir, { recursive: true, force: true });
     await src.delete().catch(() => {}); // the original isn't needed once converted
   }

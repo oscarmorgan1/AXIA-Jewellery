@@ -203,7 +203,6 @@
       const items=cart.map(i=>({id:i.id,width:i.width,length:i.length,colour:i.colour,engraving:i.engraving,q:i.q||1}));
       const r=await fetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items,giftLength:giftLen})});
       const d=await r.json().catch(()=>({}));
-      if(d.reason&&window.console) console.warn('[AXIA] checkout failed:',d.reason,d.detail||'',d.keySeen?('key the server has: '+d.keySeen):'');
       if(!r.ok||!d.url) throw new Error(d.error||'Something went wrong starting checkout. Please try again.');
       location.href=d.url;
     }catch(e){

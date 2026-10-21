@@ -40,9 +40,8 @@ env:
     value: "support@axiajewellery.com"
     availability: [RUNTIME]
 
-  # Public address used in Stripe return links and email links. Leave unset to
-  # use whatever domain the request came in on (the hosted.app URL now, the
-  # .com once it's connected). Uncomment after cutover if you want it pinned.
-  # - variable: PUBLIC_SITE_URL
-  #   value: "https://axiajewellery.com"
-  #   availability: [RUNTIME]
+  # Public address used in Stripe return links and email images. Pinned so a
+  # forged Host header can't point them at another site.
+  - variable: PUBLIC_SITE_URL
+    value: "https://axiajewellery.com"
+    availability: [RUNTIME]
