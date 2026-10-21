@@ -206,3 +206,19 @@ export interface CustomerRecord {
   /** Messages and replies sent to them from the portal (sentAt in millis). */
   emails?: (Omit<OrderEmail, 'sentAt'> & { sentAt: number | null })[];
 }
+
+/** One site video (public `site/media`), converted by the server from an upload. */
+export interface SiteVideo {
+  src: string;
+  mobileSrc?: string;
+  poster?: string;
+  sizeBytes?: number;
+  mobileSizeBytes?: number;
+  seconds?: number | null;
+  width?: number | null;
+  height?: number | null;
+  trimmed?: boolean;
+  updatedAt?: { toDate(): Date };
+  by?: string;
+}
+export type SiteMedia = Partial<Record<'landing' | 'store', SiteVideo>>;

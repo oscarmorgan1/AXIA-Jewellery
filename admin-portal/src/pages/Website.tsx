@@ -4,6 +4,7 @@ import { ArrowUpRight, EyeOff, Lock, Save, ShoppingBag, Timer, Type, Undo2 } fro
 import { db, siteUrl } from '../firebase';
 import { DEFAULT_COUNTDOWN, useCountdown, useShop } from '../lib/data';
 import { useToast } from '../components/Toast';
+import VideosCard from '../components/VideosCard';
 import type { Countdown } from '../types';
 
 const MODES: { key: Countdown['mode']; label: string; icon: React.ReactNode; hint: string }[] = [
@@ -109,6 +110,7 @@ export default function Website() {
       </div>
 
       <ShopCard />
+      <VideosCard />
 
       {error && <div className="notice notice--error">{error.message}</div>}
 
