@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unsubscribe | AXIA</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260930a">
+<link rel="stylesheet" href="assets/css/axia.css?v=20260930a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111315'/%3E%3Cg fill='%23F4F1EA'%3E%3Cpolygon points='16,5 6,27 9.5,27'/%3E%3Cpolygon points='16,5 22.5,27 26,27'/%3E%3Crect x='9' y='20.4' width='14' height='1.7'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  body{background:var(--bone);color:var(--ink)}
+  .lg-head{border-bottom:1px solid var(--line);padding:.9rem var(--gutter)}
+  .lg-head a{font-family:var(--font-display);font-weight:800;letter-spacing:.14em;font-size:.9rem;color:var(--ink);text-decoration:none}
+  .lg-wrap{max-width:520px;margin-inline:auto;padding:clamp(2.4rem,8vw,4.5rem) var(--gutter) 3.5rem;font-size:.95rem;line-height:1.65}
+  .lg-wrap h1{font-family:var(--font-display);font-weight:700;font-size:1.6rem;text-transform:uppercase;margin:0 0 1rem}
+  .lg-wrap p{color:var(--ink-secondary);margin:0 0 1.2rem}
+  .lg-wrap a{color:var(--ice-ink)}
+  .lg-wrap b{color:var(--ink);font-weight:600;overflow-wrap:anywhere}
+  .lg-err{color:var(--magenta-press,#b0174f)}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header class="lg-head"><a href="/">&larr; AXIA</a></header>
+<main class="lg-wrap">
+  <section id="ask">
+    <h1>Unsubscribe</h1>
+    <p>Stop AXIA news and offers going to <b id="who"></b>? You’ll still get emails about any order you place.</p>
+    <button class="btn btn--primary" id="go" type="button">Unsubscribe</button>
+  </section>
+  <section id="done" hidden>
+    <h1>You’re unsubscribed</h1>
+    <p>We won’t send news or offers to <b class="who"></b> any more. Emails about your orders will still arrive.</p>
+    <p>Changed your mind? <a href="#" id="undo">Resubscribe</a>.</p>
+  </section>
+  <section id="back" hidden>
+    <h1>You’re back on the list</h1>
+    <p>We’ll keep <b class="who"></b> posted on new drops. <a href="/store">Visit the store</a>.</p>
+  </section>
+  <section id="bad" hidden>
+    <h1>Link not recognised</h1>
+    <p>This unsubscribe link looks incomplete. Use the link at the bottom of your latest AXIA email, or <a href="/support#contact">send us a message</a> and we’ll take you off the list.</p>
+  </section>
+  <p class="lg-err" id="err" hidden></p>
+</main>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search), email = q.get('e') || '', token = q.get('t') || '';
+  var $ = function (id) { return document.getElementById(id); };
+  function show(id) { ['ask', 'done', 'back', 'bad'].forEach(function (s) { $(s).hidden = s !== id; }); }
+  document.querySelectorAll('#who, .who').forEach(function (el) { el.textContent = email; });
+  if (!email || !token) return show('bad');
+  // The person confirms with a button, so link checkers that open emails can't unsubscribe anyone.
+  function send(resubscribe, btn) {
+    $('err').hidden = true;
+    if (btn) btn.disabled = true;
+    fetch('/api/unsubscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, token: token, resubscribe: resubscribe }) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { if (!r.ok) throw new Error(b.error || 'Something went wrong. Please try again.'); return b; }); })
+      .then(function () { show(resubscribe ? 'back' : 'done'); })
+      .catch(function (e) { $('err').textContent = e.message; $('err').hidden = false; })
+      .then(function () { if (btn) btn.disabled = false; });
+  }
+  $('go').addEventListener('click', function () { send(false, this); });
+  $('undo').addEventListener('click', function (e) { e.preventDefault(); send(true); });
+})();
+</script>
+</body>
+</html>

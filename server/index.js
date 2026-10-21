@@ -8,6 +8,7 @@ import { checkoutRoutes } from './checkout.js';
 import { webhookRoutes } from './webhook.js';
 import { adminRoutes } from './admin.js';
 import { signupRoutes } from './signup.js';
+import { unsubscribeRoutes } from './unsubscribe.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const app = express();
@@ -18,6 +19,7 @@ app.use(webhookRoutes()); // before any JSON parsing: Stripe signs the raw body
 app.use(checkoutRoutes());
 app.use(adminRoutes());
 app.use(signupRoutes());
+app.use(unsubscribeRoutes());
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 app.use(staticSite(root));
 app.use((req, res) => res.status(404).type('text').send('Not found'));

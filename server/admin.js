@@ -161,7 +161,7 @@ async function listCustomers(backfill = true) {
   }
   return customers.docs.map(d => {
     const v = d.data();
-    return { ...v, id: d.id, emails: (v.emails || []).map(e => ({ ...e, sentAt: millis(e.sentAt) })), firstOrderAt: millis(v.firstOrderAt), lastOrderAt: millis(v.lastOrderAt), createdAt: millis(v.createdAt), updatedAt: millis(v.updatedAt) };
+    return { ...v, id: d.id, emails: (v.emails || []).map(e => ({ ...e, sentAt: millis(e.sentAt) })), unsubscribed: v.unsubscribed ? { ...v.unsubscribed, at: millis(v.unsubscribed.at) } : null, firstOrderAt: millis(v.firstOrderAt), lastOrderAt: millis(v.lastOrderAt), createdAt: millis(v.createdAt), updatedAt: millis(v.updatedAt) };
   });
 }
 

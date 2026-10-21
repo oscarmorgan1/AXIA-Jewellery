@@ -16,7 +16,7 @@ function csv(rows: Person[]) {
   const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const head = ['Name', 'Email', 'Phone', 'Instagram', 'Orders', 'Spent (AUD)', 'Open orders', 'Promo codes', 'Interested in', 'Email consent', 'SMS consent', 'Sources', 'First seen', 'Last seen'];
   const body = rows.map(c => [c.name, c.email, c.phone, c.instagram, c.sales.length, c.spentAUD.toFixed(2), c.open.length, c.promoCodes.join('; '), c.interests.join('; '),
-    c.emailConsent ? 'Yes' : 'No', c.smsConsent ? 'Yes' : 'No', c.sources.map(s => SOURCE[s] || s).join('; '), c.first?.toISOString() ?? '', c.last?.toISOString() ?? ''].map(esc).join(','));
+    c.emailConsent ? 'Yes' : c.unsubscribedAt ? 'No (unsubscribed)' : 'No', c.smsConsent ? 'Yes' : 'No', c.sources.map(s => SOURCE[s] || s).join('; '), c.first?.toISOString() ?? '', c.last?.toISOString() ?? ''].map(esc).join(','));
   return [head.map(esc).join(','), ...body].join('\n');
 }
 
@@ -103,6 +103,7 @@ export default function Customers() {
                   <td style={{ maxWidth: 240 }}>{c.interests[0] || '–'}{c.interests.length > 1 && <span className="sub">+{c.interests.length - 1} more</span>}</td>
                   <td><div className="tags" style={{ gap: 4 }}>
                     {c.emailConsent && <span className="chip chip--ice">Email</span>}
+                    {c.unsubscribedAt && <span className="chip chip--plain chip--muted">Unsubscribed</span>}
                     {c.smsConsent && <span className="chip chip--good">SMS</span>}
                   </div></td>
                   <td className="num">{fmtDate(c.last)}</td>

@@ -32,9 +32,19 @@ export async function videoUploadUrl({ slot, contentType, size, origin }) {
   return { uploadUrl, path: file };
 }
 
-async function probe(file) {
+// ffmpeg reads the original straight from Storage (with range requests), so a
+// large phone video never has to sit on the server's disk, which on App Hosting
+// is memory.
+async function sourceUrl(file) {
+  const storage = file.bucket.storage;
+  const url = `${storage.apiEndpoint}/storage/v1/b/${file.bucket.name}/o/${encodeURIComponent(file.name)}?alt=media`;
+  const token = await storage.authClient.getAccessToken().then(t => (typeof t === 'string' ? t : t && t.token)).catch(() => null);
+  return { url, input: token ? ['-headers', `Authorization: Bearer ${token}\r\n`] : [] };
+}
+
+async function probe(input) {
   // ffmpeg prints stream info to stderr and exits non-zero without an output; that's fine here.
-  const { stderr } = await run(ffmpegPath, ['-hide_banner', '-i', file]).catch(e => e);
+  const { stderr } = await run(ffmpegPath, ['-hide_banner', ...input]).catch(e => e);
   const dur = /Duration: (\d+):(\d+):([\d.]+)/.exec(stderr || '');
   const dim = /Video:.*?(\d{2,5})x(\d{2,5})/.exec(stderr || '');
   return {
@@ -43,14 +53,18 @@ async function probe(file) {
   };
 }
 
-/** Original -> 1080p and 720p streaming MP4s plus a poster JPEG. */
+/**
+ * Original -> 1080p and 720p streaming MP4s plus a poster JPEG. `input` is the
+ * ffmpeg input arguments. Two threads keep memory well under the server's
+ * limit even for 4K phone footage (about 500 MB, against 750 MB+ unlimited).
+ */
 export async function transcode(input, dir) {
   const fit = max => `scale=w='min(${max},iw)':h='min(${max},ih)':force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2`;
   const out = { hd: path.join(dir, 'hd.mp4'), sd: path.join(dir, 'sd.mp4'), poster: path.join(dir, 'poster.jpg') };
   const x264 = (crf, max) => ['-c:v', 'libx264', '-preset', 'superfast', '-crf', String(crf), '-maxrate', max, '-bufsize', max.replace(/\d+/, n => n * 2),
-    '-pix_fmt', 'yuv420p', '-movflags', '+faststart'];
-  await run(ffmpegPath, ['-v', 'error', '-y', '-i', input, '-t', String(MAX_SECONDS), '-an',
-    '-filter_complex', `[0:v]fps=30,${fit(1920)},split=2[a][b];[b]${fit(1280)}[c]`,
+    '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-threads', '2'];
+  await run(ffmpegPath, ['-v', 'error', '-y', '-threads', '2', ...input, '-t', String(MAX_SECONDS), '-an',
+    '-filter_complex', `[0:v]fps=30,${fit(1920)},split=2[a][b];[b]${fit(1280)}[c]`, '-filter_threads', '1',
     '-map', '[a]', ...x264(25, '3000k'), out.hd,
     '-map', '[c]', ...x264(26, '1500k'), out.sd], { maxBuffer: 10 * 1024 * 1024, timeout: 10 * 60 * 1000 });
   await run(ffmpegPath, ['-v', 'error', '-y', '-ss', '0.3', '-i', out.sd, '-frames:v', '1', '-q:v', '4', out.poster]);
@@ -77,18 +91,17 @@ export async function processVideo({ slot, path: uploaded, by }) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'axia-video-'));
   const src = bucket().file(uploaded);
   try {
-    const input = path.join(dir, 'original');
-    await src.download({ destination: input });
-    const info = await probe(input);
+    const { url, input } = await sourceUrl(src);
+    const info = await probe([...input, '-i', url]);
     if (!info.width) throw Object.assign(new Error('That file doesn’t look like a video we can read'), { status: 400 });
-    const out = await transcode(input, dir);
+    const out = await transcode([...input, '-i', url], dir);
     const base = `media/${slot}/${Date.now()}`;
     const [hd, sd, poster] = await Promise.all([
       publish(out.hd, `${base}-1080.mp4`, 'video/mp4'),
       publish(out.sd, `${base}-720.mp4`, 'video/mp4'),
       publish(out.poster, `${base}-poster.jpg`, 'image/jpeg'),
     ]);
-    const after = await probe(out.hd);
+    const after = await probe(['-i', out.hd]);
     const entry = {
       src: hd.url, mobileSrc: sd.url, poster: poster.url,
       sizeBytes: hd.size, mobileSizeBytes: sd.size, seconds: after.seconds, width: after.width, height: after.height,

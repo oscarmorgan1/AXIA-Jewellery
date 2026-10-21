@@ -203,6 +203,8 @@ export interface CustomerRecord {
   firstOrderAt?: number | null;
   lastOrderAt?: number | null;
   createdAt?: number | null;
+  /** Set when they used the unsubscribe link in an email (at in millis). */
+  unsubscribed?: { at: number | null; via: string } | null;
   /** Messages and replies sent to them from the portal (sentAt in millis). */
   emails?: (Omit<OrderEmail, 'sentAt'> & { sentAt: number | null })[];
 }

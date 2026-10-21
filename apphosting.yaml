@@ -9,9 +9,10 @@
 runConfig:
   minInstances: 0
   maxInstances: 4
-  # Two CPUs and 1 GiB so videos uploaded in the portal convert quickly.
+  # Two CPUs and 2 GiB so videos uploaded in the portal convert quickly
+  # (a 4K phone video needs about 500 MB while converting; 1 GiB ran out).
   cpu: 2
-  memoryMiB: 1024
+  memoryMiB: 2048
 
 env:
   # Stripe secret key: sk_test_... until cutover, then sk_live_...

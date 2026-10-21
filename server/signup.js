@@ -7,6 +7,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { db } from './services.js';
 import { welcomeEmail, sendEmail } from './email.js';
 import { emailEntry, push, customerId } from './orders.js';
+import { isUnsubscribed, setSubscribed } from './unsubscribe.js';
 
 const EMAIL = /^[^@\s/]+@[^@\s/]+\.[^@\s/]+$/;
 const SOURCES = ['landing', 'first-drop', 'other'];
@@ -64,6 +65,11 @@ export function signupRoutes() {
     };
     try {
       const ref = await db.collection('signups').add(doc);
+      // Signing up again and ticking the email box puts someone who unsubscribed back on the list.
+      if (doc.emailConsent) {
+        await (async () => { if (await isUnsubscribed(email)) await setSubscribed(email, true, 'signup'); })()
+          .catch(err => console.error('signup: could not resubscribe', err));
+      }
       // Sent before replying (the server may pause once a response is out), but a
       // failed email never fails the sign-up itself.
       const host = req.get('x-forwarded-host') || req.get('host');
