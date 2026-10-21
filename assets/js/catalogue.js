@@ -199,6 +199,20 @@
         if (!r.ok) return r.text().then(function (t) { throw new Error('Save failed (' + r.status + '): ' + t.slice(0, 200)); });
         return true;
       });
+    },
+    /* Waitlist sign-up through the server, which also sends the welcome email
+       with the first-order code. Falls back to saving straight to Firestore if
+       the server can't be reached (e.g. the static site), just without the email. */
+    signup: function (data) {
+      var self = this;
+      return fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+        .then(function (r) {
+          if (r.ok) return true;
+          if (r.status >= 400 && r.status < 500 && r.status !== 404) {
+            return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.error || 'Sign-up failed (' + r.status + ')'); });
+          }
+          return self.add('signups', data);
+        }, function () { return self.add('signups', data); });
     }
   };
 
