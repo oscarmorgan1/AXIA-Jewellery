@@ -133,7 +133,15 @@ export async function processVideo({ slot, path: uploaded, by, productId }) {
         publish(out.poster, `${base}-poster.jpg`, 'image/jpeg'),
       ]);
       const after = await probe(['-i', out.sd]);
-      return { video: sd.url, videoPoster: poster.url, sizeBytes: sd.size, seconds: after.seconds,
+      // Saved on the product straight away (if it exists yet), so the video sticks
+      // even if the editor is closed before Save.
+      const ref = db.collection('products').doc(productId);
+      const saved = await db.runTransaction(async tx => {
+        if (!(await tx.get(ref)).exists) return false;
+        tx.update(ref, { video: sd.url, videoPoster: poster.url, updatedAt: FieldValue.serverTimestamp() });
+        return true;
+      });
+      return { video: sd.url, videoPoster: poster.url, sizeBytes: sd.size, seconds: after.seconds, saved,
         trimmed: !!(info.seconds && info.seconds > PRODUCT_SECONDS + 0.5) };
     }
     const out = await transcode(['-i', source.url], dir);
