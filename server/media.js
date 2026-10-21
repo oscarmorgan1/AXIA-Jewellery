@@ -19,13 +19,15 @@ import { db } from './services.js';
 const run = promisify(execFile);
 export const MEDIA_SLOTS = ['landing', 'store'];
 const MAX_SECONDS = 20; // a looping hero film; anything longer is cut (and conversion stays quick)
+const PRODUCT_SECONDS = 30; // product page videos, played on demand
+const PRODUCT_ID = /^[a-z0-9][a-z0-9-]{0,80}$/;
 const MAX_UPLOAD = 500 * 1024 * 1024;
 
 const bucket = () => getStorage().bucket(process.env.STORAGE_BUCKET || 'axia-jewellery.firebasestorage.app');
 
 /** A resumable upload session the browser can PUT the original video to. */
 export async function videoUploadUrl({ slot, contentType, size, origin }) {
-  if (!MEDIA_SLOTS.includes(slot)) throw Object.assign(new Error('Unknown video slot'), { status: 400 });
+  if (!MEDIA_SLOTS.includes(slot) && slot !== 'product') throw Object.assign(new Error('Unknown video slot'), { status: 400 });
   if (!/^video\//.test(contentType || '')) throw Object.assign(new Error('Choose a video file'), { status: 400 });
   if (!(size > 0 && size <= MAX_UPLOAD)) throw Object.assign(new Error('Videos must be under 500 MB'), { status: 400 });
   const file = `media/uploads/${slot}-${Date.now()}-${randomUUID().slice(0, 8)}`;
@@ -77,15 +79,17 @@ async function probe(input) {
  * ffmpeg input arguments. Two threads keep memory well under the server's
  * limit even for 4K phone footage (about 500 MB, against 750 MB+ unlimited).
  */
-export async function transcode(input, dir) {
+export async function transcode(input, dir, { hd = true, seconds = MAX_SECONDS } = {}) {
   const fit = max => `scale=w='min(${max},iw)':h='min(${max},ih)':force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2`;
-  const out = { hd: path.join(dir, 'hd.mp4'), sd: path.join(dir, 'sd.mp4'), poster: path.join(dir, 'poster.jpg') };
+  const out = { hd: hd ? path.join(dir, 'hd.mp4') : null, sd: path.join(dir, 'sd.mp4'), poster: path.join(dir, 'poster.jpg') };
   const x264 = (crf, max) => ['-c:v', 'libx264', '-preset', 'superfast', '-crf', String(crf), '-maxrate', max, '-bufsize', max.replace(/\d+/, n => n * 2),
     '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-threads', '2'];
-  await run(ffmpegPath, ['-v', 'error', '-y', '-threads', '2', ...input, '-t', String(MAX_SECONDS), '-an',
-    '-filter_complex', `[0:v]fps=30,${fit(1920)},split=2[a][b];[b]${fit(1280)}[c]`, '-filter_threads', '1',
-    '-map', '[a]', ...x264(25, '3000k'), out.hd,
-    '-map', '[c]', ...x264(26, '1500k'), out.sd], { maxBuffer: 10 * 1024 * 1024, timeout: 10 * 60 * 1000 });
+  const outputs = hd
+    ? ['-filter_complex', `[0:v]fps=30,${fit(1920)},split=2[a][b];[b]${fit(1280)}[c]`, '-filter_threads', '1',
+      '-map', '[a]', ...x264(25, '3000k'), out.hd, '-map', '[c]', ...x264(26, '1500k'), out.sd]
+    : ['-filter_complex', `[0:v]fps=30,${fit(1280)}[c]`, '-filter_threads', '1', '-map', '[c]', ...x264(26, '1500k'), out.sd];
+  await run(ffmpegPath, ['-v', 'error', '-y', '-threads', '2', ...input, '-t', String(seconds), '-an', ...outputs],
+    { maxBuffer: 10 * 1024 * 1024, timeout: 10 * 60 * 1000 });
   await run(ffmpegPath, ['-v', 'error', '-y', '-ss', '0.3', '-i', out.sd, '-frames:v', '1', '-q:v', '4', out.poster]);
   return out;
 }
@@ -102,8 +106,15 @@ async function publish(local, dest, contentType) {
 }
 
 /** Turns an uploaded original into the slot's new video and saves it to site/media. */
-export async function processVideo({ slot, path: uploaded, by }) {
-  if (!MEDIA_SLOTS.includes(slot)) throw Object.assign(new Error('Unknown video slot'), { status: 400 });
+/**
+ * Turns an uploaded original into the slot's new video. Site films are saved to
+ * site/media; a product video (slot 'product') gets one 720p MP4 and a poster
+ * under products/{productId}/, returned for the portal to save on the product.
+ */
+export async function processVideo({ slot, path: uploaded, by, productId }) {
+  const product = slot === 'product';
+  if (!MEDIA_SLOTS.includes(slot) && !product) throw Object.assign(new Error('Unknown video slot'), { status: 400 });
+  if (product && !PRODUCT_ID.test(productId || '')) throw Object.assign(new Error('Save the product with a name first'), { status: 400 });
   if (typeof uploaded !== 'string' || !uploaded.startsWith(`media/uploads/${slot}-`) || uploaded.includes('..')) {
     throw Object.assign(new Error('Upload not found'), { status: 400 });
   }
@@ -114,6 +125,17 @@ export async function processVideo({ slot, path: uploaded, by }) {
     source = await serveForFfmpeg(src);
     const info = await probe(['-i', source.url]);
     if (!info.width) throw Object.assign(new Error('That file doesn’t look like a video we can read'), { status: 400 });
+    if (product) {
+      const out = await transcode(['-i', source.url], dir, { hd: false, seconds: PRODUCT_SECONDS });
+      const base = `products/${productId}/video-${Date.now()}`;
+      const [sd, poster] = await Promise.all([
+        publish(out.sd, `${base}-720.mp4`, 'video/mp4'),
+        publish(out.poster, `${base}-poster.jpg`, 'image/jpeg'),
+      ]);
+      const after = await probe(['-i', out.sd]);
+      return { video: sd.url, videoPoster: poster.url, sizeBytes: sd.size, seconds: after.seconds,
+        trimmed: !!(info.seconds && info.seconds > PRODUCT_SECONDS + 0.5) };
+    }
     const out = await transcode(['-i', source.url], dir);
     const base = `media/${slot}/${Date.now()}`;
     const [hd, sd, poster] = await Promise.all([

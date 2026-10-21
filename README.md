@@ -47,7 +47,7 @@ On localhost the storefront reads the emulator. Add `?catalogue=live` to read pr
 | `collections/{slug}` | everyone | admins | Reusable groups of products. `showInShop` ones become the Shop All tabs, in `sort` order |
 | `site/shop` | everyone | admins | The Open shop switch (`open: true/false`), under Website in the portal. Missing or false means closed: buttons say "Reserve your spot" and the server refuses checkout |
 | `site/countdown` | everyone | admins | The launch countdown (timer, text or hidden), edited under Website in the portal. Without it the site shows "Dropping soon" |
-| `site/media` | everyone | the server | The site videos uploaded under Website > Videos: `landing` (home/waitlist page) and `store` (store page), each with 1080p and 720p MP4 links, a poster and sizes. A missing slot uses the built-in film in `assets/video/` |
+| `site/media` | everyone | the server | The site film uploaded under Website > Site film (`store`, used on the home/waitlist and store pages; an older `landing` entry is only used if `store` is empty), with 1080p and 720p MP4 links, a poster and sizes. A missing slot uses the built-in film in `assets/video/` |
 | `visits/{day}_{id}` | admins | anyone can create (validated) | Anonymous unique visitors: one entry per browser per day (Sydney time) with landing page, referring site and device. Shown on the dashboard. Admins who have signed in to the portal aren't counted |
 | `signups/{id}` | admins | anyone can create (validated) | Waitlist registrations from the landing and First Drop pages. Shown under Customers |
 | `messages/{id}` | admins | anyone can create (validated) | Support page contact form. Shown in the Inbox |
@@ -157,11 +157,14 @@ Every email has an Unsubscribe link at the bottom and the one-click `List-Unsubs
 
 Reply to an Inbox inquiry, or message a customer from their page or from an order, without leaving the portal. You see exactly what will be sent before it goes. Emails go through Resend (`POST /api/admin/messages/send`) in the AXIA layout, and replies to them land at `ORDER_EMAIL_REPLY_TO`. Each one is logged with its Resend ID on the inquiry (`replies`), on the order if it's about one, and on the customer record. Inquiries link the order they mention, whatever the format (`#XYZQWE`, `axia-xyzqwe`, `xyz qwe`), plus any other orders from the same email.
 
-### Site videos
+### Site film and product videos
 
-The home (waitlist) page film and the store page film can be swapped under Website > Videos. The portal uploads the original straight to Cloud Storage (`media/uploads/`, through a one-off upload session from `POST /api/admin/media/upload-url`), then `POST /api/admin/media/video` converts it with ffmpeg, reading the original straight from Storage so it never fills the server's memory, (the `ffmpeg-static` package): sound removed, cut to 20 seconds, a 1080p and a 720p H.264 MP4 that start playing before they finish downloading, and a poster image. Those land in `media/{slot}/` and the links in `site/media`; the original is deleted. "Use original" goes back to the built-in film.
+One site film plays on both the home (waitlist) page and the store page; swap it under Website > Site film. Product videos are uploaded on each product's page (Video card). Either way the portal uploads the original straight to Cloud Storage (`media/uploads/`, through a one-off upload session from `POST /api/admin/media/upload-url`), then `POST /api/admin/media/video` converts it with ffmpeg (the `ffmpeg-static` package). ffmpeg reads the original through a short-lived local server that streams it from Storage, so a big phone video never fills the server's memory. The original is deleted afterwards.
 
-Pages never download a video up front: it loads only when it's about to scroll into view, and phones (or data-saver connections) get the 720p one. The App Hosting service account needs write access to the Storage bucket (`STORAGE_BUCKET`, default `axia-jewellery.firebasestorage.app`); conversion is why `apphosting.yaml` asks for 2 CPUs and 2 GiB.
+- **Site film:** sound removed, cut to 20 seconds, a 1080p and a 720p H.264 MP4 that start playing before they finish downloading, and a poster, in `media/store/`. The links go in `site/media.store`, which the storefront uses for every page's film. "Use original" goes back to the built-in film.
+- **Product video:** one 720p MP4 (no sound, up to 30 seconds) and a poster in `products/{id}/`, saved on the product as `video` and `videoPoster`. The product page only loads it when someone taps the video thumbnail.
+
+Pages never download the site film up front: it loads only when it's about to scroll into view, and phones (or data-saver connections) get the 720p one. The App Hosting service account needs read and write access to the Storage bucket (`STORAGE_BUCKET`, default `axia-jewellery.firebasestorage.app`); conversion is why `apphosting.yaml` asks for 2 CPUs and 2 GiB.
 
 ### Promo codes
 

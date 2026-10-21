@@ -317,7 +317,12 @@
   .filmhero{position:relative;overflow:hidden;height:min(82vh,700px);min-height:460px}
   .filmhero__video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 42%;z-index:0}
   .filmhero__scrim{position:absolute;inset:0;z-index:1;pointer-events:none;
-    background:linear-gradient(180deg,rgba(17,19,21,.5) 0%,transparent 14%,transparent 62%,rgba(17,19,21,.8) 89%,var(--obsidian) 100%)}
+    background:linear-gradient(180deg,rgba(17,19,21,.5) 0%,transparent 14%,transparent 50%,rgba(17,19,21,.82) 86%,var(--obsidian) 100%)}
+  /* desktop: the countdown sits over the bottom of the film */
+  @media(min-width:701px){
+    .filmhero .cd-bar{position:absolute;left:0;right:0;bottom:0;z-index:2;background:none;border-bottom:0;padding-bottom:clamp(1.6rem,4vw,2.6rem)}
+    .filmhero .cd-bar__u span{color:var(--on-dark)}
+  }
   .filmhero__in{position:relative;z-index:2;width:100%;max-width:var(--maxw);margin-inline:auto;
     padding:0 var(--gutter) clamp(1.6rem,5vw,3.2rem);
     opacity:0;transform:translateY(18px);transition:opacity 1s var(--ease-out) .15s,transform 1s var(--ease-out) .15s}
@@ -354,7 +359,9 @@
   @media(max-width:700px){
     .filmhero{height:auto;min-height:0;display:block;background:var(--obsidian)}
     .filmhero__video{position:static;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain;background:#000;display:block}
-    .filmhero__scrim{display:none}
+    .filmhero{position:relative}
+    .filmhero__scrim{top:auto;bottom:0;aspect-ratio:16/9;height:auto;inset-inline:0;
+      background:linear-gradient(180deg,transparent 50%,rgba(17,19,21,.55) 80%,var(--obsidian) 100%)}
     .filmhero__in{position:static;transform:none!important;opacity:1!important;padding:var(--s-5) var(--gutter) var(--s-6)}
   }
 
@@ -373,19 +380,18 @@
   <a class="cbar__enter" href="store">Enter the shop &rarr;</a>
 </header>
 
-<!-- ============ FULL-WIDTH COUNTDOWN (hidden until a launch date is set) ============ -->
-<section class="cd-bar" id="fhCount" hidden aria-label="Countdown to the First Drop">
-  <div class="cd-bar__eye">The First Drop</div>
-  <div class="cd-bar__grid">
-    <div class="cd-bar__u"><b id="cd-d">--</b><span>Days</span></div>
-    <div class="cd-bar__u"><b id="cd-h">--</b><span>Hrs</span></div>
-    <div class="cd-bar__u"><b id="cd-m">--</b><span>Min</span></div>
-    <div class="cd-bar__u"><b id="cd-s">--</b><span>Sec</span></div>
-  </div>
-</section>
-
 <!-- ============ VIDEO HERO ============ -->
 <section class="filmhero">
+  <!-- countdown (hidden until a launch date is set): over the bottom of the film on desktop, above it on phones -->
+  <section class="cd-bar" id="fhCount" hidden aria-label="Countdown to the First Drop">
+    <div class="cd-bar__eye">The First Drop</div>
+    <div class="cd-bar__grid">
+      <div class="cd-bar__u"><b id="cd-d">--</b><span>Days</span></div>
+      <div class="cd-bar__u"><b id="cd-h">--</b><span>Hrs</span></div>
+      <div class="cd-bar__u"><b id="cd-m">--</b><span>Min</span></div>
+      <div class="cd-bar__u"><b id="cd-s">--</b><span>Sec</span></div>
+    </div>
+  </section>
   <video class="filmhero__video" data-media="landing" data-src="assets/video/axia-hero.mp4?v=2" data-src-mobile="assets/video/axia-hero-720.mp4?v=2" poster="assets/video/axia-hero-poster.jpg" autoplay muted loop playsinline preload="none" aria-hidden="true"></video>
   <div class="filmhero__scrim"></div>
 </section>
