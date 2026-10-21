@@ -2,6 +2,7 @@
 // for each status change made in the admin portal. Every send returns the
 // Resend email id, which the caller stores on the order.
 import { resend } from './services.js';
+import { unsubscribeUrl } from './unsubscribe.js';
 
 const C = { ink: '#111315', soft: '#5b5e63', line: '#e6e2d9', bone: '#fbfaf6', page: '#f4f1ea', ice: '#2a6076', iceBg: '#eef6f9', accent: '#f3436e' };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -9,7 +10,7 @@ const aud = n => 'A$' + Number(n || 0).toLocaleString('en-AU', { minimumFraction
 // Links in emails always point at the public site, whatever address the server
 // is reached on (e.g. the temporary hosted.app URL). Images still load from the
 // serving address, so they work before and after the domain cutover.
-const brandUrl = () => (process.env.EMAIL_LINK_URL || 'https://axiajewellery.com').trim().replace(/\/$/, '');
+export const brandUrl = () => (process.env.EMAIL_LINK_URL || 'https://axiajewellery.com').trim().replace(/\/$/, '');
 
 const font = "font-family:'Helvetica Neue',Helvetica,Arial,sans-serif";
 
@@ -100,6 +101,9 @@ function address(order) {
   return lines ? `${sectionTitle('Shipping to')}<p style="margin:0;${font};font-size:14px;line-height:1.6;color:${C.ink}">${lines}</p>` : '';
 }
 
+// Replaced with the recipient's own signed link when the email is sent.
+const UNSUBSCRIBE = '%%UNSUBSCRIBE_URL%%';
+
 function layout({ siteUrl, preheader, heading, body, reason = 'You’re receiving this email because you placed an order with AXIA.' }) {
   const help = `${brandUrl()}/support`;
   const link = (href, t) => `<a href="${esc(href)}" style="color:${C.ice};text-decoration:underline">${t}</a>`;
@@ -123,7 +127,8 @@ function layout({ siteUrl, preheader, heading, body, reason = 'You’re receivin
   <tr><td style="padding:26px 34px 8px;${font};font-size:11px;line-height:1.6;color:${C.soft};text-align:center">
     ${link(help, 'Help centre')} &nbsp;·&nbsp; ${link(`${help}#shipping`, 'Shipping')} &nbsp;·&nbsp; ${link(`${help}#sizing`, 'Sizing')} &nbsp;·&nbsp; ${link(`${help}#care`, 'Care')}<br>
     Hand-set in 925 sterling silver with VVS D-colour moissanite.<br>
-    ${esc(reason)}
+    ${esc(reason)}<br>
+    ${link(UNSUBSCRIBE, 'Unsubscribe')} from AXIA news and offers.
   </td></tr>
 </table></td></tr></table></body></html>`;
 }
@@ -236,7 +241,7 @@ export function welcomeEmail({ name, code, percentOff, siteUrl }) {
   ].join('');
   const html = layout({
     siteUrl, preheader: `Here’s ${percentOff}% off your first order: ${code}`, heading: 'Welcome to AXIA', body,
-    reason: 'You’re receiving this email because you signed up at axiajewellery.com. Reply to this email any time to opt out.',
+    reason: 'You’re receiving this email because you signed up at axiajewellery.com. Unsubscribe any time with the link below.',
   });
   const text = [`${first ? `Hi ${first}, welcome` : 'Welcome'} to AXIA. You’re on the list, so you’ll hear about every drop before anyone else.`,
     `As a thank you, here’s ${percentOff}% off your first piece. Your code: ${code} (enter it at checkout).`,
@@ -254,8 +259,14 @@ export async function sendEmail({ to, subject, html, text, idempotencyKey }) {
     console.warn('email: RESEND_API_KEY or ORDER_EMAIL_FROM not set, skipping', subject);
     return null;
   }
+  // Never hold an email back over the link: fall back to the contact page.
+  const unsub = await unsubscribeUrl(to).catch(err => { console.error('email: no unsubscribe link', err); return null; });
+  const link = unsub || `${brandUrl()}/support#contact`;
   const { data, error } = await resend.emails.send({
-    from, to, subject, html, text,
+    from, to, subject,
+    html: html.split(UNSUBSCRIBE).join(esc(link)),
+    text: text && `${text}\n\nUnsubscribe from AXIA news and offers: ${link}`,
+    ...(unsub ? { headers: { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } } : {}),
     ...(process.env.ORDER_EMAIL_REPLY_TO ? { replyTo: process.env.ORDER_EMAIL_REPLY_TO } : {}),
   }, idempotencyKey ? { idempotencyKey } : undefined);
   if (error) throw new Error(`Resend: ${error.message || JSON.stringify(error)}`);

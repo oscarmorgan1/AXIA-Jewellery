@@ -68,6 +68,7 @@ export default function CustomerDetail() {
         <h1>{p.name || p.email}</h1>
         {p.sales.length ? <span className="chip chip--good">Customer</span> : <span className="chip chip--ice">Waitlist</span>}
         {p.sales.length > 1 && <span className="chip chip--plain chip--muted">Repeat</span>}
+        {p.unsubscribedAt && <span className="chip chip--plain chip--muted" title="They used the unsubscribe link. Order emails and your replies still reach them.">Unsubscribed</span>}
         <span className="spacer" />
         {p.phone && <a className="btn" href={`tel:${p.phone}`}><Phone size={16} /> Call</a>}
         <button className="btn btn--primary" onClick={() => setComposing(true)}><Mail size={16} /> Message</button>
@@ -129,7 +130,7 @@ export default function CustomerDetail() {
               <dt>Email</dt><dd><a href={`mailto:${p.email}`}>{p.email}</a></dd>
               <dt>Phone</dt><dd>{p.phone || '–'}</dd>
               <dt>Instagram</dt><dd>{p.instagram ? <a href={`https://instagram.com/${p.instagram.replace(/^@/, '')}`} target="_blank" rel="noreferrer">{p.instagram}</a> : '–'}</dd>
-              <dt>Email OK</dt><dd>{p.emailConsent ? 'Yes' : p.signups.length ? 'No' : '–'}</dd>
+              <dt>Email OK</dt><dd>{p.unsubscribedAt ? `No, unsubscribed ${fmtDate(p.unsubscribedAt)}` : p.emailConsent ? 'Yes' : p.signups.length ? 'No' : '–'}</dd>
               <dt>SMS OK</dt><dd>{p.smsConsent ? 'Yes' : p.signups.length ? 'No' : '–'}</dd>
             </dl>
             {a && <address className="address" style={{ marginTop: 14 }}>

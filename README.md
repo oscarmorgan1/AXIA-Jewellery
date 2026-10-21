@@ -149,15 +149,19 @@ Sign-ups from the landing and First Drop pages go through `POST /api/signup`, wh
 
 Links in every email point at `https://axiajewellery.com` (override with `EMAIL_LINK_URL`), never the temporary App Hosting address.
 
+### Unsubscribe
+
+Every email has an Unsubscribe link at the bottom and the one-click `List-Unsubscribe` header that Gmail and Apple Mail show. The link opens `/unsubscribe`, which asks the person to confirm (so link scanners can't unsubscribe anyone) and has a Resubscribe option. Unsubscribing marks their customer record `unsubscribed` and turns off email consent on their waitlist sign-ups; the portal shows them as Unsubscribed. Order emails and your replies still reach them. Signing up again with the email box ticked puts them back on the list. Links are signed with a random key the server creates in `serverConfig/unsubscribe` (server-only), or `UNSUBSCRIBE_SECRET` if set.
+
 ### Replies and messages
 
 Reply to an Inbox inquiry, or message a customer from their page or from an order, without leaving the portal. You see exactly what will be sent before it goes. Emails go through Resend (`POST /api/admin/messages/send`) in the AXIA layout, and replies to them land at `ORDER_EMAIL_REPLY_TO`. Each one is logged with its Resend ID on the inquiry (`replies`), on the order if it's about one, and on the customer record. Inquiries link the order they mention, whatever the format (`#XYZQWE`, `axia-xyzqwe`, `xyz qwe`), plus any other orders from the same email.
 
 ### Site videos
 
-The home (waitlist) page film and the store page film can be swapped under Website > Videos. The portal uploads the original straight to Cloud Storage (`media/uploads/`, through a one-off upload session from `POST /api/admin/media/upload-url`), then `POST /api/admin/media/video` converts it with ffmpeg (the `ffmpeg-static` package): sound removed, cut to 20 seconds, a 1080p and a 720p H.264 MP4 that start playing before they finish downloading, and a poster image. Those land in `media/{slot}/` and the links in `site/media`; the original is deleted. "Use original" goes back to the built-in film.
+The home (waitlist) page film and the store page film can be swapped under Website > Videos. The portal uploads the original straight to Cloud Storage (`media/uploads/`, through a one-off upload session from `POST /api/admin/media/upload-url`), then `POST /api/admin/media/video` converts it with ffmpeg, reading the original straight from Storage so it never fills the server's memory, (the `ffmpeg-static` package): sound removed, cut to 20 seconds, a 1080p and a 720p H.264 MP4 that start playing before they finish downloading, and a poster image. Those land in `media/{slot}/` and the links in `site/media`; the original is deleted. "Use original" goes back to the built-in film.
 
-Pages never download a video up front: it loads only when it's about to scroll into view, and phones (or data-saver connections) get the 720p one. The App Hosting service account needs write access to the Storage bucket (`STORAGE_BUCKET`, default `axia-jewellery.firebasestorage.app`); conversion is why `apphosting.yaml` asks for 2 CPUs and 1 GiB.
+Pages never download a video up front: it loads only when it's about to scroll into view, and phones (or data-saver connections) get the 720p one. The App Hosting service account needs write access to the Storage bucket (`STORAGE_BUCKET`, default `axia-jewellery.firebasestorage.app`); conversion is why `apphosting.yaml` asks for 2 CPUs and 2 GiB.
 
 ### Promo codes
 

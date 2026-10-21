@@ -28,6 +28,8 @@ export interface Person {
   promoCodes: string[];
   emailConsent: boolean;
   smsConsent: boolean;
+  /** When they unsubscribed from emails, if they have. */
+  unsubscribedAt?: Date;
   first?: Date;
   last?: Date;
   record?: CustomerRecord;
@@ -85,6 +87,10 @@ export function buildPeople(records: CustomerRecord[], orders: Order[], signups:
     p.name = p.name || r.name || '';
     p.phone = p.phone || r.phone || '';
     p.address = p.address || r.address || null;
+    if (r.unsubscribed) {
+      p.unsubscribedAt = new Date(r.unsubscribed.at || Date.now());
+      p.emailConsent = false;
+    }
   });
   messages.forEach(m => {
     const p = map.get(key(m.email));
