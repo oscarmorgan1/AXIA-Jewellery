@@ -8,6 +8,7 @@ import { allPrices, slugify, statusOf, withDerivedPrices } from '../lib/catalogu
 import { economics, retailAtSize } from '../lib/economics';
 import { aud, pct, timeAgo } from '../lib/format';
 import ImageList from '../components/ImageList';
+import ProductVideo from '../components/ProductVideo';
 import VariantsTable from '../components/VariantsTable';
 import { useToast } from '../components/Toast';
 import ProductSales from '../components/ProductSales';
@@ -258,9 +259,14 @@ export default function ProductEdit() {
             </label>
           </div>
 
+          <div className="card">
+            <div className="card__head"><div><h2>Video</h2></div></div>
+            <ProductVideo productId={id} video={draft.video} poster={draft.videoPoster} onError={setError} onChange={v => set(v)} />
+          </div>
+
           <details className="card">
             <summary style={{ cursor: 'pointer', fontWeight: 600 }} onClick={() => setJson(JSON.stringify((({ sort, updatedAt, ...r }) => r)(draft), null, 2))}>
-              Advanced: edit raw JSON (bundles, video, colour photos…)
+              Advanced: edit raw JSON (bundles, colour photos…)
             </summary>
             <p className="card__sub">Every field the storefront reads. Apply to load it into the form, then Save.</p>
             <textarea className="textarea textarea--code" value={json} onChange={e => setJson(e.target.value)} spellCheck={false} />

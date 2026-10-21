@@ -557,3 +557,4 @@ tr:hover .thumb { transform: scale(1.06); }
 .video-slot__bar i.pulse { animation: pulseBar 1.2s ease-in-out infinite; }
 @keyframes pulseBar { 50% { opacity: .4; } }
 @media (max-width: 640px) { .video-slot { grid-template-columns: 1fr; } }
+.video-slot__empty { display: grid; place-items: center; color: var(--muted); font-size: 13px; background: var(--soft); }

@@ -235,7 +235,9 @@ export function adminRoutes() {
   router.post('/api/admin/media/upload-url', handle(req => videoUploadUrl({
     slot: str(req.body.slot, 20), contentType: str(req.body.contentType, 100), size: Number(req.body.size), origin: req.get('origin'),
   })));
-  router.post('/api/admin/media/video', handle(req => processVideo({ slot: str(req.body.slot, 20), path: req.body.path, by: req.admin.email || req.admin.uid })));
+  router.post('/api/admin/media/video', handle(req => processVideo({
+    slot: str(req.body.slot, 20), path: req.body.path, productId: str(req.body.productId, 100), by: req.admin.email || req.admin.uid,
+  })));
   router.post('/api/admin/media/reset', handle(req => resetVideo(str(req.body.slot, 20))));
   router.get('/api/admin/promos', handle(listPromos));
   router.post('/api/admin/promos', handle(createPromo));

@@ -218,8 +218,8 @@
 
   /* ---- Site videos (Admin > Website > Videos) ----
      <video data-media="landing" data-src="..." data-src-mobile="..."> starts with no
-     src, so nothing downloads until we know which file to use: the one set in the
-     portal (site/media) or the built-in one, the 720p version on phones or data
+     src, so nothing downloads until we know which file to use: the site film set
+     in the portal (site/media.store, shown on every page) or the built-in one, the 720p version on phones or data
      saver, and only once the video is near the screen. */
   (function () {
     var MEDIA_KEY = 'axia_media_v1';
@@ -238,7 +238,7 @@
       return (window.matchMedia && matchMedia('(max-width: 760px)').matches) || c.saveData || /(^|-)2g$/.test(c.effectiveType || '');
     }
     function start(v, m) {
-      var set = m && m[v.getAttribute('data-media')];
+      var set = m && ((m.store && m.store.src) ? m.store : m[v.getAttribute('data-media')]);
       var src = set && set.src ? (small() && set.mobileSrc ? set.mobileSrc : set.src)
         : (small() && v.getAttribute('data-src-mobile')) || v.getAttribute('data-src');
       if (set && set.poster) v.poster = set.poster;
