@@ -114,7 +114,7 @@ export interface Order {
   tracking?: Tracking;
   emails?: OrderEmail[];
   statusHistory?: OrderHistory[];
-  stripe?: { sessionId?: string; paymentIntent?: string; livemode?: boolean };
+  stripe?: { sessionId?: string; paymentIntent?: string; livemode?: boolean; receiptUrl?: string; card?: { brand: string; last4: string } | null };
 }
 
 /** Promo code (server API; stored in Firestore `promoCodes`, mirrored in Stripe). */

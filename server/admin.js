@@ -82,6 +82,27 @@ async function changeStatus(req) {
   return { status, email: email && { resendId: email.resendId, status: email.status } };
 }
 
+// ---- Stripe receipt: the hosted receipt Stripe made for the order's charge.
+// The link lives on the charge, not the order, so it's looked up when asked for
+// and saved on the order (stripe.receiptUrl) so the next time is instant.
+
+async function orderReceipt(req) {
+  const ref = db.collection('orders').doc(str(req.params.id, 300));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpError(404, 'Order not found');
+  const s = snap.get('stripe') || {};
+  if (s.receiptUrl) return { url: s.receiptUrl, card: s.card || null };
+  if (!s.paymentIntent) throw new HttpError(404, 'This order has no Stripe payment yet');
+  if (!stripe) throw new HttpError(503, 'Stripe is not configured');
+  const pi = await stripe.paymentIntents.retrieve(s.paymentIntent, { expand: ['latest_charge'] });
+  const charge = pi.latest_charge && typeof pi.latest_charge === 'object' ? pi.latest_charge : null;
+  if (!charge || !charge.receipt_url) throw new HttpError(404, 'Stripe has no receipt for this payment yet');
+  const c = charge.payment_method_details && charge.payment_method_details.card;
+  const card = c ? { brand: c.brand || '', last4: c.last4 || '' } : null;
+  await ref.update({ 'stripe.receiptUrl': charge.receipt_url, 'stripe.card': card });
+  return { url: charge.receipt_url, card };
+}
+
 // ---- Promo codes: a Stripe coupon (the discount) plus a promotion code (what
 // the customer types). Saved in Firestore `promoCodes/{promotionCodeId}`;
 // sales per code are worked out in the portal from orders.promotionCodeId.
@@ -235,6 +256,7 @@ export function adminRoutes() {
   const router = express.Router();
   router.use('/api/admin', express.json({ limit: '32kb' }), requireAdmin);
   router.post('/api/admin/orders/:id/status', handle(changeStatus));
+  router.get('/api/admin/orders/:id/receipt', handle(orderReceipt));
   router.get('/api/admin/customers', handle(() => listCustomers()));
   router.post('/api/admin/customers/:id/notes', handle(saveCustomerNotes));
   router.post('/api/admin/messages/send', handle(sendMessage));
