@@ -70,7 +70,7 @@ export function BarChart({ data, format, W = 720 }: { data: { label: string; val
             {on && (
               <g>
                 <rect x={x + bw / 2 - 46} y={y - 36} width="92" height="26" rx="13" fill="var(--obsidian)" stroke="var(--ice)" strokeOpacity=".5" />
-                <text x={x + bw / 2} y={y - 18} textAnchor="middle" style={{ fill: '#F4F1EA', fontWeight: 600 }}>{format(d.value)}</text>
+                <text x={x + bw / 2} y={y - 18} textAnchor="middle" style={{ fill: 'var(--bone)', fontWeight: 600 }}>{format(d.value)}</text>
               </g>
             )}
           </g>
@@ -111,8 +111,8 @@ export function StackedBars({ data, format, W = 460 }: {
             {hover === i && (
               <g>
                 <rect x={Math.min(W - 150, Math.max(PAD.l, x + bw / 2 - 70))} y={Math.max(2, yt - 52)} width="140" height="44" rx="10" fill="var(--obsidian)" />
-                <text x={Math.min(W - 80, Math.max(PAD.l + 70, x + bw / 2))} y={Math.max(2, yt - 52) + 18} textAnchor="middle" style={{ fill: '#fff' }}>Cost {format(d.bottom)}</text>
-                <text x={Math.min(W - 80, Math.max(PAD.l + 70, x + bw / 2))} y={Math.max(2, yt - 52) + 35} textAnchor="middle" style={{ fill: '#C7EAF7' }}>Margin {format(d.top)}</text>
+                <text x={Math.min(W - 80, Math.max(PAD.l + 70, x + bw / 2))} y={Math.max(2, yt - 52) + 18} textAnchor="middle" style={{ fill: 'var(--white)' }}>Cost {format(d.bottom)}</text>
+                <text x={Math.min(W - 80, Math.max(PAD.l + 70, x + bw / 2))} y={Math.max(2, yt - 52) + 35} textAnchor="middle" style={{ fill: 'var(--ice)' }}>Margin {format(d.top)}</text>
               </g>
             )}
           </g>

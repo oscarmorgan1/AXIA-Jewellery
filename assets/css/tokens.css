@@ -1,3 +1,13 @@
+/* Hallmark · checked: 2026-11-06 · genre: editorial (inferred)
+ * floor: 6 FAIL left, all structural (44b, 44d) · fixed: 6a, 7a, 10a, 15, 19, 26a, 33, 34, 39a, 40, 48, 50, 54, 55a, 56, 62, 63, 67, 73, 76 · structural: printed (42, 44b, 44c, 44d, 58, 59, 77, 83)
+ * built: the project · redesign: polish · v2.0.0 */
+/* Hallmark · reworded "Made for you, not off a shelf" to "Free engraving, made for you" · 54 folds its eyebrow into the heading */
+/* Hallmark · reworded "Coming soon" to "The full drop, coming soon" · 54 folds its eyebrow into the heading */
+/* Hallmark · reworded "Wear it with" to "Complete the set" · 54 folds its eyebrow into the heading */
+/* Hallmark · reworded "A complete world" to "Beyond the Cuban" · 54 folds its eyebrow into the heading */
+/* Hallmark · waive 2b · a single-hue ramp from two tokens, bone to ice · the Titans title is the chrome lockup the collection is named for */
+/* Hallmark · waive 37 · the fourth face is Pinyon Script on the engraving preview only · it shows the customer the script the workshop engraves on the clasp */
+/* Hallmark · waive 38iii · the drop date is a second line at its own size under the countdown head · the date is the launch the home page exists to announce */
 /* ============================================================
    AXIA - DESIGN TOKENS  (v0.1)
    Foundation: Obsidian · Bone · Titanium  (~80–85%)
@@ -24,16 +34,19 @@
   /* ---- Text ---- */
   --ink:#111315;             /* primary on light */
   --ink-secondary:#5C636C;   /* AA secondary on bone */
-  --ink-tertiary:#8A9099;    /* labels on bone (large only) */
+  --ink-tertiary:#636970;    /* labels on bone, 4.5:1 on bone and bone-2 */
   --on-dark:#F4F1EA;         /* primary on obsidian */
   --on-dark-2:#AEB4BC;       /* secondary on obsidian */
-  --on-dark-3:#767C85;       /* tertiary on obsidian */
+  --on-dark-3:#80868F;       /* tertiary on obsidian, 4.5:1 on obsidian and obsidian-2 */
 
   /* ---- Lines ---- */
   --line:rgba(17,19,21,.12);
   --line-strong:rgba(17,19,21,.22);
   --line-dark:rgba(244,241,234,.14);
   --line-dark-strong:rgba(244,241,234,.26);
+  --field-edge:#7A808A;      /* form field outline on bone, 3:1 or better */
+  --field-edge-dark:#6B717A; /* form field outline on obsidian, 3:1 or better */
+  --focus:var(--ink);        /* focus ring; dark surfaces set it to ice */
 
   /* ---- Ice atmosphere ---- */
   --ice-glow:rgba(199,234,247,.72);
@@ -46,19 +59,72 @@
 
   /* ---- Magenta states ---- */
   --magenta-press:#DD2F5B;
+  --magenta-fill:#CF2657;        /* magenta as a button fill: deep enough for light text at 4.5:1 */
+  --magenta-fill-press:#B91F4D;
   --magenta-soft:rgba(243,67,110,.14);
-  --on-magenta:#FFFFFF;
+  --on-magenta:#FFF7F9;
 
   /* ---- Metal (product renders) ---- */
   --metal-a:#EAF3F8; --metal-b:#BEC9D3; --metal-c:#8894A2; --metal-d:#4F5865;   /* cooled toward ice-steel */
+
+
+  /* ---- Lifted from page styles (Hallmark polish): every colour now resolves to a token ---- */
+  --white:#FDFCFA;           /* tinted paper-white, never pure #fff */
+  --black:#000000;           /* shadow base only */
+  --ok:#1F7A4D;              /* success ink */
+  --magenta-ink:#B0174F;     /* magenta for text on light */
+  --steel:#5C6066;
+  --ice-steel:#8EA6B4;
+  --stone:#9A9A94;
+  --titanium-2:#C8CED5;
+  --bone-4:#E7E2D6;
+  --bone-5:#E7E3D9;
+  --ice-pale:#EAF6FC;
+  /* the night ramp: the blue-black stops used by heroes, stages and placeholders, darkest first */
+  --deep-01:#06080A;
+  --deep-02:#07090C;
+  --deep-03:#070A0E;
+  --deep-04:#080A0E;
+  --deep-05:#0A0C10;
+  --deep-06:#0A0E13;
+  --deep-07:#0B0E13;
+  --deep-08:#0C0E12;
+  --deep-09:#0D0F11;
+  --deep-10:#0C0F14;
+  --deep-11:#0E1012;
+  --deep-12:#0D1015;
+  --deep-13:#0F1114;
+  --deep-14:#10141B;
+  --deep-15:#12161B;
+  --deep-16:#12161C;
+  --deep-17:#141619;
+  --deep-18:#13161C;
+  --deep-19:#14171B;
+  --deep-20:#14181E;
+  --deep-21:#141B23;
+  --deep-22:#171C23;
+  --deep-23:#181C21;
+  --deep-24:#171D26;
+  --deep-25:#1C1E22;
+  --deep-26:#1B1F26;
+  --deep-27:#1C2024;
+  --deep-28:#1A212C;
+  --deep-29:#1C222A;
+  --deep-30:#1A2230;
+  --deep-31:#1C2A3A;
+  --deep-32:#222933;
+  --deep-33:#232A37;
+  --deep-34:#2C343E;
+  --deep-35:#2B3846;
 
   /* ---- Type ---- */
   --font-display:'Bricolage Grotesque',system-ui,sans-serif; /* impact heads - characterful, not the AI default */
   --font-sans:'Hanken Grotesk',system-ui,-apple-system,sans-serif;   /* workhorse / body / UI */
   --font-serif:'Cormorant',Georgia,serif;                           /* wordmark only (peaked-serif logo) */
+  --font-engrave:"Pinyon Script","Snell Roundhand",cursive;  /* engraving preview only: the script the workshop engraves */
 
   /* Fluid type scale (min → max) */
-  --t-label:0.72rem;
+  --t-label:0.8rem;          /* labels are sentence case and untracked, so they sit a step under body-s */
   --t-caption:0.8rem;
   --t-body-s:0.9rem;
   --t-body:1rem;

@@ -12,11 +12,11 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111315'/%3E%3Cg fill='%23F4F1EA'%3E%3Cpolygon points='16,5 6,27 9.5,27'/%3E%3Cpolygon points='16,5 22.5,27 26,27'/%3E%3Crect x='9' y='20.4' width='14' height='1.7'/%3E%3C/g%3E%3C/svg%3E">
 <style>
   body{background:var(--bone-2)}
-  .co-head{position:sticky;top:0;z-index:20;background:var(--bone);border-bottom:1px solid var(--line)}
+  .co-head{position:sticky;top:var(--give-h);z-index:20;background:var(--bone);border-bottom:1px solid var(--line)}
   .co-head__in{max-width:1080px;margin:0 auto;padding:var(--s-4) var(--gutter);display:flex;align-items:center;justify-content:space-between;gap:1rem}
   .co-brand{display:inline-flex;align-items:center}
   .co-brand img{height:24px;width:auto;display:block}
-  .co-secure{display:inline-flex;align-items:center;gap:.5em;font-size:var(--t-label);letter-spacing:var(--ls-mid);text-transform:uppercase;color:var(--ink-secondary)}
+  .co-secure{display:inline-flex;align-items:center;gap:.5em;font-size:var(--t-label);color:var(--ink-secondary)}
   .co-secure svg{width:15px;height:15px;stroke:var(--ink-secondary);fill:none;stroke-width:1.5}
 
   .co-wrap{max-width:1080px;margin:0 auto;padding:clamp(var(--s-6),5vw,var(--s-8)) var(--gutter) var(--s-9);display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(2rem,4vw,4rem);align-items:start}
@@ -25,18 +25,18 @@
   .co-sec{margin-bottom:var(--s-7)}
   .co-sec__h{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin-bottom:var(--s-4)}
   .co-sec__h h2{font-family:var(--font-display);font-weight:700;font-size:var(--t-24);text-transform:uppercase;letter-spacing:.01em}
-  .co-sec__h .step{font-size:var(--t-label);letter-spacing:var(--ls-mid);text-transform:uppercase;color:var(--ink-tertiary,var(--ink-secondary))}
+  .co-sec__h .step{font-size:var(--t-label);color:var(--ink-tertiary,var(--ink-secondary))}
 
   .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-3)}
-  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:var(--s-3)}
+  .field{display:flex;flex-direction:column;gap:8px;margin-bottom:var(--s-3)}
   .field.col2{grid-column:1/-1}
-  .field label{font-size:var(--t-label);letter-spacing:.02em;text-transform:uppercase;color:var(--ink-secondary)}
-  .field input,.field select{font-family:var(--font-sans);font-size:1rem;padding:.85em .9em;border:1px solid var(--line-strong,var(--line));border-radius:var(--r-1);background:var(--bone);color:var(--ink);width:100%;transition:border-color var(--dur-2) var(--ease),box-shadow var(--dur-2) var(--ease)}
-  .field input:focus,.field select:focus{outline:none;border-color:var(--ice-ink);box-shadow:0 0 0 3px rgba(42,96,118,.14)}
-  .field input.err{border-color:var(--magenta);box-shadow:0 0 0 3px rgba(243,67,110,.14)}
+  .field label{font-size:var(--t-label);color:var(--ink-secondary)}
+  .field input,.field select{font-family:var(--font-sans);font-size:1rem;padding:.85em .9em;border:1px solid var(--field-edge);border-radius:var(--r-1);background:var(--bone);color:var(--ink);width:100%;transition:border-color var(--dur-2) var(--ease),box-shadow var(--dur-2) var(--ease)}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--ice-ink);box-shadow:0 0 0 3px color-mix(in srgb, var(--ice-ink) 14%, transparent)}
+  .field input.err{border-color:var(--magenta);box-shadow:0 0 0 3px color-mix(in srgb, var(--magenta) 14%, transparent)}
 
   .ship-opt,.pay-opt{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-4);border:1px solid var(--line-strong,var(--line));border-radius:var(--r-1);cursor:pointer;margin-bottom:var(--s-2);background:var(--bone);transition:border-color var(--dur-2) var(--ease),background var(--dur-2) var(--ease)}
-  .ship-opt.on,.pay-opt.on{border-color:var(--ice-ink);background:linear-gradient(180deg,rgba(199,234,247,.16),rgba(199,234,247,.04))}
+  .ship-opt.on,.pay-opt.on{border-color:var(--ice-ink);background:linear-gradient(180deg,color-mix(in srgb, var(--ice) 16%, transparent),color-mix(in srgb, var(--ice) 4%, transparent))}
   .ship-opt input,.pay-opt input{accent-color:var(--ice-ink);width:18px;height:18px;flex:none}
   .ship-opt .m,.pay-opt .m{flex:1;min-width:0}
   .ship-opt .t,.pay-opt .t{font-weight:600;color:var(--ink)}
@@ -57,36 +57,36 @@
   .co-card{background:var(--bone);border:1px solid var(--line);border-radius:var(--r-2);padding:var(--s-5)}
   .co-card h2{font-family:var(--font-display);font-weight:700;font-size:var(--t-20);text-transform:uppercase;margin-bottom:var(--s-4)}
   .ci{display:flex;gap:var(--s-3);align-items:center;padding:var(--s-3) 0;border-bottom:1px solid var(--line)}
-  .ci__m{width:56px;height:56px;flex:none;border-radius:var(--r-1);overflow:hidden;background:radial-gradient(120% 100% at 30% 20%,#2b3846,#0a0e13);display:grid;place-items:center;position:relative}
+  .ci__m{width:56px;height:56px;flex:none;border-radius:var(--r-1);overflow:hidden;background:radial-gradient(120% 100% at 30% 20%,var(--deep-35),var(--deep-06));display:grid;place-items:center;position:relative}
   .ci__m img{width:100%;height:100%;object-fit:cover;display:block}
   .ci__mono{font-family:var(--font-serif);font-weight:600;color:var(--bone);font-size:1.25rem;letter-spacing:.04em}
-  .ci__q{position:absolute;top:-7px;right:-7px;min-width:19px;height:19px;padding:0 5px;background:var(--ink);color:var(--bone);border-radius:99px;font-size:.62rem;display:grid;place-items:center}
+  .ci__q{position:absolute;top:-7px;right:-7px;min-width:19px;height:19px;padding:0 4px;background:var(--ink);color:var(--bone);border-radius:99px;font-size:.62rem;display:grid;place-items:center;--focus:var(--ice)}
   .ci__t{flex:1;min-width:0}
   .ci__n{font-weight:600;font-size:var(--t-body-s);line-height:1.25}
   .ci__o{font-size:var(--t-label);color:var(--ink-secondary);margin-top:2px}
   .ci__p{font-weight:600;font-size:var(--t-body-s);white-space:nowrap}
   .disc{display:flex;gap:var(--s-2);margin:var(--s-4) 0}
-  .disc input{flex:1;font-family:var(--font-sans);font-size:.95rem;padding:.7em .8em;border:1px solid var(--line-strong,var(--line));border-radius:var(--r-1);background:var(--bone)}
-  .disc button{padding:.7em 1.1em;border:1px solid var(--ink);border-radius:var(--r-1);background:transparent;font-size:var(--t-label);letter-spacing:var(--ls-mid);text-transform:uppercase;cursor:pointer;color:var(--ink)}
+  .disc input{flex:1;font-family:var(--font-sans);font-size:.95rem;padding:.7em .8em;border:1px solid var(--field-edge);border-radius:var(--r-1);background:var(--bone)}
+  .disc button{padding:.7em 1.1em;border:1px solid var(--ink);border-radius:var(--r-1);background:transparent;font-size:var(--t-label);cursor:pointer;color:var(--ink)}
   .disc button:hover{background:var(--ink);color:var(--bone)}
   .disc-msg{font-size:var(--t-label);margin:-.4rem 0 var(--s-3);min-height:1em}
   .disc-msg.ok{color:var(--ice-ink)}.disc-msg.no{color:var(--magenta)}
-  .co-row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;font-size:var(--t-body-s);color:var(--ink-secondary)}
+  .co-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;font-size:var(--t-body-s);color:var(--ink-secondary)}
   .co-row[hidden]{display:none}
   .co-row .v{color:var(--ink)}
   .co-total{display:flex;justify-content:space-between;align-items:baseline;padding-top:var(--s-4);margin-top:var(--s-2);border-top:1px solid var(--line)}
   .co-total .l{font-weight:600;text-transform:uppercase;letter-spacing:.02em}
   .co-total .v{font-family:var(--font-display);font-weight:700;font-size:var(--t-28)}
-  .co-total .cur{font-size:var(--t-label);color:var(--ink-secondary);margin-right:.4em;letter-spacing:var(--ls-mid)}
+  .co-total .cur{font-size:var(--t-label);color:var(--ink-secondary);margin-right:.4em;}
   .co-assure{display:flex;flex-wrap:wrap;gap:var(--s-3) var(--s-5);margin-top:var(--s-5);font-size:var(--t-label);color:var(--ink-secondary)}
   .co-assure span{display:inline-flex;align-items:center;gap:.45em}
   .co-assure svg{width:14px;height:14px;stroke:var(--ice-ink);fill:none;stroke-width:1.6}
 
   /* empty + confirmation */
   .co-msg{max-width:560px;margin:clamp(var(--s-8),9vw,var(--s-10)) auto;padding:0 var(--gutter);text-align:center}
-  .co-msg .tick{width:64px;height:64px;margin:0 auto var(--s-5);border-radius:99px;background:linear-gradient(180deg,rgba(199,234,247,.3),rgba(199,234,247,.08));display:grid;place-items:center}
+  .co-msg .tick{width:64px;height:64px;margin:0 auto var(--s-5);border-radius:99px;background:linear-gradient(180deg,color-mix(in srgb, var(--ice) 30%, transparent),color-mix(in srgb, var(--ice) 8%, transparent));display:grid;place-items:center}
   .co-msg .tick svg{width:30px;height:30px;stroke:var(--ice-ink);fill:none;stroke-width:2}
-  .co-msg h1{font-family:var(--font-display);font-weight:700;font-size:clamp(2rem,5vw,3.2rem);text-transform:uppercase;line-height:.98;margin-bottom:var(--s-3)}
+  .co-msg h1{font-family:var(--font-display);font-weight:700;font-size:clamp(2rem,5vw,3.2rem);text-transform:uppercase;line-height:1;margin-bottom:var(--s-3)}
   .co-msg p{color:var(--ink-secondary);margin-bottom:var(--s-3)}
   .co-msg .ordno{font-family:var(--font-display);font-weight:700;color:var(--ink);letter-spacing:.05em}
   .co-msg .btn{margin-top:var(--s-4)}
@@ -100,10 +100,10 @@
   .co-wrap[hidden],.co-msg[hidden]{display:none}
   .co-note{font-size:var(--t-body-s);color:var(--ink-secondary);margin-bottom:var(--s-3)}
   .co-list .ci:last-child{border-bottom:0}
-  .ci__gift{display:inline-block;margin-top:4px;font-size:.62rem;letter-spacing:var(--ls-mid);text-transform:uppercase;color:var(--ice-ink)}
+  .ci__gift{display:inline-block;margin-top:4px;font-size:.62rem;color:var(--ice-ink)}
   .co-err{font-size:var(--t-body-s);color:var(--magenta);margin-top:var(--s-3);min-height:1em}
-  .btn--pay[disabled]{opacity:.6;cursor:progress}
-  .co-ship li{display:flex;justify-content:space-between;gap:1rem;padding:6px 0;font-size:var(--t-body-s);color:var(--ink-secondary)}
+  .btn--pay[disabled]{background:var(--titanium);border-color:var(--titanium);color:var(--ink-secondary);cursor:progress}
+  .co-ship li{display:flex;justify-content:space-between;gap:1rem;padding:8px 0;font-size:var(--t-body-s);color:var(--ink-secondary)}
   .co-ship ul{list-style:none;margin:0;padding:0}
   .co-ship b{color:var(--ink);font-weight:600}
 </style>
@@ -112,7 +112,7 @@
 <header class="co-head">
   <div class="co-head__in">
     <a class="co-brand" href="store" aria-label="AXIA home"><img src="assets/img/axia-logo.png" alt="AXIA"></a>
-    <span class="co-secure"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> Secure checkout</span>
+    <span class="co-secure"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> Secure checkout</span>
   </div>
 </header>
 
@@ -143,8 +143,8 @@
       <p class="co-note">You'll enter your delivery address, choose shipping, add a discount code and pay on the next page, run by our payment partner Stripe.</p>
       <button type="button" class="btn btn--cart btn--pay" id="payBtn">Continue to payment</button>
       <p class="co-err" id="coErr" role="alert"></p>
-      <p class="paynote"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> Card details are entered on Stripe's secure page and never touch our servers.</p>
-      <a class="co-back" href="store"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg> Return to store</a>
+      <p class="paynote"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> Card details are entered on Stripe's secure page and never touch our servers.</p>
+      <a class="co-back" href="store"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg> Return to store</a>
     </div>
   </div>
   <aside class="co-aside">
@@ -155,8 +155,8 @@
       <div class="co-row"><span>Discount codes</span><span class="v">Next step</span></div>
       <div class="co-total"><span class="l">Total</span><span><span class="cur">AUD</span><span class="v" id="sumTot">A$0</span></span></div>
       <div class="co-assure">
-        <span><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5z"/></svg> Lifetime warranty</span>
-        <span><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v5h5"/></svg> 30-day exchanges</span>
+        <span><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5z"/></svg> Lifetime warranty</span>
+        <span><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v5h5"/></svg> 30-day exchanges</span>
       </div>
     </div>
   </aside>
@@ -164,7 +164,7 @@
 
 <!-- CONFIRMATION (Stripe sends buyers back here with ?session_id=...) -->
 <div class="co-msg" id="coDone" hidden>
-  <div class="tick"><svg viewBox="0 0 24 24"><path d="m5 13 4 4 10-11"/></svg></div>
+  <div class="tick"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 13 4 4 10-11"/></svg></div>
   <h1>Order confirmed</h1>
   <p id="doneLine">Thank you. A confirmation is on its way to <span id="doneEmail">your inbox</span>.</p>
   <p id="doneNoWrap" hidden>Order <span class="ordno" id="doneNo"></span></p>

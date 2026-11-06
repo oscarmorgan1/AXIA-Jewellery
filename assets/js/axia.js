@@ -100,23 +100,19 @@
   $$('[data-art="cross"]').forEach(cross);
   $$('[data-art="atlas"]').forEach(s => atlas(s, s.dataset.img || ''));
 
-  /* ---- Reveal on scroll ---- */
+  document.documentElement.classList.add('js');
+
+  /* ---- Reveal on scroll ----
+     Visible by default. Only elements that start below the fold are armed (hidden, then revealed
+     as they enter), so above-the-fold content never moves under a first click and nothing stays
+     hidden without the script. */
   const rev = $$('.reveal');
-  if (reduce || !('IntersectionObserver' in window)) rev.forEach(e => e.classList.add('in'));
-  else {
+  if (!reduce && 'IntersectionObserver' in window) {
     const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.14, rootMargin: '0px 0px -6% 0px' });
-    rev.forEach(e => io.observe(e));
-    // Anything already on-screen at load settles INSTANTLY (no entrance transform). The entrance
-    // slide used to move hero CTAs mid-click, so a fast first click landed where the button *was*
-    // (the "press twice" bug). Above-the-fold content now appears in place and is instantly clickable.
-    requestAnimationFrame(() => rev.forEach(e => {
-      const r = e.getBoundingClientRect();
-      if (r.bottom > 0 && r.top < innerHeight) {
-        const t = e.style.transition; e.style.transition = 'none';
-        e.classList.add('in'); io.unobserve(e);
-        requestAnimationFrame(() => { e.style.transition = t; });
-      }
-    }));
+    rev.forEach(e => {
+      if (e.getBoundingClientRect().top < innerHeight) return;
+      e.classList.add('is-armed'); io.observe(e);
+    });
   }
 
   /* ---- Nav shadow on scroll ---- */
@@ -125,8 +121,8 @@
 
   /* ---- Mobile menu ---- */
   const mm = $('#mm');
-  $$('[data-menu]').forEach(b => b.onclick = () => { mm.classList.add('on'); document.body.style.overflow = 'hidden'; });
-  $$('[data-menu-close]').forEach(b => b.onclick = () => { mm.classList.remove('on'); document.body.style.overflow = ''; });
+  $$('[data-menu]').forEach(b => b.onclick = () => { mm.classList.add('on'); document.documentElement.style.overflow = 'hidden'; });
+  $$('[data-menu-close]').forEach(b => b.onclick = () => { mm.classList.remove('on'); document.documentElement.style.overflow = ''; });
 
   /* ---- Width/size chips ---- */
   $$('[data-chips]').forEach(row => row.addEventListener('click', e => {
@@ -142,8 +138,8 @@
   const KEY = 'axia_cart';
   let cart = []; try { cart = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) {}
   const ov = $('#ov'), drw = $('#drw'), cc = $('#cc');
-  const openC = () => { drw.classList.add('on'); ov.classList.add('on'); document.body.style.overflow = 'hidden'; };
-  const closeC = () => { drw.classList.remove('on'); ov.classList.remove('on'); document.body.style.overflow = ''; };
+  const openC = () => { drw.classList.add('on'); ov.classList.add('on'); document.documentElement.style.overflow = 'hidden'; };
+  const closeC = () => { drw.classList.remove('on'); ov.classList.remove('on'); document.documentElement.style.overflow = ''; };
   $$('[data-cart]').forEach(b => b.onclick = e => { e.preventDefault(); openC(); });
   $$('[data-cart-close]').forEach(b => b.onclick = closeC);
   if (ov) ov.onclick = closeC;
@@ -265,8 +261,8 @@
       else window.AXIA_art.drape(el, { yTop: 250, yBot: 380, w: 66, h: 52, n: 11, iced: true });
     } catch (e) {} });
   };
-  const openSearch = () => { SEARCH_INDEX = buildSearchIndex(); srch.classList.add('on'); srch.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; srchRender(''); setTimeout(() => srchInput.focus(), 40); };
-  const closeSearch = () => { srch.classList.remove('on'); srch.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; srchInput.value = ''; };
+  const openSearch = () => { SEARCH_INDEX = buildSearchIndex(); srch.classList.add('on'); srch.setAttribute('aria-hidden', 'false'); document.documentElement.style.overflow = 'hidden'; srchRender(''); setTimeout(() => srchInput.focus(), 40); };
+  const closeSearch = () => { srch.classList.remove('on'); srch.setAttribute('aria-hidden', 'true'); document.documentElement.style.overflow = ''; srchInput.value = ''; };
   srchInput.addEventListener('input', e => srchRender(e.target.value));
   // Enter = browse the whole catalogue filtered by the query (not jump to one item; click a result for that)
   srchInput.addEventListener('keydown', e => { if (e.key === 'Enter') { const q = srchInput.value.trim(); location.href = q ? 'collection?q=' + encodeURIComponent(q) : 'collection'; } });
@@ -347,7 +343,7 @@
         else document.body.insertBefore(a, document.body.firstChild);
         document.documentElement.classList.add('has-cdbar');
       }
-      var eye = '<span class="cdbar__eye"></span>', cta = '<span class="cdbar__cta">Register &rarr;</span>';
+      var eye = '<span class="cdbar__eye"></span>', cta = '<span class="cdbar__cta">Register</span>';
       if (st.mode === 'timer') {
         if (built !== 'timer') { a.innerHTML = eye + '<span class="cdbar__t"><b>--</b><i>d</i> <b>--</b><i>h</i> <b>--</b><i>m</i> <b>--</b><i>s</i></span>' + cta; built = 'timer'; a.querySelector('.cdbar__eye').textContent = st.label + ' lands in'; }
         var b = a.querySelectorAll('.cdbar__t b');

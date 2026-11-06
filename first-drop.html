@@ -11,12 +11,12 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111315'/%3E%3Cg fill='%23F4F1EA'%3E%3Cpolygon points='16,5 6,27 9.5,27'/%3E%3Cpolygon points='16,5 22.5,27 26,27'/%3E%3Crect x='9' y='20.4' width='14' height='1.7'/%3E%3C/g%3E%3C/svg%3E">
 <style>
   /* hero */
-  .fd-hero{position:relative;background:radial-gradient(130% 110% at 50% 30%,#1a212c 0%,#0c0f14 55%,#07090c 100%);color:var(--on-dark);overflow:hidden;padding-block:clamp(var(--s-8),9vw,var(--s-10));text-align:center}
-  .fd-hero .glow{position:absolute;inset:0;background:radial-gradient(46% 42% at 50% 34%,rgba(199,234,247,.10),transparent 66%);pointer-events:none}
+  .fd-hero{position:relative;background:radial-gradient(130% 110% at 50% 30%,var(--deep-28) 0%,var(--deep-10) 55%,var(--deep-02) 100%);color:var(--on-dark);overflow:hidden;padding-block:clamp(var(--s-8),9vw,var(--s-10));text-align:center}
+  .fd-hero .glow{position:absolute;inset:0;background:radial-gradient(46% 42% at 50% 34%,color-mix(in srgb, var(--ice) 10%, transparent),transparent 66%);pointer-events:none}
   .fd-hero .in{position:relative;z-index:2;max-width:60ch;margin-inline:auto}
   .fd-hero .eyebrow{display:block;margin-bottom:var(--s-4)}
-  .fd-hero h1{font-family:var(--font-display);font-weight:700;font-size:clamp(2.6rem,7vw,5.5rem);text-transform:uppercase;line-height:.9;letter-spacing:-0.01em}
-  .fd-tag{font-family:var(--font-display);font-weight:700;font-size:clamp(1.2rem,2.4vw,1.7rem);text-transform:uppercase;letter-spacing:.02em;color:var(--ice);margin-top:var(--s-5)}
+  .fd-hero h1{font-family:var(--font-display);font-weight:700;font-size:clamp(2.6rem,7vw,5.5rem);text-transform:uppercase;line-height:1;letter-spacing:-0.01em}
+  .fd-tag{font-family:var(--font-display);font-weight:700;font-size:clamp(1.2rem,2.4vw,1.7rem);color:var(--ice);margin-top:var(--s-5)}
   .fd-hero p{color:var(--on-dark-2);max-width:52ch;margin:var(--s-4) auto 0;font-size:var(--t-body-l)}
   .fd-hero .cta{margin-top:var(--s-6)}
   /* countdown (hidden until a launch date is genuinely fixed) */
@@ -25,43 +25,43 @@
   .cd-grid{display:inline-flex;gap:clamp(1rem,3vw,2.5rem);justify-content:center}
   .cd-unit{text-align:center}
   .cd-unit b{display:block;font-family:var(--font-display);font-weight:700;font-size:clamp(2rem,5vw,3.4rem);line-height:1;font-variant-numeric:tabular-nums}
-  .cd-unit span{font-size:var(--t-label);letter-spacing:var(--ls-mid);text-transform:uppercase;color:var(--on-dark-3)}
-  .cd-soon{margin-top:var(--s-5);font-size:var(--t-label);letter-spacing:var(--ls-mid);text-transform:uppercase;color:var(--ice)}
+  .cd-unit span{font-size:var(--t-label);color:var(--on-dark-3)}
+  .cd-soon{margin-top:var(--s-5);font-size:var(--t-label);color:var(--ice)}
 
   /* founding perks */
   /* first-drop giveaway */
-  .fd-give{background:linear-gradient(180deg,#14181e,#0b0e13);color:var(--on-dark);border-top:1px solid var(--line-dark);padding-block:clamp(var(--s-7),8vw,var(--s-9))}
-  .fd-give__in{max-width:1000px;margin:0 auto;padding-inline:var(--gutter);display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,5vw,4rem);align-items:center}
-  .fd-give__media{aspect-ratio:1;border-radius:var(--r-2);overflow:hidden;background:#0a0c10;position:relative;border:1px solid var(--line-dark-strong)}
+  .fd-give{background:linear-gradient(180deg,var(--deep-20),var(--deep-07));color:var(--on-dark);border-top:1px solid var(--line-dark);padding-block:clamp(var(--s-7),8vw,var(--s-9));--focus:var(--ice)}
+  .fd-give__in{max-width:1000px;margin:0 auto;padding-inline:var(--gutter);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(2rem,5vw,4rem);align-items:center}
+  .fd-give__media{aspect-ratio:1;border-radius:var(--r-2);overflow:hidden;background:var(--deep-05);position:relative;border:1px solid var(--line-dark-strong)}
   .fd-give__media img{width:100%;height:100%;object-fit:cover;display:block}
-  .fd-give__tag{position:absolute;top:14px;left:14px;background:var(--magenta);color:#fff;font-size:var(--t-label);letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:.4em .85em;border-radius:var(--r-pill);z-index:2}
-  .fd-give__eye{color:var(--magenta);font-weight:600;letter-spacing:var(--ls-wide);text-transform:uppercase;font-size:var(--t-label)}
-  .fd-give h2{font-family:var(--font-display);font-weight:700;font-size:clamp(2.1rem,5vw,3.4rem);text-transform:uppercase;line-height:.96;margin:var(--s-3) 0 var(--s-2)}
+  .fd-give__tag{position:absolute;top:14px;left:14px;background:var(--magenta-fill);color:var(--white);font-size:var(--t-label);font-weight:700;padding:.4em .85em;border-radius:var(--r-pill);z-index:2}
+  .fd-give__eye{color:var(--magenta);font-weight:600;font-size:var(--t-label)}
+  .fd-give h2{font-family:var(--font-display);font-weight:700;font-size:clamp(2.1rem,5vw,3.4rem);text-transform:uppercase;line-height:1;margin:var(--s-3) 0 var(--s-2)}
   .fd-give .val{font-family:var(--font-display);font-weight:700;color:var(--ice);font-size:var(--t-28);margin-bottom:var(--s-4)}
   .fd-give>.fd-give__in>div>p{color:var(--on-dark-2);margin-bottom:var(--s-4);max-width:42ch}
   .fd-give__how{margin:0 0 var(--s-5);padding:0}
   .fd-give__how li{list-style:none;display:flex;gap:.6rem;align-items:flex-start;font-size:var(--t-body-s);color:var(--on-dark-2);margin-bottom:.5rem}
   .fd-give__how svg{width:18px;height:18px;stroke:var(--ice);fill:none;stroke-width:1.7;flex:none;margin-top:1px}
   .fd-give .fine{font-size:var(--t-label);color:var(--on-dark-3);margin-top:var(--s-4);max-width:44ch}
-  @media(max-width:820px){.fd-give__in{grid-template-columns:1fr;gap:var(--s-5)}.fd-give__media{max-width:340px;margin-inline:auto;order:-1}}
+  @media(max-width:820px){.fd-give__in{grid-template-columns:minmax(0,1fr);gap:var(--s-5)}.fd-give__media{max-width:340px;margin-inline:auto;order:-1}}
   /* drop meter (limited-stock scarcity; claimed count fed live by the backend) */
-  .dropmeter{background:var(--obsidian);color:var(--on-dark);border-top:1px solid var(--line-dark);padding-block:clamp(var(--s-6),6vw,var(--s-8));text-align:center}
+  .dropmeter{background:var(--obsidian);color:var(--on-dark);border-top:1px solid var(--line-dark);padding-block:clamp(var(--s-6),6vw,var(--s-8));text-align:center;--focus:var(--ice)}
   .dropmeter__in{max-width:640px}
-  .dropmeter__eye{color:var(--magenta);font-weight:600;letter-spacing:var(--ls-wide);text-transform:uppercase;font-size:var(--t-label)}
+  .dropmeter__eye{color:var(--magenta);font-weight:600;font-size:var(--t-label)}
   .dropmeter__h{font-family:var(--font-display);font-weight:700;font-size:clamp(1.8rem,4.5vw,3rem);text-transform:uppercase;margin:var(--s-3) 0 var(--s-4);line-height:.98}
-  .dropmeter__bar{height:10px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin:0 auto var(--s-4);max-width:420px}
-  .dropmeter__fill{display:block;height:100%;width:0;background:var(--magenta);border-radius:99px;transition:width .8s var(--ease)}
+  .dropmeter__bar{height:10px;border-radius:99px;background:color-mix(in srgb, var(--white) 10%, transparent);overflow:hidden;margin:0 auto var(--s-4);max-width:420px}
+  .dropmeter__fill{display:block;height:100%;width:100%;transform:scaleX(0);transform-origin:left;background:var(--magenta);border-radius:99px;transition:transform .8s var(--ease)}
   .dropmeter__sub{color:var(--on-dark-2);font-size:var(--t-body-s)}
-  .fd-offer{background:var(--obsidian);color:var(--on-dark);padding-block:clamp(var(--s-7),7vw,var(--s-9));border-top:1px solid var(--line-dark)}
+  .fd-offer{background:var(--obsidian);color:var(--on-dark);padding-block:clamp(var(--s-7),7vw,var(--s-9));border-top:1px solid var(--line-dark);--focus:var(--ice)}
   .fd-offer__head{text-align:center;margin-bottom:var(--s-6)}
   .fd-offer__head .eyebrow{display:block;margin-bottom:var(--s-3);color:var(--ice)}
-  .fd-offer__head h2{font-family:var(--font-display);font-weight:700;font-size:clamp(1.8rem,4.4vw,3rem);text-transform:uppercase;line-height:.98}
+  .fd-offer__head h2{font-family:var(--font-display);font-weight:700;font-size:clamp(1.8rem,4.4vw,3rem);text-transform:uppercase;line-height:1}
   .fd-perks{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s-5)}
-  .fd-perk{border:1px solid var(--line-dark-strong);border-radius:var(--r-2);padding:var(--s-5);background:linear-gradient(180deg,rgba(199,234,247,.05),rgba(199,234,247,0))}
+  .fd-perk{border:1px solid var(--line-dark-strong);border-radius:var(--r-2);padding:var(--s-5);background:linear-gradient(180deg,color-mix(in srgb, var(--ice) 5%, transparent),rgba(199,234,247,0))}
   .fd-perk svg{width:30px;height:30px;stroke:var(--ice);fill:none;stroke-width:1.4;stroke-linejoin:round;margin-bottom:var(--s-4)}
   .fd-perk h3{font-family:var(--font-display);font-weight:700;font-size:var(--t-20);text-transform:uppercase;margin-bottom:var(--s-2)}
   .fd-perk p{font-size:var(--t-body-s);color:var(--on-dark-2)}
-  .fd-perk--gift{border-color:var(--magenta);background:linear-gradient(180deg,rgba(243,67,110,.10),rgba(243,67,110,0))}
+  .fd-perk--gift{border-color:var(--magenta);background:linear-gradient(180deg,color-mix(in srgb, var(--magenta) 10%, transparent),rgba(243,67,110,0))}
   .fd-perk--gift svg{stroke:var(--magenta)}
   .fd-offer__fine{text-align:center;margin-top:var(--s-5);font-size:var(--t-label);color:var(--on-dark-3);letter-spacing:.02em}
   @media(max-width:760px){.fd-perks{grid-template-columns:1fr;gap:var(--s-4)}}
@@ -72,9 +72,9 @@
   .form-wrap .lead-p{color:var(--ink-secondary);text-align:center;max-width:48ch;margin:var(--s-4) auto var(--s-7)}
   form.fd-form{margin-top:var(--s-5)}
   .field{display:flex;flex-direction:column;gap:.5rem;margin-bottom:var(--s-5)}
-  .field label{font-size:var(--t-label);letter-spacing:var(--ls-mid);text-transform:uppercase;color:var(--ink-secondary)}
+  .field label{font-size:var(--t-label);color:var(--ink-secondary)}
   .field label .opt{color:var(--ink-tertiary);text-transform:none;letter-spacing:0;font-weight:400}
-  .field input,.field select{font-family:var(--font-sans);font-size:var(--t-body);padding:.95em 1em;border:1px solid var(--line-strong);border-radius:var(--r-1);background:var(--bone);color:var(--ink);width:100%;transition:border-color var(--dur-2) var(--ease)}
+  .field input,.field select{font-family:var(--font-sans);font-size:var(--t-body);padding:.95em 1em;border:1px solid var(--field-edge);border-radius:var(--r-1);background:var(--bone);color:var(--ink);width:100%;transition:border-color var(--dur-2) var(--ease)}
   .field input:focus,.field select:focus{outline:none;border-color:var(--ink)}
   .field select:disabled{opacity:.55;cursor:not-allowed}
   .field-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-4)}
@@ -98,7 +98,7 @@
   @media(max-width:760px){.fd-info-grid{grid-template-columns:1fr;gap:var(--s-7)}}
   .fd-block h3{font-family:var(--font-display);font-weight:700;font-size:var(--t-24);text-transform:uppercase;margin-bottom:var(--s-4)}
   .fd-block .deftable div{display:flex;justify-content:space-between;gap:1rem;padding:.7rem 0;border-top:1px solid var(--line-soft);font-size:var(--t-body-s)}
-  .fd-block .deftable .k{color:var(--ink-secondary);letter-spacing:.06em;text-transform:uppercase;font-size:var(--t-label)}
+  .fd-block .deftable .k{color:var(--ink-secondary);font-size:var(--t-label)}
   .fd-block p{color:var(--ink-secondary);font-size:var(--t-body-s);margin-bottom:var(--s-3)}
   .fd-block li{position:relative;padding-left:1.2rem;color:var(--ink-secondary);font-size:var(--t-body-s);margin-bottom:.5rem}
   .fd-block li::before{content:"";position:absolute;left:0;top:.6em;width:6px;height:1px;background:var(--magenta)}
@@ -114,6 +114,7 @@
   .faq__q .pm::after{left:50%;top:0;height:100%;width:1.5px;transform:translateX(-50%)}
   .faq__i.open .pm::after{transform:translateX(-50%) scaleY(0)}
   .faq__a{max-height:0;overflow:hidden;transition:max-height var(--dur-3) var(--ease)}
+  .faq__i:not(.open) .faq__a{display:none}
   .faq__a p{padding-bottom:var(--s-4);color:var(--ink-secondary);font-size:var(--t-body-s);line-height:1.7;max-width:64ch}
 </style>
 </head>
@@ -125,10 +126,10 @@
   <nav class="nav__links" aria-label="Primary"><a class="nav__link" href="collection">Shop</a><a class="nav__link" href="cuban">The Cuban</a><a class="nav__link" href="about">About</a><a class="nav__link" href="support">Support</a></nav>
   <a class="nav__brand" href="store" aria-label="AXIA home"><span class="wm-img" aria-hidden="true"></span></a>
   <div class="nav__right">
-    <button class="nav__icon" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
-    <button class="nav__icon" aria-label="Account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></button>
-    <button class="nav__icon" data-cart aria-label="Bag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="cc" id="cc" aria-hidden="true">0</span></button>
-    <button class="nav__icon menu-btn" data-menu aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <button class="nav__icon" aria-label="Search"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+    <button class="nav__icon" aria-label="Account"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></button>
+    <button class="nav__icon" data-cart aria-label="Bag"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="cc" id="cc" aria-hidden="true">0</span></button>
+    <button class="nav__icon menu-btn" data-menu aria-label="Menu"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </div>
 </header>
 <div class="announce" aria-label="Store highlights"><div class="announce__track"><span>Passes a diamond tester</span><span class="dot">/</span><span>Hand-set and made to order</span><span class="dot">/</span><span>Free custom engraving</span><span class="dot">/</span><span>Lifetime warranty on defects</span><span class="dot">/</span><span>Ships in an AXIA box</span><span class="dot">/</span><span>Worldwide shipping</span><span class="dot">/</span><span>30-day exchanges</span><span class="dot">/</span><span>Passes a diamond tester</span><span class="dot">/</span><span>Hand-set and made to order</span><span class="dot">/</span><span>Free custom engraving</span><span class="dot">/</span><span>Lifetime warranty on defects</span><span class="dot">/</span><span>Ships in an AXIA box</span><span class="dot">/</span><span>Worldwide shipping</span><span class="dot">/</span><span>30-day exchanges</span><span class="dot">/</span></div></div>
@@ -138,7 +139,6 @@
   <section class="fd-hero">
     <div class="glow"></div>
     <div class="in container">
-      <span class="eyebrow eyebrow--ice">First access</span>
       <h1>Join the First Drop</h1>
       <p class="fd-tag">Buy once, shine forever.</p>
       <p>The first AXIA release. 925 sterling silver, hand-set VVS D-colour moissanite. Register your interest and get in before the public launch.</p>
@@ -169,11 +169,11 @@
         <div class="val">Valued at A$2,699</div>
         <p>Our unreleased 15mm Micro Pavé Cuban chain, fully iced. Register free for First Access and you're in the draw.</p>
         <ul class="fd-give__how">
-          <li><svg viewBox="0 0 24 24"><path d="m5 13 4 4 10-11"/></svg><span>Register free for First Access. That's your entry.</span></li>
-          <li><svg viewBox="0 0 24 24"><path d="m5 13 4 4 10-11"/></svg><span>One entry per person. Open to Australian residents 18+.</span></li>
-          <li><svg viewBox="0 0 24 24"><path d="m5 13 4 4 10-11"/></svg><span>One winner, drawn at random after entries close.</span></li>
+          <li><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 13 4 4 10-11"/></svg><span>Register free for First Access. That's your entry.</span></li>
+          <li><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 13 4 4 10-11"/></svg><span>One entry per person. Open to Australian residents 18+.</span></li>
+          <li><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 13 4 4 10-11"/></svg><span>One winner, drawn at random after entries close.</span></li>
         </ul>
-        <a class="btn btn--cart" href="#register">Register free to enter &rarr;</a>
+        <a class="btn btn--cart" href="#register">Register free to enter</a>
         <p class="fine">Open to Australian residents 18+. One entry per person. See the <a href="terms#giveaway" style="color:var(--ice);text-decoration:underline">giveaway terms</a>.</p>
       </div>
     </div>
@@ -213,11 +213,11 @@
       </div>
 
       <div class="fd-success" id="successView" aria-live="polite">
-        <div class="tick"><svg viewBox="0 0 24 24"><path d="m5 13 4 4 10-11"/></svg></div>
+        <div class="tick"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 13 4 4 10-11"/></svg></div>
         <h2>You're on the AXIA First Access list.</h2>
         <p>Members receive early access before the public release. We'll contact <span id="okEmail">you</span>, and text you if you opted in, the moment the first drop opens.</p>
         <p>Check your inbox: we've sent you <strong>15% off your first order</strong> with the code <strong>FREE15</strong>.</p>
-        <p style="margin-top:var(--s-5)"><a class="link-u" href="collection">Browse the collection <span class="arw">→</span></a></p>
+        <p style="margin-top:var(--s-5)"><a class="link-u" href="collection">Browse the collection</a></p>
       </div>
     </div>
   </section>
@@ -226,11 +226,11 @@
   <section class="fd-faq container">
     <h2>Questions</h2>
     <div class="faq" id="faq">
-      <div class="faq__i"><button class="faq__q">Is joining a purchase? Will I be charged? <span class="pm"></span></button><div class="faq__a"><p>No. Joining is free and takes no payment. It reserves your early-access spot and enters you in the giveaway. Checkout isn't open yet, and First Access members get in first the moment it is.</p></div></div>
-      <div class="faq__i"><button class="faq__q">When is the launch? <span class="pm"></span></button><div class="faq__a"><p>The date isn't public yet. Register for First Access and you'll be first to hear when it's set, you'll shop before the public opening, and you'll get 15% off your first order.</p></div></div>
-      <div class="faq__i"><button class="faq__q">How long until my piece ships? <span class="pm"></span></button><div class="faq__a"><p>Every AXIA piece is <strong>made to order</strong>. We hand-set each one after you order it, so allow roughly <strong>3-5 weeks</strong> before it ships. We confirm your exact timeline before anything is made, and every order arrives in an AXIA box.</p></div></div>
-      <div class="faq__i"><button class="faq__q">What is the jewellery made of? <span class="pm"></span></button><div class="faq__a"><p>Solid 925 sterling silver, white-gold plated, set with hand-set VVS D-colour moissanite that passes a diamond tester. Moissanite is a lab-created stone, not a diamond, and we never pretend otherwise.</p></div></div>
-      <div class="faq__i"><button class="faq__q">How do I get my size right? <span class="pm"></span></button><div class="faq__a"><p>Bracelets run 7″-9″, chains 16″-24″. If you're between sizes, size up. Every product page shows its exact lengths, and size exchanges are always free within 30 days.</p></div></div>
+      <div class="faq__i"><button class="faq__q" aria-expanded="false">Is joining a purchase? Will I be charged? <span class="pm"></span></button><div class="faq__a"><p>No. Joining is free and takes no payment. It reserves your early-access spot and enters you in the giveaway. Checkout isn't open yet, and First Access members get in first the moment it is.</p></div></div>
+      <div class="faq__i"><button class="faq__q" aria-expanded="false">When is the launch? <span class="pm"></span></button><div class="faq__a"><p>The date isn't public yet. Register for First Access and you'll be first to hear when it's set, you'll shop before the public opening, and you'll get 15% off your first order.</p></div></div>
+      <div class="faq__i"><button class="faq__q" aria-expanded="false">How long until my piece ships? <span class="pm"></span></button><div class="faq__a"><p>Every AXIA piece is <strong>made to order</strong>. We hand-set each one after you order it, so allow roughly <strong>3-5 weeks</strong> before it ships. We confirm your exact timeline before anything is made, and every order arrives in an AXIA box.</p></div></div>
+      <div class="faq__i"><button class="faq__q" aria-expanded="false">What is the jewellery made of? <span class="pm"></span></button><div class="faq__a"><p>Solid 925 sterling silver, white-gold plated, set with hand-set VVS D-colour moissanite that passes a diamond tester. Moissanite is a lab-created stone, not a diamond, and we never pretend otherwise.</p></div></div>
+      <div class="faq__i"><button class="faq__q" aria-expanded="false">How do I get my size right? <span class="pm"></span></button><div class="faq__a"><p>Bracelets run 7″-9″, chains 16″-24″. If you're between sizes, size up. Every product page shows its exact lengths, and size exchanges are always free within 30 days.</p></div></div>
     </div>
   </section>
 </main>
@@ -249,12 +249,12 @@
 
 <div class="ov" id="ov"></div>
 <aside class="drw" id="drw" role="dialog" aria-modal="true" aria-label="Your bag">
-  <div class="drw__h"><span class="t">Your Bag</span><button data-cart-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="drw__h"><span class="t">Your Bag</span><button data-cart-close aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
   <div class="drw__b" id="drwb"></div>
   <div class="drw__f" id="drwf"><div class="drw__r"><span class="label">Subtotal</span><span class="t num" id="ctot">$0</span></div><p class="drw__note">Checkout opens at launch. Join the First Drop for early access.</p><button class="btn btn--cart btn--block">Checkout</button></div>
 </aside>
 <div class="mm" id="mm">
-  <div class="mm__h"><a class="nav__brand" href="store" aria-label="AXIA"><span class="wm-img" aria-hidden="true"></span></a><button data-menu-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" style="width:22px;height:22px"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="mm__h"><a class="nav__brand" href="store" aria-label="AXIA"><span class="wm-img" aria-hidden="true"></span></a><button data-menu-close aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" style="width:22px;height:22px"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
   <nav class="mm__links"><a class="big" href="collection" data-menu-close>Shop</a><a class="big" href="cuban" data-menu-close>The Cuban</a><a class="big" href="about" data-menu-close>About</a><a class="big" href="support" data-menu-close>Support</a></nav>
   <div class="mm__shop">
     <span class="mm__label">Shop by</span>
@@ -267,7 +267,7 @@
     </div>
   </div>
 </div>
-<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
+<div class="toast" id="toast"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
 
 <script src="assets/js/catalogue.js?v=20261021b"></script>
 <script type="text/axia-deferred" src="assets/js/axia.js?v=20261002a"></script>
@@ -386,6 +386,7 @@
   $$('.faq__q').forEach(q=>q.addEventListener('click',()=>{
     const it=q.closest('.faq__i'), a=$('.faq__a',it), open=it.classList.toggle('open');
     a.style.maxHeight=open?a.scrollHeight+'px':0;
+    q.setAttribute('aria-expanded',open?'true':'false');
   }));
 })();
 </script>
