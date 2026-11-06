@@ -69,7 +69,6 @@
   .beyond-sec{padding-top:0}
   .titans-sec{padding-bottom:clamp(var(--s-7),6vw,var(--s-8))}
   .craft-sec{padding-block:clamp(var(--s-7),6vw,var(--s-8))}
-  .trust-sec{padding-top:0}
   .shopall-cta{text-align:center;margin-top:clamp(2rem,4vw,3rem)}
   .btn--shopall{font-size:1.05rem;padding:1.05em 2.4em}
 
@@ -95,9 +94,6 @@
   .on-obsidian .mat p{color:var(--on-dark-2)}
   @media(max-width:900px){.mat-grid{grid-template-columns:1fr;gap:var(--s-6)}}
 
-  .band{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-5);text-align:center}
-  .band .k{font-weight:600;margin-bottom:2px}.band .s{font-size:var(--t-body-s);color:var(--on-dark-2)}
-  @media(max-width:900px){.band{grid-template-columns:repeat(2,1fr);gap:var(--s-6) var(--s-4)}}
 
   .shead{display:flex;justify-content:space-between;align-items:flex-end;gap:2rem;flex-wrap:wrap;margin-bottom:var(--s-6)}
   .shead .eyebrow{display:block;margin-bottom:var(--s-3)}
@@ -136,7 +132,7 @@
   .foot a{display:block;font-size:var(--t-body-s);padding:.35rem 0;color:var(--on-dark-2)}.foot a:hover{color:var(--ice)}
   .foot__bot{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding-block:var(--s-5);font-size:.66rem;color:var(--on-dark-3)}
   @media(max-width:900px){.foot__top{grid-template-columns:1fr 1fr}.foot__brand{grid-column:1/-1}}
-  @media(max-width:600px){.mat-grid,.band{grid-template-columns:1fr}}
+  @media(max-width:600px){.mat-grid{grid-template-columns:1fr}}
 
   /* ===== First-visit logo intro ===== */
   .intro{position:fixed;inset:0;z-index:2000;background:radial-gradient(135% 115% at 50% 38%,var(--deep-24) 0%,var(--deep-10) 52%,var(--deep-02) 100%);display:grid;place-items:center;overflow:hidden}
@@ -270,22 +266,12 @@
 <section class="section on-obsidian craft-sec" id="craft" data-band-dark>
   <div class="container">
     <div class="shead reveal"><div><h2 class="h3" style="color:var(--bone)">Made to be looked at closely</h2></div></div>
-    <p class="reveal" style="max-width:54ch;color:var(--on-dark-2);margin:calc(-1*var(--s-3)) 0 var(--s-6);font-size:var(--t-body-l)">Built for long-term wear with proper care. Made to be worn, not replaced.</p>
+    <p class="reveal" style="max-width:none;text-wrap:balance;color:var(--on-dark-2);margin:calc(-1*var(--s-3)) 0 var(--s-6);font-size:var(--t-body-l)">Built for long-term wear with proper care. Made to be worn, not replaced.</p>
     <div class="mat-grid">
       <div class="mat reveal"><svg aria-hidden="true" class="mat__ico" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M6 6l12 12M18 6 6 18"/></svg><h4 class="h4">925 sterling silver</h4><p>Solid sterling silver, white-gold plated for a bright, lasting finish. Exact spec on every tag.</p></div>
       <div class="mat reveal" data-d="1"><svg aria-hidden="true" class="mat__ico" viewBox="0 0 24 24"><path d="M12 3 4 8l8 13 8-13-8-5Z"/><path d="M4 8h16"/></svg><h4 class="h4">VVS D-colour moissanite</h4><p>Hand-set and graded for cut and clarity, and it passes a diamond tester. We tell you exactly what it is, never a diamond game.</p></div>
       <div class="mat reveal" data-d="2"><svg aria-hidden="true" class="mat__ico" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3Z"/><path d="m9 12 2 2 4-5"/></svg><h4 class="h4">Australian support</h4><p>Local support and made-to-order care for major pieces. Warranty and returns detailed at checkout.</p></div>
     </div>
-  </div>
-</section>
-
-<!-- TRUST -->
-<section class="section--tight on-obsidian trust-sec">
-  <div class="container band reveal">
-    <div><div class="k">Worldwide dispatch</div><div class="s">Express, tracked, insured</div></div>
-    <div><div class="k">Hand-set to order</div><div class="s">Every piece &middot; approx. 3-5 weeks</div></div>
-    <div><div class="k">Australian support</div><div class="s">Real people, real answers</div></div>
-    <div><div class="k">Secure checkout</div><div class="s">Encrypted &amp; private</div></div>
   </div>
 </section>
 
