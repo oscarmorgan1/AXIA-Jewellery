@@ -64,7 +64,7 @@ export default function VideosCard() {
             <button className="btn btn--sm btn--primary" onClick={() => input.current?.click()} disabled={!!stage}><Upload size={14} /> Upload new video</button>
             {(video?.src || data.landing?.src) && <button className="btn btn--sm" onClick={reset} disabled={!!stage}><RotateCcw size={14} /> Use original</button>}
             <a className="btn btn--sm btn--ghost" href={siteUrl('/')} target="_blank" rel="noreferrer">Waitlist page</a>
-            <a className="btn btn--sm btn--ghost" href={siteUrl('/store?preview')} target="_blank" rel="noreferrer">Store page</a>
+            <a className="btn btn--sm btn--ghost" href={siteUrl('/store')} target="_blank" rel="noreferrer">Store page</a>
           </div>
         </div>
       </div>
