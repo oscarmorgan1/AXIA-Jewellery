@@ -8,21 +8,17 @@ import { db } from './services.js';
 import { welcomeEmail, sendEmail } from './email.js';
 import { emailEntry, push, customerId } from './orders.js';
 import { isUnsubscribed, setSubscribed } from './unsubscribe.js';
+import { rateLimit, clientIp } from './limit.js';
 
 const EMAIL = /^[^@\s/]+@[^@\s/]+\.[^@\s/]+$/;
 const SOURCES = ['landing', 'first-drop', 'other'];
 const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 
-// A light per-address limit so the form can't be used to spam inboxes.
-const recent = new Map();
-function tooMany(ip) {
-  const now = Date.now();
-  const hits = (recent.get(ip) || []).filter(t => now - t < 10 * 60 * 1000);
-  hits.push(now);
-  recent.set(ip, hits);
-  if (recent.size > 5000) recent.clear();
-  return hits.length > 8;
-}
+// A light per-visitor limit so the form can't be used to spam inboxes, plus an
+// overall cap on welcome emails per instance as a backstop if the IP is ever
+// misread: past it, sign-ups still save but the email waits for a re-sign-up.
+const tooMany = rateLimit({ windowMs: 10 * 60 * 1000, max: 8 });
+const tooManyWelcomes = rateLimit({ windowMs: 60 * 60 * 1000, max: 300, maxKeys: 1 });
 
 export function welcomeCode() {
   return {
@@ -54,7 +50,7 @@ export function signupRoutes() {
     const firstName = str(b.firstName, 80);
     if (!firstName) return res.status(400).json({ error: 'Please add your first name.' });
     if (!EMAIL.test(email)) return res.status(400).json({ error: 'Please enter a valid email.' });
-    if (tooMany(req.ip)) return res.status(429).json({ error: 'Too many sign-ups from here. Please try again later.' });
+    if (tooMany(clientIp(req))) return res.status(429).json({ error: 'Too many sign-ups from here. Please try again later.' });
     const doc = {
       firstName, email,
       mobile: str(b.mobile, 30), instagram: str(b.instagram, 60),
@@ -74,7 +70,8 @@ export function signupRoutes() {
       // failed email never fails the sign-up itself.
       const host = req.get('x-forwarded-host') || req.get('host');
       const siteUrl = (process.env.PUBLIC_SITE_URL || `${req.protocol}://${host}`).replace(/\/$/, '');
-      await sendWelcome(email, firstName, ref, siteUrl).catch(err => console.error('signup: welcome email failed', err));
+      if (tooManyWelcomes('all')) console.error('signup: hourly welcome email cap reached, not sending to', email);
+      else await sendWelcome(email, firstName, ref, siteUrl).catch(err => console.error('signup: welcome email failed', err));
       res.json({ ok: true });
     } catch (err) {
       console.error('signup: could not save', err);

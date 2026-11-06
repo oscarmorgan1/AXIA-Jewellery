@@ -39,6 +39,10 @@ Seeding loads factory costs from `private/AXIA-backend-data.json` if it exists. 
 
 On localhost the storefront reads the emulator. Add `?catalogue=live` to read production, or `?catalogue=static` to use the bundled file.
 
+## Photos
+
+Pages show web-sized WebP copies of the photos in `assets/img` (600px and 1200px wide, next to each original as `1-600.webp` and `1-1200.webp`). After adding or replacing a photo, run `npm run images` to make its copies, then commit them. A photo without copies still shows: the server falls back to the original.
+
 ## Data model
 
 | Collection | Who can read | Who can write | Holds |
@@ -48,9 +52,9 @@ On localhost the storefront reads the emulator. Add `?catalogue=live` to read pr
 | `site/shop` | everyone | admins | The Open shop switch (`open: true/false`), under Website in the portal. Missing or false means closed: buttons say "Reserve your spot" and the server refuses checkout |
 | `site/countdown` | everyone | admins | The launch countdown (timer, text or hidden), edited under Website in the portal. Without it the site shows "Dropping soon" |
 | `site/media` | everyone | the server | The site film uploaded under Website > Site film (`store`, used on the home/waitlist and store pages; an older `landing` entry is only used if `store` is empty), with 1080p and 720p MP4 links, a poster and sizes. A missing slot uses the built-in film in `assets/video/` |
-| `visits/{day}_{id}` | admins | anyone can create (validated) | Anonymous unique visitors: one entry per browser per day (Sydney time) with landing page, referring site and device. Shown on the dashboard. Admins who have signed in to the portal aren't counted |
-| `signups/{id}` | admins | anyone can create (validated) | Waitlist registrations from the landing and First Drop pages. Shown under Customers |
-| `messages/{id}` | admins | anyone can create (validated) | Support page contact form. Shown in the Inbox |
+| `visits/{day}_{id}` | admins | server only (`POST /api/visit`, rate limited) | Anonymous unique visitors: one entry per browser per day (Sydney time) with landing page, referring site and device. Shown on the dashboard. Admins who have signed in to the portal aren't counted |
+| `signups/{id}` | admins | server only (`POST /api/signup`, rate limited) | Waitlist registrations from the landing and First Drop pages. Shown under Customers |
+| `messages/{id}` | admins | server only (`POST /api/message`, rate limited) | Support page contact form. Shown in the Inbox |
 | `productCosts/{id}` | admins | admins | Factory cost, quoted size, notes. **Private** |
 | `internal/costAssumptions` | admins | admins | Payment fee, packaging, returns reserve |
 | `internal/firstDropPlan` | admins | admins | Internal unit plan |

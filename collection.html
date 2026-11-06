@@ -362,8 +362,8 @@
   }
   function media(p){
     const ph=(p.images&&p.images[0])||(p.imagesByColor&&(Object.values(p.imagesByColor).find(a=>a&&a.length)||[])[0])||(p.widths&&((p.widths.find(w=>w.image)||{}).image))||'';
-    if(p.showBoth&&p.images&&p.images.length>=2) return '<div class="card__split">'+p.images.slice(0,2).map(im=>'<img src="'+im+'" alt="'+p.name+'" loading="lazy">').join('')+'</div>';
-    if(ph) return '<img class="card__photo" src="'+ph+'" alt="'+p.name+'" loading="lazy">';
+    if(p.showBoth&&p.images&&p.images.length>=2) return '<div class="card__split">'+p.images.slice(0,2).map(im=>'<img '+AXIA_IMG(im,'(max-width: 760px) 25vw, 17vw')+' alt="'+p.name+'" loading="lazy">').join('')+'</div>';
+    if(ph) return '<img class="card__photo" '+AXIA_IMG(ph)+' alt="'+p.name+'" loading="lazy">';
     const a=p.art;
     if(a==='tennis') return '<svg class="card__art" viewBox="0 0 1000 620" data-gen="tennis"></svg>';
     if(a==='cubanBracelet') return '<svg class="card__art" viewBox="0 0 1000 620" data-gen="cubanBracelet"></svg>';

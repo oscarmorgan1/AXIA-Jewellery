@@ -6,7 +6,16 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   base: '/admin/',
   plugins: [react()],
-  build: { outDir: '../admin', emptyOutDir: true, chunkSizeWarningLimit: 1200 },
+  build: {
+    outDir: '../admin', emptyOutDir: true, chunkSizeWarningLimit: 600,
+    // Libraries in their own files: they change rarely, so browsers keep them cached across portal updates.
+    rollupOptions: {
+      output: {
+        manualChunks: (id: string) => /node_modules\/(@firebase|firebase)\//.test(id) ? 'firebase'
+          : /node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(id) ? 'react' : undefined,
+      },
+    },
+  },
   // In dev, /api goes to the local server (`npm run serve`, port 5050).
   server: { port: 5173, host: '127.0.0.1', proxy: { '/api': 'http://127.0.0.1:5050' } },
 });

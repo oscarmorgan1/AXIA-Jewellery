@@ -281,11 +281,13 @@
     const orig=btn.textContent; btn.disabled=true; btn.textContent='Sending…';
     let ok=true;
     try{
-      await window.AXIA_DB.add('messages',{ name:name.slice(0,100), email:email.toLowerCase().slice(0,200), topic:String(topic).slice(0,40),
-        order:order.slice(0,60), message:message.slice(0,5000), status:'new' });
-    }catch(ex){ ok=false; if(window.console) console.error(ex); }
+      const r=await fetch('/api/message',{ method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ name:name.slice(0,100), email:email.toLowerCase().slice(0,200), topic:String(topic).slice(0,40),
+          order:order.slice(0,60), message:message.slice(0,5000) }) });
+      if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error(j.error||('Send failed ('+r.status+')')); }
+    }catch(ex){ ok=ex.message&&!/^Send failed|fetch/i.test(ex.message)?ex.message:false; if(window.console) console.error(ex); }
     btn.disabled=false; btn.textContent=orig;
-    if(!ok){ fail('Something stopped that from sending. Please try again in a moment.'); return; }
+    if(ok!==true){ fail(typeof ok==='string'?ok:'Something stopped that from sending. Please try again in a moment.'); return; }
     $('#cOkEmail').textContent=email;
     form.style.display='none';
     const okv=$('#cOk'); okv.classList.add('on'); okv.scrollIntoView({block:'center'});

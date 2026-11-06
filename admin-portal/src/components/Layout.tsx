@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   ArrowUpRight, Bell, Globe, BadgePercent, Menu, X, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Receipt, Search, Settings as SettingsIcon, TicketPercent, Timer, Users,
@@ -57,6 +57,8 @@ export default function Layout() {
   const openOrders = orders.filter(o => o.status === 'paid' || o.status === 'in_progress').length;
   const unread = messages.filter(m => m.status !== 'done').length;
   const title = TITLES.find(([r]) => r.test(loc.pathname))?.[1] ?? '';
+  // Each page's name in the browser tab, so open tabs and history are easy to tell apart.
+  useEffect(() => { document.title = title ? `${title} · AXIA Admin` : 'AXIA Admin'; }, [title]);
   const name = user?.displayName || user?.email?.split('@')[0] || 'Admin';
   const link = ({ isActive }: { isActive: boolean }) => 'nav-link' + (isActive ? ' active' : '');
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
@@ -104,7 +106,7 @@ export default function Layout() {
           <NavLink to="/" className="header__logo" aria-label="Dashboard"><Logo height={17} /></NavLink>
           <div className="header__title">AXIA / <b>{title}</b></div>
           <span className="spacer" />
-          {!shop.loading && <NavLink to="/website" className={`chip header__shop ${shop.data.open ? 'chip--good' : 'chip--warn'}`} title="Open or close the shop">{shop.data.open ? 'Shop open' : 'Shop closed'}</NavLink>}
+          {!shop.loading && <NavLink to="/website" className={`chip header__shop ${shop.data.open ? 'chip--good' : 'chip--warn'}`} title="Open or close the shop" aria-label={shop.data.open ? 'Shop open' : 'Shop closed'}><span className="header__shop-text">{shop.data.open ? 'Shop open' : 'Shop closed'}</span></NavLink>}
           <button className="search-trigger" onClick={() => setPalette(true)} aria-label="Search">
             <Search size={16} /><span>Search anything</span><kbd>{isMac ? '⌘' : 'Ctrl'} K</kbd>
           </button>
@@ -116,7 +118,7 @@ export default function Layout() {
             <div><span>{name}</span><small>Admin</small></div>
           </div>
         </header>
-        <div className="page" key={loc.pathname}><Outlet /></div>
+        <div className="page" key={loc.pathname}><Suspense fallback={<div className="page-loading" aria-busy="true" />}><Outlet /></Suspense></div>
       </div>
 
       <CommandPalette open={palette} onClose={() => setPalette(false)} products={products} collections={collections} signups={signups} orders={orders} messages={messages} />

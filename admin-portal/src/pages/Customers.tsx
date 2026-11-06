@@ -82,7 +82,7 @@ export default function Customers() {
           <label className="check"><input type="checkbox" checked={smsOnly} onChange={e => setSmsOnly(e.target.checked)} /> SMS opt-in</label>
           <span className="spacer" />
           <div className="search"><Search size={16} />
-            <input placeholder="Name, email, phone, order, engraving…" value={q} onChange={e => setParams(e.target.value ? { q: e.target.value } : {}, { replace: true })} />
+            <input aria-label="Search customers" placeholder="Name, email, phone, order, engraving…" value={q} onChange={e => setParams(e.target.value ? { q: e.target.value } : {}, { replace: true })} />
           </div>
         </div>
         {error && <div className="notice notice--error">{error.message}</div>}

@@ -8,6 +8,8 @@
   const $$ = (s, c = document) => Array.from(c.querySelectorAll(s));
   const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
   const fmt = n => '$' + n.toLocaleString('en-AU');
+  // Bag lines come from localStorage, so anything shown from them is escaped.
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
   /* ---- Wordmark: custom peaked-serif AXIA (matches brand mark) ---- */
   // Peaked high-contrast serif traced from the AXIA mark: thin/concave left stroke, thick right, sharp apex, bracketed serifs
@@ -157,11 +159,11 @@
     const P = window.AXIA_PRODUCTS || [];
     const idFor = it => { if (it.id) return it.id; const m = P.find(p => (p.name + (p.width ? ', ' + p.width : '')) === it.name || p.name === it.name); return m ? m.id : null; };
     b.innerHTML = cart.map((it, i) => {
-      const m = it.img ? `<img src="${it.img}" alt="" loading="lazy">` : `<svg viewBox="0 0 1000 620" data-art="cuban" data-top="230" data-bot="430" data-w="60" data-h="46" data-n="16"></svg>`;
+      const m = it.img ? `<img ${window.AXIA_IMG ? AXIA_IMG(it.img, '96px') : 'src="' + esc(it.img) + '"'} alt="" loading="lazy">` : `<svg viewBox="0 0 1000 620" data-art="cuban" data-top="230" data-bot="430" data-w="60" data-h="46" data-n="16"></svg>`;
       const id = idFor(it); const href = id ? `product.html?id=${encodeURIComponent(id)}` : null;
       const mHtml = href ? `<a class="ci__m" href="${href}">${m}</a>` : `<div class="ci__m">${m}</div>`;
-      const nHtml = href ? `<a class="ci__n" href="${href}">${it.name}</a>` : `<div class="ci__n">${it.name}</div>`;
-      return `<div class="ci">${mHtml}<div>${nHtml}<div class="ci__o">${it.opt || ''}</div><button class="ci__rm" data-rm="${i}">Remove</button></div><div class="ci__p num">${fmt(it.price)}</div></div>`;
+      const nHtml = href ? `<a class="ci__n" href="${href}">${esc(it.name)}</a>` : `<div class="ci__n">${esc(it.name)}</div>`;
+      return `<div class="ci">${mHtml}<div>${nHtml}<div class="ci__o">${esc(it.opt)}</div><button class="ci__rm" data-rm="${i}">Remove</button></div><div class="ci__p num">${fmt(it.price)}</div></div>`;
     }).join('');
     // Free gift: a Classic Tennis Bracelet, unlocked once the bag passes A$999.
     const paid = cart.reduce((a, i) => a + i.price * i.q, 0);
@@ -237,14 +239,14 @@
   srch.className = 'srch'; srch.id = 'srch'; srch.setAttribute('aria-hidden', 'true');
   srch.innerHTML = '<div class="srch__panel" role="dialog" aria-label="Search AXIA">'
     + '<div class="srch__bar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'
-    + '<input id="srchInput" type="search" placeholder="Search AXIA" autocomplete="off" spellcheck="false">'
+    + '<input id="srchInput" type="search" aria-label="Search AXIA" placeholder="Search AXIA" autocomplete="off" spellcheck="false">'
     + '<button class="srch__close" data-search-close aria-label="Close search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>'
     + '<div class="srch__results" id="srchResults"></div></div>';
   document.body.appendChild(srch);
   const srchInput = $('#srchInput'), srchResults = $('#srchResults');
   const MONOGRAM = '<svg viewBox="0 0 32 32" aria-hidden="true"><g fill="currentColor"><polygon points="16,6 7,26 10,26"/><polygon points="16,6 25,26 22,26"/><rect x="9.5" y="20" width="13" height="1.7"/></g></svg>';
   const srchThumb = i => i.img
-    ? `<span class="srch__thumb"><img src="${i.img}" alt="" loading="lazy"></span>`
+    ? `<span class="srch__thumb"><img ${window.AXIA_IMG ? AXIA_IMG(i.img, '96px') : 'src="' + esc(i.img) + '"'} alt="" loading="lazy"></span>`
     : i.art
     ? `<span class="srch__thumb"><svg viewBox="${i.art === 'cross' ? '0 0 300 430' : '0 0 1000 620'}" data-sg="${i.art}" aria-hidden="true"></svg></span>`
     : `<span class="srch__thumb srch__thumb--page">${MONOGRAM}</span>`;
