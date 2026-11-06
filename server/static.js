@@ -14,8 +14,8 @@ const WEEK = 'public, max-age=604800';
 const YEAR = 'public, max-age=31536000, immutable';
 const MEDIA = /\.(jpe?g|png|webp|mp4|svg)$/i;
 
-// The Open shop switch decides where the front door goes: open, / goes to the
-// store; closed, /store goes to the waitlist page at /. Cached for a few
+// The Open shop switch decides what the main address shows: open, / is the
+// store (and /store sends people there); closed, / is the waitlist page. Cached for a few
 // seconds so every visit isn't a Firestore read; if Firestore can't be
 // reached the site acts closed, matching checkout.
 const SHOP_TTL = 10_000;
@@ -64,12 +64,9 @@ export function staticSite(root) {
   router.get('/{*page}', async (req, res, next) => {
     const qs = req.originalUrl.slice(req.path.length);
     const m = req.path.match(/^\/([\w-]+)(\.html)?$/);
-    if (req.path === '/') {
-      if (await shopOpen()) return sendTo(res, '/store' + qs);
-      return sendPage(res, path.join(root, 'index.html'));
-    }
-    // ?preview lets the owner check the store from the admin portal while it's closed.
-    if (m && m[1] === 'store' && !m[2] && !('preview' in req.query) && !(await shopOpen())) return sendTo(res, '/' + qs);
+    if (req.path === '/') return sendPage(res, path.join(root, (await shopOpen()) ? 'store.html' : 'index.html'));
+    // Open, the store lives at the main address, so /store goes there. Closed, /store stays reachable.
+    if (m && m[1] === 'store' && !m[2] && (await shopOpen())) return sendTo(res, '/' + qs);
     if (!m || !pages.has(m[1])) return next();
     if (m[2]) return res.redirect(301, (m[1] === 'index' ? '/' : '/' + m[1]) + qs);
     if (m[1] === 'index') return res.redirect(301, '/' + qs);
