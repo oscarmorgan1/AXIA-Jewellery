@@ -5,7 +5,7 @@ import { db, usingEmulators } from '../firebase';
 import { useAuth } from '../auth';
 import { useAssumptions } from '../lib/data';
 import { useToast } from '../components/Toast';
-import { useLarpMode } from '../lib/larp';
+import { LARP_LEVELS, useLarpMode } from '../lib/larp';
 import type { CostAssumptions } from '../types';
 
 const FIELDS: { key: keyof CostAssumptions; label: string; pct?: boolean; step: string }[] = [
@@ -64,10 +64,20 @@ export default function Settings() {
             <div className="card__head">
               <h2>Larp mode</h2>
               <button type="button" className="switch" role="switch" aria-checked={larp.on} aria-label="Larp mode"
-                onClick={() => { larp.set(!larp.on); toast.show(larp.on ? 'Larp mode off. Back to reality.' : 'Larp mode on. Welcome to the top.'); }} />
+                onClick={() => { larp.set(larp.on ? 0 : 2); toast.show(larp.on ? 'Larp mode off. Back to reality.' : 'Larp mode on: Millionaire'); }} />
             </div>
             <div className="card__sub" style={{ margin: 0 }}>
-              Makes the dashboard show made-up, millionaire-level numbers. Only on this browser, only on the dashboard. Real data and the public site are never touched.
+              Makes the dashboard show made-up numbers. Pick how rich you want to look. Only on this browser, only on the dashboard. Real data and the public site are never touched.
+            </div>
+            <div className="larp-levels" role="radiogroup" aria-label="Larp level">
+              {LARP_LEVELS.map(l => (
+                <button key={l.id} type="button" role="radio" aria-checked={larp.level === l.id}
+                  className={`larp-level${larp.level === l.id ? ' on' : ''}`}
+                  onClick={() => { larp.set(l.id); toast.show(`Larp mode: ${l.name}`); }}>
+                  <span className="larp-level__name"><b>{l.id}</b>{l.name}</span>
+                  <small>{l.blurb}</small>
+                </button>
+              ))}
             </div>
           </div>
           <div className="card">

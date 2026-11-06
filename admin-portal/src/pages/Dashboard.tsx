@@ -9,14 +9,16 @@ import { collectionLabel, firstImage, primaryCollection, statusOf } from '../lib
 import { productEconomics } from '../lib/economics';
 import { aud, pct } from '../lib/format';
 import { siteUrl, usingEmulators } from '../firebase';
-import { audCompact, fake, useLarpMode } from '../lib/larp';
+import { audCompact, compact, fake, useLarpMode } from '../lib/larp';
 import { SkeletonCard, SkeletonStats } from '../components/Skeleton';
 
 export const PALETTE = ['var(--ink)', '#2A6076', '#9FD3EA', '#F3436E', '#B7BDC5', '#6E7781', '#E3DED1'];
 const DAY = 86400000;
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN);
 // keeps big larp-mode numbers inside the chart tooltip
-const tip = (n: number) => (n >= 1e6 ? `${+(n / 1e6).toFixed(1)}M` : n >= 1e4 ? `${Math.round(n / 1e3)}K` : n.toLocaleString('en-AU'));
+const tip = compact;
+// full digits up to 10M, then 12.4M / 1.2B so stat cards don't overflow
+const big = (n: number) => (n >= 1e7 ? compact(n) : Math.round(n).toLocaleString('en-AU'));
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 
 function ago(d?: Date) {
@@ -40,7 +42,8 @@ export default function Dashboard() {
   const ready = !lp && !ls && !lm && !lv;
   const [range, setRange] = useState<'daily' | 'weekly'>('daily');
   const [metric, setMetric] = useState<'visitors' | 'signups'>('visitors');
-  const larp = useLarpMode().on;
+  const larpLevel = useLarpMode().current;
+  const larp = !!larpLevel;
 
   const s = useMemo(() => {
     const active = products.filter(p => !p.archived);
@@ -110,28 +113,29 @@ export default function Dashboard() {
 
   // Larp mode: swap the real numbers for made-up millionaire ones. Display only, nothing is written anywhere.
   const v = useMemo(() => {
-    if (!larp) return { ...s, customers: s.emails.size, revenue30: 0, interest: (_id: string, n: number | null) => n };
-    const d = sydneyDay(new Date());
+    if (!larpLevel) return { ...s, customers: s.emails.size, revenue30: 0, interest: (_id: string, n: number | null) => n };
+    const k = larpLevel.scale;
+    const d = sydneyDay(new Date()) + larpLevel.id;
     const n = s.series.length;
     const series = s.series.map((x, i) => ({
       label: x.label,
-      value: fake((metric === 'visitors' ? 260000 : 1400) * (range === 'weekly' ? 7 : 1) * (0.55 + 0.45 * i / Math.max(1, n - 1)), `${d}${metric}${range}${i}`, 0.12),
+      value: fake(k * (metric === 'visitors' ? 260000 : 1400) * (range === 'weekly' ? 7 : 1) * (0.55 + 0.45 * i / Math.max(1, n - 1)), `${d}${metric}${range}${i}`, 0.12),
     }));
     const total = series.reduce((a, x) => a + x.value, 0);
-    const spanVisitors = metric === 'visitors' ? total : fake(range === 'weekly' ? 11800000 : 2900000, `${d}sv${range}`);
-    const spanSignups = metric === 'signups' ? total : fake(range === 'weekly' ? 64000 : 15500, `${d}ss${range}`);
+    const spanVisitors = metric === 'visitors' ? total : fake(k * (range === 'weekly' ? 11800000 : 2900000), `${d}sv${range}`);
+    const spanSignups = metric === 'signups' ? total : fake(k * (range === 'weekly' ? 64000 : 15500), `${d}ss${range}`);
     const sources = [['Instagram', 0.41], ['TikTok', 0.27], ['Direct or typed in', 0.19], ['google.com', 0.13]]
       .map(([label, share]) => ({ label: label as string, n: Math.round(spanVisitors * (share as number)) }));
     return {
       ...s, series, spanVisitors, spanSignups, sources,
-      visitors7: fake(1840000, d + 'v7'), visitorsToday: fake(268000, d + 'vt'),
-      customers: fake(128400, d + 'c'), newThisWeek: fake(9400, d + 'nw'),
-      revenue30: fake(4820000, d + 'rev'), avgGross: 87.4,
+      visitors7: fake(k * 1840000, d + 'v7'), visitorsToday: fake(k * 268000, d + 'vt'),
+      customers: fake(k * 128400, d + 'c'), newThisWeek: fake(k * 9400, d + 'nw'),
+      revenue30: fake(k * 4820000, d + 'rev'), avgGross: larpLevel.margin,
       // every piece is wildly wanted
       wanted: s.wanted.length ? s.wanted : s.fallbackTop.map(p => ({ p, id: p.id, n: 0 })),
-      interest: (id: string) => fake(6200, d + id, 0.5),
+      interest: (id: string) => fake(k * 6200, d + id, 0.5),
     };
-  }, [s, larp, metric, range]);
+  }, [s, larpLevel, metric, range]);
 
   const today = new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
 
@@ -153,12 +157,12 @@ export default function Dashboard() {
       ) : (<div className="fade-in page-body">
       <div className="grid-4">
         <StatCard label="Visitors, last 7 days"
-          value={<CountUp value={v.visitors7} />} foot={<><b>{v.visitorsToday.toLocaleString('en-AU')}</b> so far today</>} />
+          value={<CountUp value={v.visitors7} format={big} />} foot={<><b>{big(v.visitorsToday)}</b> so far today</>} />
         <StatCard label="Customers"
-          value={<CountUp value={v.customers} />} foot={<><b>+{v.newThisWeek.toLocaleString('en-AU')}</b> this week</>} />
+          value={<CountUp value={v.customers} format={big} />} foot={<><b>+{big(v.newThisWeek)}</b> this week</>} />
         {larp ? (
           <StatCard label="Revenue, last 30 days"
-            value={<CountUp value={v.revenue30} format={audCompact} />} foot={<><b>+312%</b> on last month</>} />
+            value={<CountUp value={v.revenue30} format={audCompact} />} foot={<><b>{larpLevel?.growth}</b> on last month</>} />
         ) : (
           <StatCard label="Unread messages"
             value={<CountUp value={v.unread} />} foot={<Link to="/inbox">Open inbox</Link>} />
