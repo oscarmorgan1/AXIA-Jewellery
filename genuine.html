@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One of one | AXIA</title>
+<meta name="description" content="Every AXIA piece is hand-set to order and carries its own serial number. Enter the serial from your authenticity card to see your piece's record.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260930a">
+<link rel="stylesheet" href="assets/css/axia.css?v=20260930a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111315'/%3E%3Cg fill='%23F4F1EA'%3E%3Cpolygon points='16,5 6,27 9.5,27'/%3E%3Cpolygon points='16,5 22.5,27 26,27'/%3E%3Crect x='9' y='20.4' width='14' height='1.7'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  /* Genuine: dark page, the authenticity card is the hero object */
+  body{background:var(--obsidian);color:var(--on-dark);--focus:var(--ice)}
+  .mm a.big,.mm__h button{color:var(--ink)}
+  .drw,.drw__h .t,.drw__h button{color:var(--ink)}
+  .gen-hero{position:relative;padding-block:clamp(var(--s-8),8vw,var(--s-10)) clamp(var(--s-8),7vw,var(--s-9))}
+  .gen-hero .glow{position:absolute;inset:0;background:radial-gradient(40% 50% at 74% 46%,var(--ice-haze),transparent 70%);pointer-events:none}
+  .gen-grid{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(2.5rem,6vw,6rem);align-items:center}
+  .gen-copy{max-width:34rem;min-width:0}
+  .gen-copy h1{font-family:var(--font-display);font-weight:700;font-size:var(--t-64);text-transform:uppercase;line-height:1;color:var(--bone);overflow-wrap:break-word;min-width:0}
+  .gen-copy .lead{color:var(--on-dark-2);font-size:var(--t-body-l);max-width:42ch;margin-top:var(--s-5)}
+
+  /* serial search */
+  .gen-form{margin-top:var(--s-7)}
+  .gen-form label{display:block;font-size:var(--t-label);font-weight:500;color:var(--on-dark-2);margin-bottom:var(--s-2)}
+  .gen-field{display:flex;gap:var(--s-2)}
+  .gen-field input{flex:1;min-width:0;font-family:var(--font-sans);font-size:var(--t-body-l);font-variant-numeric:tabular-nums;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--bone);background:var(--obsidian-2);border:1px solid var(--field-edge-dark);border-radius:var(--r-1);padding:.95em 1em;
+    transition:border-color var(--dur-2) var(--ease),box-shadow var(--dur-2) var(--ease)}
+  .gen-field input::placeholder{color:var(--on-dark-3);letter-spacing:0;text-transform:none}
+  .gen-field input:hover{border-color:var(--on-dark-3)}
+  .gen-field input:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-color:var(--ice);box-shadow:0 0 0 3px var(--ice-haze)}
+  .gen-field .btn{flex:none}
+  .gen-msg{min-height:1.5em;margin-top:var(--s-3);font-size:var(--t-body-s);color:var(--on-dark-2)}
+  .gen-msg.err{color:var(--magenta)}
+  .gen-hint{margin-top:var(--s-2);font-size:var(--t-body-s);color:var(--on-dark-3)}
+  @media(max-width:520px){.gen-field{flex-direction:column}.gen-field .btn{width:100%}}
+
+  /* the card */
+  .gen-stage{display:grid;place-items:center;min-width:0}
+  .gcard{position:relative;width:min(100%,440px);aspect-ratio:85.6 / 54;border-radius:14px;overflow:hidden;color:var(--bone);
+    background:linear-gradient(145deg,var(--deep-29) 0%,var(--deep-08) 58%,var(--deep-18) 100%);
+    border:1px solid var(--line-dark-strong);
+    box-shadow:0 1px 0 var(--ice-rim) inset,0 30px 60px -20px var(--black),0 0 80px -30px var(--ice-soft);
+    transform:rotate(-4deg);transition:transform var(--dur-3) var(--ease)}
+  .gcard:hover{transform:rotate(-2deg) translateY(-4px)}
+  .gcard::before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,var(--ice-haze) 46%,transparent 60%);pointer-events:none}
+  .gcard__in{position:absolute;inset:0;padding:7% 7.5%;display:flex;flex-direction:column;justify-content:space-between}
+  .gcard__top{display:flex;justify-content:space-between;align-items:flex-start}
+  .gcard .wm-img{display:block;height:clamp(14px,4.4vw,22px);aspect-ratio:2000 / 404;background-color:currentColor;
+    -webkit-mask:url("assets/img/axia-logo.png?v=20260801i") center/contain no-repeat;mask:url("assets/img/axia-logo.png?v=20260801i") center/contain no-repeat}
+  .gcard__nfc{width:clamp(20px,5.6vw,28px);height:auto;color:var(--ice)}
+  .gcard__chip{width:15%;aspect-ratio:1.3;border-radius:4px;background:linear-gradient(135deg,var(--metal-a),var(--metal-b) 45%,var(--metal-c));opacity:.85}
+  .gcard__t{font-size:clamp(.66rem,1.9vw,.82rem);color:var(--on-dark-2)}
+  .gcard__sn{font-family:var(--font-display);font-weight:600;font-size:clamp(1rem,3.4vw,1.45rem);letter-spacing:.08em;font-variant-numeric:tabular-nums;margin-top:.15em;color:var(--bone)}
+  @media (prefers-reduced-motion:reduce){.gcard,.gcard:hover{transition:none}}
+
+  @media(max-width:860px){
+    .gen-grid{grid-template-columns:minmax(0,1fr)}
+    .gen-stage{order:-1;padding-inline:var(--s-4)}
+    .gcard{width:min(100%,360px)}
+  }
+
+  /* how it works */
+  .gen-how{border-top:1px solid var(--line-dark);padding-block:clamp(var(--s-8),7vw,var(--s-9))}
+  .gen-how h2{font-family:var(--font-display);font-weight:700;font-size:var(--t-32);text-transform:uppercase;color:var(--bone);margin-bottom:var(--s-7)}
+  .gen-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(1.5rem,4vw,4rem);list-style:none;padding:0;margin:0;counter-reset:st}
+  .gen-steps li{counter-increment:st;border-top:1px solid var(--line-dark-strong);padding-top:var(--s-5)}
+  .gen-steps li::before{content:counter(st);display:block;font-family:var(--font-display);font-weight:600;font-size:var(--t-24);color:var(--ice);margin-bottom:var(--s-4)}
+  .gen-steps h3{font-size:var(--t-body-l);font-weight:600;color:var(--bone);margin-bottom:var(--s-2)}
+  .gen-steps p{font-size:var(--t-body-s);color:var(--on-dark-2);max-width:34ch}
+  @media(max-width:860px){.gen-steps{grid-template-columns:minmax(0,1fr);gap:var(--s-6)}}
+
+  .gen-help{border-top:1px solid var(--line-dark);padding-block:var(--s-7) clamp(var(--s-8),7vw,var(--s-9));display:flex;flex-wrap:wrap;gap:var(--s-4) var(--s-6);align-items:baseline;justify-content:space-between}
+  .gen-help p{color:var(--on-dark-2);max-width:56ch}
+  .gen-help .link-u{color:var(--ice)}
+</style>
+
+</head>
+<body class="chrome-dark show-carousel">
+
+<header class="nav" id="nav">
+  <nav class="nav__links" aria-label="Primary"><a class="nav__link" href="collection">Shop</a><a class="nav__link" href="cuban">The Cuban</a><a class="nav__link" href="about">About</a><a class="nav__link" href="support">Support</a></nav>
+  <a class="nav__brand" href="store" aria-label="AXIA home"><span class="wm-img" aria-hidden="true"></span></a>
+  <div class="nav__right">
+    <button class="nav__icon" aria-label="Search"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+    <button class="nav__icon" aria-label="Account"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></button>
+    <button class="nav__icon" data-cart aria-label="Bag"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="cc" id="cc" aria-hidden="true">0</span></button>
+    <button class="nav__icon menu-btn" data-menu aria-label="Menu"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </div>
+</header>
+<div class="announce" aria-label="Store highlights"><div class="announce__track"><span>Passes a diamond tester</span><span class="dot">/</span><span>Hand-set and made to order</span><span class="dot">/</span><span>Free custom engraving</span><span class="dot">/</span><span>Lifetime warranty on defects</span><span class="dot">/</span><span>Ships in an AXIA box</span><span class="dot">/</span><span>Worldwide shipping</span><span class="dot">/</span><span>30-day exchanges</span><span class="dot">/</span><span>Passes a diamond tester</span><span class="dot">/</span><span>Hand-set and made to order</span><span class="dot">/</span><span>Free custom engraving</span><span class="dot">/</span><span>Lifetime warranty on defects</span><span class="dot">/</span><span>Ships in an AXIA box</span><span class="dot">/</span><span>Worldwide shipping</span><span class="dot">/</span><span>30-day exchanges</span><span class="dot">/</span></div></div>
+
+<main>
+  <section class="container gen-hero" aria-labelledby="genTitle">
+    <div class="glow" aria-hidden="true"></div>
+    <div class="gen-grid">
+      <div class="gen-copy">
+        <h1 id="genTitle">One of one</h1>
+        <p class="lead">Every AXIA piece is hand-set to order and carries its own serial number. Enter the one on your authenticity card to see your piece's record.</p>
+        <form class="gen-form" id="genForm" action="genuine" method="get" role="search" novalidate>
+          <label for="genSerial">Serial number</label>
+          <div class="gen-field">
+            <input id="genSerial" name="serial" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40" placeholder="Printed on your card" aria-describedby="genMsg genHint">
+            <button class="btn btn--cart" type="submit">Find my piece</button>
+          </div>
+          <p class="gen-msg" id="genMsg" role="status" aria-live="polite"></p>
+          <p class="gen-hint" id="genHint">Tap the card on your phone and the serial fills in for you.</p>
+        </form>
+      </div>
+      <div class="gen-stage" aria-hidden="true">
+        <div class="gcard">
+          <div class="gcard__in">
+            <div class="gcard__top">
+              <span class="wm-img"></span>
+              <svg class="gcard__nfc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 8.5a5 5 0 0 1 0 7"/><path d="M9.5 6a9 9 0 0 1 0 12"/><path d="M13 3.5a13 13 0 0 1 0 17"/></svg>
+            </div>
+            <span class="gcard__chip"></span>
+            <div>
+              <div class="gcard__t">Authenticity card</div>
+              <div class="gcard__sn">AX 0000 0000</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container gen-how" aria-labelledby="genHow">
+    <h2 id="genHow">How it works</h2>
+    <ol class="gen-steps">
+      <li><h3>Find your card</h3><p>Your authenticity card comes in the AXIA box with your piece. The serial number is printed on it.</p></li>
+      <li><h3>Tap or type</h3><p>Hold the card to the back of your phone to open this page, or type the serial into the search above.</p></li>
+      <li><h3>Keep it with the piece</h3><p>The card is your piece's record. If you sell or gift the piece, pass the card on with it.</p></li>
+    </ol>
+  </section>
+
+  <section class="container gen-help">
+    <p>Lost your card, or the serial doesn't look right? Send us your order number and we'll help.</p>
+    <a class="link-u" href="support#contact">Contact support</a>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="container">
+    <div class="foot__top">
+      <div class="foot__brand"><a class="nav__brand" href="store" aria-label="AXIA"><span class="wm-img" aria-hidden="true"></span></a><p>Buy once, shine forever.</p></div>
+      <div><h5>Shop</h5><a href="cuban">The Cuban</a><a href="collection?cat=Tennis">Tennis</a><a href="collection?cat=Pendants">Pendants</a><a href="titans">The Titans</a><a href="collection">Shop all</a></div>
+      <div><h5>AXIA</h5><a href="about">About</a><a href="first-drop">First Drop</a><a href="cuban">The Cuban</a><a href="support#sizing">Sizing</a><a href="support#gifting">Gifting</a></div>
+      <div><h5>Support</h5><a href="support#shipping">Shipping</a><a href="support#warranty">Warranty</a><a href="support#returns">Exchanges</a><a href="genuine">Authenticity</a></div>
+    </div>
+    <div class="foot__bot"><span>© 2026 AXIA Jewellery <span style="opacity:.4;font-size:.82em">ABN 64 972 889 034</span></span><span>Worth, made visible.</span></div>
+  </div>
+</footer>
+
+<div class="ov" id="ov"></div>
+<aside class="drw" id="drw" role="dialog" aria-modal="true" aria-label="Your bag">
+  <div class="drw__h"><span class="t">Your Bag</span><button data-cart-close aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="drw__b" id="drwb"></div>
+  <div class="drw__f" id="drwf"><div class="drw__r"><span class="label">Subtotal</span><span class="t num" id="ctot">$0</span></div><p class="drw__note">Lifetime warranty on manufacturing defects. Shipping &amp; taxes calculated at checkout.</p><button class="btn btn--cart btn--block">Checkout</button></div>
+</aside>
+<div class="mm" id="mm">
+  <div class="mm__h"><a class="nav__brand" href="store" aria-label="AXIA"><span class="wm-img" aria-hidden="true"></span></a><button data-menu-close aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" style="width:22px;height:22px"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <nav class="mm__links"><a class="big" href="collection" data-menu-close>Shop</a><a class="big" href="cuban" data-menu-close>The Cuban</a><a class="big" href="about" data-menu-close>About</a><a class="big" href="support" data-menu-close>Support</a></nav>
+  <div class="mm__shop">
+    <span class="mm__label">Shop by</span>
+    <div class="mm__cats">
+      <a href="cuban" data-menu-close>Cuban</a>
+      <a href="collection?cat=Tennis" data-menu-close>Tennis</a>
+      <a href="collection?cat=Pendants" data-menu-close>Pendants</a>
+      <a href="titans" data-menu-close>The Titans</a>
+      <a href="collection?sort=low" data-menu-close>Price: low to high</a>
+      <a href="collection?sort=high" data-menu-close>Price: high to low</a>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
+
+<script src="assets/js/catalogue.js?v=20261021b"></script>
+<script type="text/axia-deferred" src="assets/js/axia.js?v=20261002a"></script>
+<script type="text/axia-deferred">
+(function(){
+  /* UI only for now: there is no serial lookup yet, so a search just acknowledges the serial. */
+  const form=document.getElementById('genForm'); if(!form) return;
+  const input=document.getElementById('genSerial'), msg=document.getElementById('genMsg');
+  const clean=v=>String(v||'').trim().toUpperCase().replace(/\s+/g,' ').slice(0,40);
+  /* an NFC tap can open /genuine?serial=... with the serial filled in */
+  const pre=clean(new URLSearchParams(location.search).get('serial'));
+  if(pre) input.value=pre;
+  form.addEventListener('submit',e=>{
+    e.preventDefault();
+    const serial=clean(input.value);
+    msg.classList.remove('err');
+    if(!serial){ msg.classList.add('err'); msg.textContent='Enter the serial number from your card.'; input.focus(); return; }
+    input.value=serial;
+    msg.textContent='Piece records are coming soon. Keep your card safe with your piece.';
+  });
+})();
+</script>
+</body>
+</html>
