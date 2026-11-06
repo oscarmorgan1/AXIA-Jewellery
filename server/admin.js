@@ -24,7 +24,10 @@ async function requireAdmin(req, res, next) {
   try {
     const token = (req.get('authorization') || '').replace(/^Bearer\s+/i, '');
     if (!token) throw new HttpError(401, 'Sign in again');
-    const user = await getAuth().verifyIdToken(token);
+    // checkRevoked: honour a revoked session or disabled account right away
+    // (e.g. after revoking an ex-admin's refresh tokens), not just when the
+    // short-lived ID token next expires.
+    const user = await getAuth().verifyIdToken(token, true);
     if (user.admin !== true) throw new HttpError(403, 'Not an admin');
     if (!isVerifiedAdmin(user)) throw new HttpError(401, 'Enter the code we emailed you to finish signing in');
     req.admin = { uid: user.uid, email: user.email || '' };

@@ -36,7 +36,9 @@ export function isVerifiedAdmin(token) {
 async function adminToken(req) {
   const raw = (req.get('authorization') || '').replace(/^Bearer\s+/i, '');
   if (!raw) throw new HttpError(401, 'Sign in again');
-  const token = await getAuth().verifyIdToken(raw).catch(() => { throw new HttpError(401, 'Sign in again'); });
+  // checkRevoked so a revoked session or disabled account can't still request
+  // or verify a sign-in code (matches requireAdmin in admin.js).
+  const token = await getAuth().verifyIdToken(raw, true).catch(() => { throw new HttpError(401, 'Sign in again'); });
   if (token.admin !== true) throw new HttpError(403, 'Not an admin');
   return token;
 }
