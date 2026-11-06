@@ -39,6 +39,10 @@ Seeding loads factory costs from `private/AXIA-backend-data.json` if it exists. 
 
 On localhost the storefront reads the emulator. Add `?catalogue=live` to read production, or `?catalogue=static` to use the bundled file.
 
+## Photos
+
+Pages show web-sized WebP copies of the photos in `assets/img` (600px and 1200px wide, next to each original as `1-600.webp` and `1-1200.webp`). After adding or replacing a photo, run `npm run images` to make its copies, then commit them. A photo without copies still shows: the server falls back to the original.
+
 ## Data model
 
 | Collection | Who can read | Who can write | Holds |
@@ -48,17 +52,24 @@ On localhost the storefront reads the emulator. Add `?catalogue=live` to read pr
 | `site/shop` | everyone | admins | The Open shop switch (`open: true/false`), under Website in the portal. Missing or false means closed: buttons say "Reserve your spot" and the server refuses checkout |
 | `site/countdown` | everyone | admins | The launch countdown (timer, text or hidden), edited under Website in the portal. Without it the site shows "Dropping soon" |
 | `site/media` | everyone | the server | The site film uploaded under Website > Site film (`store`, used on the home/waitlist and store pages; an older `landing` entry is only used if `store` is empty), with 1080p and 720p MP4 links, a poster and sizes. A missing slot uses the built-in film in `assets/video/` |
-| `visits/{day}_{id}` | admins | anyone can create (validated) | Anonymous unique visitors: one entry per browser per day (Sydney time) with landing page, referring site and device. Shown on the dashboard. Admins who have signed in to the portal aren't counted |
-| `signups/{id}` | admins | anyone can create (validated) | Waitlist registrations from the landing and First Drop pages. Shown under Customers |
-| `messages/{id}` | admins | anyone can create (validated) | Support page contact form. Shown in the Inbox |
+| `visits/{day}_{id}` | admins | server only (`POST /api/visit`, rate limited) | Anonymous unique visitors: one entry per browser per day (Sydney time) with landing page, referring site and device. Shown on the dashboard. Admins who have signed in to the portal aren't counted |
+| `signups/{id}` | admins | server only (`POST /api/signup`, rate limited) | Waitlist registrations from the landing and First Drop pages. Shown under Customers |
+| `messages/{id}` | admins | server only (`POST /api/message`, rate limited) | Support page contact form. Shown in the Inbox |
 | `productCosts/{id}` | admins | admins | Factory cost, quoted size, notes. **Private** |
 | `internal/costAssumptions` | admins | admins | Payment fee, packaging, returns reserve |
 | `internal/firstDropPlan` | admins | admins | Internal unit plan |
 | `orders/{id}` | admins | admins | Paid Stripe orders, keyed by Checkout session id. Written by the webhook and the admin API with the Admin SDK. Holds each line's engraving, the promo code used, `statusHistory`, and `emails` (every customer email with its Resend ID) |
 | `customers/{email}` | nobody | nobody | One record per buyer, keyed by lower-cased email: latest name, phone and address, order ids, first and last order dates, and private notes. Created or updated by the webhook on every order; the portal reads it through `/api/admin/customers`, which also creates records for older orders |
+| `adminSignInCodes/{uid}` | nobody | nobody | The admin's current sign-in code, hashed, with its expiry and attempt count. Server only (`/api/auth/code/*`) |
 | `promoCodes/{id}` | nobody | nobody | Promo codes, keyed by Stripe promotion code id. Only the server reads and writes them (portal goes through `/api/admin/promos`) |
 
-"Admin" means a Firebase Auth user with the custom claim `admin: true`. The rules also refuse any cost or economics field on a public product.
+"Admin" means a Firebase Auth user with the custom claim `admin: true` whose current sign-in has passed the emailed code (see "Admin sign-in codes" below). The rules also refuse any cost or economics field on a public product.
+
+### Admin sign-in codes (email 2FA)
+
+After the password or Google step, the portal emails a 6-digit code to the admin's account address (through Resend, from `ORDER_EMAIL_FROM`) and opens only once it's entered. A code works for 10 minutes and 5 tries; a new one can be sent every 45 seconds, up to 6 an hour. Each verified sign-in is remembered on that device until you log off, so you enter a code once per new sign-in, not on every visit.
+
+This is enforced on the server side, not only in the portal: `POST /api/auth/code/verify` adds the sign-in's `auth_time` to the user's `mfa` custom claim, and the Firestore rules, Storage rules and `/api/admin/*` all refuse an admin token whose `auth_time` isn't in that list. Codes are stored hashed in `adminSignInCodes/{uid}`, which only the server can read. Locally with no Resend key, `npm run serve` prints the code in its terminal instead of emailing it.
 
 The raw `AXIA-backend-data.json` must never be committed or deployed: `.gitignore` and the Hosting `ignore` list both exclude it.
 

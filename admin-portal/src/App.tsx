@@ -1,28 +1,33 @@
+import { lazy } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth';
 import Layout from './components/Layout';
 import Logo from './components/Logo';
 import Login from './pages/Login';
 import NotAuthorised from './pages/NotAuthorised';
-import Dashboard from './pages/Dashboard';
-import Products from './pages/Products';
-import ProductEdit from './pages/ProductEdit';
-import Margins from './pages/Margins';
-import Orders from './pages/Orders';
-import OrderDetail from './pages/OrderDetail';
-import Promos from './pages/Promos';
-import Settings from './pages/Settings';
-import Collections from './pages/Collections';
-import Customers from './pages/Customers';
-import CustomerDetail from './pages/CustomerDetail';
-import InboxPage from './pages/Inbox';
-import Website from './pages/Website';
+import SignInCode from './pages/SignInCode';
+
+// Each page loads when it's first opened, so the portal starts faster.
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Products = lazy(() => import('./pages/Products'));
+const ProductEdit = lazy(() => import('./pages/ProductEdit'));
+const Margins = lazy(() => import('./pages/Margins'));
+const Orders = lazy(() => import('./pages/Orders'));
+const OrderDetail = lazy(() => import('./pages/OrderDetail'));
+const Promos = lazy(() => import('./pages/Promos'));
+const Settings = lazy(() => import('./pages/Settings'));
+const Collections = lazy(() => import('./pages/Collections'));
+const Customers = lazy(() => import('./pages/Customers'));
+const CustomerDetail = lazy(() => import('./pages/CustomerDetail'));
+const InboxPage = lazy(() => import('./pages/Inbox'));
+const Website = lazy(() => import('./pages/Website'));
 
 export default function App() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, verified, loading } = useAuth();
   if (loading) return <div className="loading-screen"><Logo height={34} className="logo--loading" /></div>;
   if (!user) return <Login />;
   if (!isAdmin) return <NotAuthorised />;
+  if (!verified) return <SignInCode />;
   return (
     <Routes>
       <Route element={<Layout />}>

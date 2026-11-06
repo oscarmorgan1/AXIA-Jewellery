@@ -59,7 +59,7 @@ export default function ImageList({ productId, images, onChange, onError }: {
       </div>
       <input ref={input} type="file" accept="image/*" multiple hidden onChange={e => upload(e.target.files)} />
       <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-        <input className="input" placeholder="…or add a site path, e.g. assets/img/products/x/1.jpg" value={path} onChange={e => setPath(e.target.value)} />
+        <input className="input" aria-label="Image path" placeholder="…or add a site path, e.g. assets/img/products/x/1.jpg" value={path} onChange={e => setPath(e.target.value)} />
         <button type="button" className="btn btn--sm" disabled={!path.trim()} onClick={() => { onChange([...images, path.trim()]); setPath(''); }}>Add</button>
       </div>
     </div>

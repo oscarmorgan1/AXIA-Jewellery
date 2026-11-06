@@ -10,6 +10,7 @@ import { useToast } from '../components/Toast';
 import ComposeEmail from '../components/ComposeEmail';
 import { OrdersTable } from './Orders';
 import { SOURCE, fmtDate, initials } from './Customers';
+import { SkeletonPage } from '../components/Skeleton';
 
 export default function CustomerDetail() {
   const { id = '' } = useParams();
@@ -37,7 +38,7 @@ export default function CustomerDetail() {
 
   const sent = [...(p?.record?.emails || [])].filter(e => e.type === 'message' || e.type === 'reply' || e.type === 'welcome').reverse();
 
-  if (loading) return <div className="card empty">Loading…</div>;
+  if (loading) return <SkeletonPage stats />;
   if (!p) return <div className="card empty"><b>Customer not found</b><Link className="btn" to="/customers">Back to customers</Link></div>;
 
   async function saveNotes() {

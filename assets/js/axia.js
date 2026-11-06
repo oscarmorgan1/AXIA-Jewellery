@@ -8,6 +8,8 @@
   const $$ = (s, c = document) => Array.from(c.querySelectorAll(s));
   const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
   const fmt = n => '$' + n.toLocaleString('en-AU');
+  // Bag lines come from localStorage, so anything shown from them is escaped.
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
   /* ---- Wordmark: custom peaked-serif AXIA (matches brand mark) ---- */
   // Peaked high-contrast serif traced from the AXIA mark: thin/concave left stroke, thick right, sharp apex, bracketed serifs
@@ -98,23 +100,19 @@
   $$('[data-art="cross"]').forEach(cross);
   $$('[data-art="atlas"]').forEach(s => atlas(s, s.dataset.img || ''));
 
-  /* ---- Reveal on scroll ---- */
+  document.documentElement.classList.add('js');
+
+  /* ---- Reveal on scroll ----
+     Visible by default. Only elements that start below the fold are armed (hidden, then revealed
+     as they enter), so above-the-fold content never moves under a first click and nothing stays
+     hidden without the script. */
   const rev = $$('.reveal');
-  if (reduce || !('IntersectionObserver' in window)) rev.forEach(e => e.classList.add('in'));
-  else {
+  if (!reduce && 'IntersectionObserver' in window) {
     const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.14, rootMargin: '0px 0px -6% 0px' });
-    rev.forEach(e => io.observe(e));
-    // Anything already on-screen at load settles INSTANTLY (no entrance transform). The entrance
-    // slide used to move hero CTAs mid-click, so a fast first click landed where the button *was*
-    // (the "press twice" bug). Above-the-fold content now appears in place and is instantly clickable.
-    requestAnimationFrame(() => rev.forEach(e => {
-      const r = e.getBoundingClientRect();
-      if (r.bottom > 0 && r.top < innerHeight) {
-        const t = e.style.transition; e.style.transition = 'none';
-        e.classList.add('in'); io.unobserve(e);
-        requestAnimationFrame(() => { e.style.transition = t; });
-      }
-    }));
+    rev.forEach(e => {
+      if (e.getBoundingClientRect().top < innerHeight) return;
+      e.classList.add('is-armed'); io.observe(e);
+    });
   }
 
   /* ---- Nav shadow on scroll ---- */
@@ -123,8 +121,8 @@
 
   /* ---- Mobile menu ---- */
   const mm = $('#mm');
-  $$('[data-menu]').forEach(b => b.onclick = () => { mm.classList.add('on'); document.body.style.overflow = 'hidden'; });
-  $$('[data-menu-close]').forEach(b => b.onclick = () => { mm.classList.remove('on'); document.body.style.overflow = ''; });
+  $$('[data-menu]').forEach(b => b.onclick = () => { mm.classList.add('on'); document.documentElement.style.overflow = 'hidden'; });
+  $$('[data-menu-close]').forEach(b => b.onclick = () => { mm.classList.remove('on'); document.documentElement.style.overflow = ''; });
 
   /* ---- Width/size chips ---- */
   $$('[data-chips]').forEach(row => row.addEventListener('click', e => {
@@ -140,8 +138,8 @@
   const KEY = 'axia_cart';
   let cart = []; try { cart = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) {}
   const ov = $('#ov'), drw = $('#drw'), cc = $('#cc');
-  const openC = () => { drw.classList.add('on'); ov.classList.add('on'); document.body.style.overflow = 'hidden'; };
-  const closeC = () => { drw.classList.remove('on'); ov.classList.remove('on'); document.body.style.overflow = ''; };
+  const openC = () => { drw.classList.add('on'); ov.classList.add('on'); document.documentElement.style.overflow = 'hidden'; };
+  const closeC = () => { drw.classList.remove('on'); ov.classList.remove('on'); document.documentElement.style.overflow = ''; };
   $$('[data-cart]').forEach(b => b.onclick = e => { e.preventDefault(); openC(); });
   $$('[data-cart-close]').forEach(b => b.onclick = closeC);
   if (ov) ov.onclick = closeC;
@@ -157,11 +155,11 @@
     const P = window.AXIA_PRODUCTS || [];
     const idFor = it => { if (it.id) return it.id; const m = P.find(p => (p.name + (p.width ? ', ' + p.width : '')) === it.name || p.name === it.name); return m ? m.id : null; };
     b.innerHTML = cart.map((it, i) => {
-      const m = it.img ? `<img src="${it.img}" alt="" loading="lazy">` : `<svg viewBox="0 0 1000 620" data-art="cuban" data-top="230" data-bot="430" data-w="60" data-h="46" data-n="16"></svg>`;
+      const m = it.img ? `<img ${window.AXIA_IMG ? AXIA_IMG(it.img, '96px') : 'src="' + esc(it.img) + '"'} alt="" loading="lazy">` : `<svg viewBox="0 0 1000 620" data-art="cuban" data-top="230" data-bot="430" data-w="60" data-h="46" data-n="16"></svg>`;
       const id = idFor(it); const href = id ? `product.html?id=${encodeURIComponent(id)}` : null;
       const mHtml = href ? `<a class="ci__m" href="${href}">${m}</a>` : `<div class="ci__m">${m}</div>`;
-      const nHtml = href ? `<a class="ci__n" href="${href}">${it.name}</a>` : `<div class="ci__n">${it.name}</div>`;
-      return `<div class="ci">${mHtml}<div>${nHtml}<div class="ci__o">${it.opt || ''}</div><button class="ci__rm" data-rm="${i}">Remove</button></div><div class="ci__p num">${fmt(it.price)}</div></div>`;
+      const nHtml = href ? `<a class="ci__n" href="${href}">${esc(it.name)}</a>` : `<div class="ci__n">${esc(it.name)}</div>`;
+      return `<div class="ci">${mHtml}<div>${nHtml}<div class="ci__o">${esc(it.opt)}</div><button class="ci__rm" data-rm="${i}">Remove</button></div><div class="ci__p num">${fmt(it.price)}</div></div>`;
     }).join('');
     // Free gift: a Classic Tennis Bracelet, unlocked once the bag passes A$999.
     const paid = cart.reduce((a, i) => a + i.price * i.q, 0);
@@ -237,14 +235,14 @@
   srch.className = 'srch'; srch.id = 'srch'; srch.setAttribute('aria-hidden', 'true');
   srch.innerHTML = '<div class="srch__panel" role="dialog" aria-label="Search AXIA">'
     + '<div class="srch__bar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'
-    + '<input id="srchInput" type="search" placeholder="Search AXIA" autocomplete="off" spellcheck="false">'
+    + '<input id="srchInput" type="search" aria-label="Search AXIA" placeholder="Search AXIA" autocomplete="off" spellcheck="false">'
     + '<button class="srch__close" data-search-close aria-label="Close search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>'
     + '<div class="srch__results" id="srchResults"></div></div>';
   document.body.appendChild(srch);
   const srchInput = $('#srchInput'), srchResults = $('#srchResults');
   const MONOGRAM = '<svg viewBox="0 0 32 32" aria-hidden="true"><g fill="currentColor"><polygon points="16,6 7,26 10,26"/><polygon points="16,6 25,26 22,26"/><rect x="9.5" y="20" width="13" height="1.7"/></g></svg>';
   const srchThumb = i => i.img
-    ? `<span class="srch__thumb"><img src="${i.img}" alt="" loading="lazy"></span>`
+    ? `<span class="srch__thumb"><img ${window.AXIA_IMG ? AXIA_IMG(i.img, '96px') : 'src="' + esc(i.img) + '"'} alt="" loading="lazy"></span>`
     : i.art
     ? `<span class="srch__thumb"><svg viewBox="${i.art === 'cross' ? '0 0 300 430' : '0 0 1000 620'}" data-sg="${i.art}" aria-hidden="true"></svg></span>`
     : `<span class="srch__thumb srch__thumb--page">${MONOGRAM}</span>`;
@@ -263,8 +261,8 @@
       else window.AXIA_art.drape(el, { yTop: 250, yBot: 380, w: 66, h: 52, n: 11, iced: true });
     } catch (e) {} });
   };
-  const openSearch = () => { SEARCH_INDEX = buildSearchIndex(); srch.classList.add('on'); srch.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; srchRender(''); setTimeout(() => srchInput.focus(), 40); };
-  const closeSearch = () => { srch.classList.remove('on'); srch.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; srchInput.value = ''; };
+  const openSearch = () => { SEARCH_INDEX = buildSearchIndex(); srch.classList.add('on'); srch.setAttribute('aria-hidden', 'false'); document.documentElement.style.overflow = 'hidden'; srchRender(''); setTimeout(() => srchInput.focus(), 40); };
+  const closeSearch = () => { srch.classList.remove('on'); srch.setAttribute('aria-hidden', 'true'); document.documentElement.style.overflow = ''; srchInput.value = ''; };
   srchInput.addEventListener('input', e => srchRender(e.target.value));
   // Enter = browse the whole catalogue filtered by the query (not jump to one item; click a result for that)
   srchInput.addEventListener('keydown', e => { if (e.key === 'Enter') { const q = srchInput.value.trim(); location.href = q ? 'collection?q=' + encodeURIComponent(q) : 'collection'; } });
@@ -345,7 +343,7 @@
         else document.body.insertBefore(a, document.body.firstChild);
         document.documentElement.classList.add('has-cdbar');
       }
-      var eye = '<span class="cdbar__eye"></span>', cta = '<span class="cdbar__cta">Register &rarr;</span>';
+      var eye = '<span class="cdbar__eye"></span>', cta = '<span class="cdbar__cta">Register</span>';
       if (st.mode === 'timer') {
         if (built !== 'timer') { a.innerHTML = eye + '<span class="cdbar__t"><b>--</b><i>d</i> <b>--</b><i>h</i> <b>--</b><i>m</i> <b>--</b><i>s</i></span>' + cta; built = 'timer'; a.querySelector('.cdbar__eye').textContent = st.label + ' lands in'; }
         var b = a.querySelectorAll('.cdbar__t b');
@@ -463,16 +461,16 @@
   m.hidden = true;
   m.innerHTML =
     '<div class="promo__ov" data-promo-close></div>' +
-    '<div class="promo__card">' +
-      '<button class="promo__x" type="button" data-promo-close aria-label="Close">×</button>' +
-      '<span class="promo__eye">First Drop · First Access</span>' +
-      '<h3 class="promo__h" id="promoTitle">Secure your spot</h3>' +
-      '<p class="promo__p">Register for First Access and get in before the First Drop opens to the public.</p>' +
-      '<div class="promo__coupon"><span class="promo__off">15% off</span><span class="promo__coupontxt">your first order<br><b>when you register</b></span></div>' +
-      '<div class="promo__btns">' +
-        '<a class="promo__reg" href="first-drop">Register &amp; enter the draw</a>' +
-        '<button class="promo__no" type="button" data-promo-close data-promo-dismiss>No thanks, I’ll pay full price</button>' +
+    '<div class="promo__card" tabindex="-1">' +
+      '<div class="promo__media"><img src="assets/img/products/two-row-flat-cuban-chain-12mm/silver/2.jpg" alt="" loading="lazy" decoding="async"></div>' +
+      '<div class="promo__body">' +
+        '<p class="promo__off"><span class="promo__pct">15%</span> off your first order</p>' +
+        '<h3 class="promo__h" id="promoTitle">Get in before the First Drop</h3>' +
+        '<p class="promo__p">Register free and we\u2019ll email your code, with early access before the public and an entry to win the chain.</p>' +
+        '<a class="promo__reg" href="first-drop">Register for First Access</a>' +
+        '<button class="promo__no" type="button" data-promo-close data-promo-dismiss>Not now</button>' +
       '</div>' +
+      '<button class="promo__x" type="button" data-promo-close aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>' +
     '</div>';
   document.body.appendChild(m);
 
@@ -482,7 +480,7 @@
     try { sessionStorage.setItem('axia_promo_s', '1'); } catch (e) {} // once shown, don't re-open this session (even across pages)
     prevFocus = document.activeElement;
     m.hidden = false; document.body.classList.add('promo-open');
-    var r = m.querySelector('.promo__reg'); if (r) r.focus();
+    var c = m.querySelector('.promo__card'); if (c) c.focus({ preventScroll: true }); // focus the dialog, not the CTA, so no ring flashes on open
   }
   function close(days) {
     try { sessionStorage.setItem('axia_promo_s', '1'); } catch (e) {}

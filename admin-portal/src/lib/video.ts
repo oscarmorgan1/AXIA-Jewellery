@@ -19,7 +19,7 @@ export type VideoStage = '' | 'uploading' | 'converting';
  * Uploads a video straight to Cloud Storage, then has the server convert it for
  * the web (see server/media.js). Returns what the server made.
  */
-export async function uploadVideo<T>(slot: 'store' | 'landing' | 'product', file: File,
+export async function uploadVideo<T>(slot: 'store' | 'landing' | 'product' | 'review', file: File,
   on: { stage: (s: VideoStage) => void; progress: (p: number) => void }, extra: Record<string, string> = {}): Promise<T> {
   if (!file.type.startsWith('video/')) throw new Error('Choose a video file (MP4 or MOV).');
   on.stage('uploading'); on.progress(0);

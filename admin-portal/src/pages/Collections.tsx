@@ -114,17 +114,17 @@ export default function Collections() {
       </div>
 
       <div className="grid-3">
-        {loading && [0, 1, 2].map(i => <div key={i} className="card"><div className="skeleton" style={{ height: 150 }} /></div>)}
+        {loading && [0, 1, 2, 3, 4, 5].map(i => <div key={i} className="card" style={{ padding: 0, overflow: 'hidden' }} aria-hidden="true"><div className="skeleton" style={{ height: 150, borderRadius: 0 }} /><div style={{ padding: '16px 20px' }}><div className="skeleton" style={{ height: 12, width: '60%' }} /></div></div>)}
         {collections.map((c, i) => {
           const n = products.filter(p => (p.coll || []).includes(c.slug) && !p.archived).length;
           const live = products.filter(p => (p.coll || []).includes(c.slug) && statusOf(p) === 'Live').length;
           const img = cover(c);
           return (
-            <div key={c.slug} className="card card--hover" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer', animation: `rise .5s cubic-bezier(.2,.8,.2,1) ${i * 40}ms both` }} onClick={() => open(c)}>
+            <div key={c.slug} className="card card--link fade-in" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }} onClick={() => open(c)}>
               <div style={{ height: 150, background: 'var(--obsidian)', position: 'relative', overflow: 'hidden' }}>
                 {img && <img src={siteUrl(img)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: .9 }} />}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 40%, rgba(17,19,21,.75))' }} />
-                <div style={{ position: 'absolute', left: 18, bottom: 14, color: '#F4F1EA' }}>
+                <div style={{ position: 'absolute', left: 18, bottom: 14, color: 'var(--bone)' }}>
                   <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600 }}>{c.name}</div>
                   <div style={{ fontSize: 12.5, opacity: .8 }}>{n} piece{n === 1 ? '' : 's'} · {live} live</div>
                 </div>

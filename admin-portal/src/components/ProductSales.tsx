@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useOrders } from '../lib/data';
 import { aud } from '../lib/format';
 import { orderNo, salesByProduct } from '../lib/orders';
+import { SkeletonRows } from './Skeleton';
 
 /** Sales and order history for one product, from paid orders. */
 export default function ProductSales({ id }: { id: string }) {
@@ -21,7 +22,7 @@ export default function ProductSales({ id }: { id: string }) {
   return (
     <div className="card">
       <div className="card__head"><h2>Sales</h2></div>
-      {loading ? <div className="card__sub">Loading…</div> : !s ? <div className="card__sub">No sales yet.</div> : (
+      {loading ? <SkeletonRows rows={4} cols={2} /> : !s ? <div className="card__sub">No sales yet.</div> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <dl className="kv">
             <dt>Units sold</dt><dd>{s.units}</dd>

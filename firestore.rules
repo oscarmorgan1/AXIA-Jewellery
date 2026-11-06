@@ -6,18 +6,23 @@ rules_version = '2';
 //   productCosts/{id}    PRIVATE factory costs and margins: admins only
 //   internal/{doc}       PRIVATE cost assumptions, launch plan: admins only
 //   collections/{slug}   public: anyone can read, only admins write
-//   signups/{id}         waitlist sign-ups: anyone can CREATE a valid entry, only admins read
-//   messages/{id}        support form: anyone can CREATE a valid entry, only admins read
-//   visits/{day_vid}     anonymous unique-visitor counts: anyone can CREATE a valid entry, only admins read
+//   signups/{id}         waitlist sign-ups: written by the server, only admins read
+//   messages/{id}        support form: written by the server, only admins read
+//   visits/{day_vid}     anonymous unique-visitor counts: written by the server, only admins read
 //   site/{doc}           public site settings (launch countdown): anyone reads, only admins write
 //   orders/{id}          admins only (Stripe webhooks will write via the Admin SDK)
 //
 // "Admin" means a signed-in user whose ID token carries the custom claim
-// admin == true (set with `npm run set-admin -- <email>`).
+// admin == true (set with `npm run set-admin -- <email>`) AND who has entered
+// the code emailed to them for this sign-in: the server adds the token's
+// auth_time to the `mfa` claim once the code checks out (server/twofactor.js).
+// adminSignInCodes/{uid} holds those codes (hashed); only the server touches it.
 service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin() {
-      return request.auth != null && request.auth.token.admin == true;
+      return request.auth != null && request.auth.token.admin == true
+        && request.auth.token.get('mfa', []) is list
+        && request.auth.token.auth_time in request.auth.token.get('mfa', []);
     }
 
     match /products/{productId} {
@@ -39,50 +44,14 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    function str(d, k, max) {
-      return d[k] is string && d[k].size() <= max;
-    }
-    function optStr(d, k, max) {
-      return !(k in d) || str(d, k, max);
-    }
-    function optBool(d, k) {
-      return !(k in d) || d[k] is bool;
-    }
-    function validEmail(e) {
-      return e is string && e.size() <= 200 && e.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$');
-    }
-
-    // Public forms write here. No reads, no edits: an entry can only be created,
-    // with a fixed set of fields, and stamped with the server time.
+    // Public forms (waitlist sign-ups, support messages, visitor counts) are
+    // written by the server through the Admin SDK (server/signup.js, server/forms.js),
+    // which validates and rate limits them. Browsers can't write here directly.
     match /signups/{id} {
-      allow create: if request.resource.data.keys().hasOnly([
-            'firstName', 'email', 'mobile', 'instagram', 'productId', 'productName', 'size',
-            'emailConsent', 'smsConsent', 'source', 'page', 'createdAt'])
-        && str(request.resource.data, 'firstName', 80) && request.resource.data.firstName.size() > 0
-        && validEmail(request.resource.data.email)
-        && optStr(request.resource.data, 'mobile', 30)
-        && optStr(request.resource.data, 'instagram', 60)
-        && optStr(request.resource.data, 'productId', 120)
-        && optStr(request.resource.data, 'productName', 160)
-        && optStr(request.resource.data, 'size', 40)
-        && optStr(request.resource.data, 'page', 200)
-        && optBool(request.resource.data, 'emailConsent')
-        && optBool(request.resource.data, 'smsConsent')
-        && request.resource.data.source in ['landing', 'first-drop', 'other']
-        && request.resource.data.createdAt == request.time;
       allow read, update, delete: if isAdmin();
     }
 
     match /messages/{id} {
-      allow create: if request.resource.data.keys().hasOnly([
-            'name', 'email', 'topic', 'order', 'message', 'status', 'createdAt'])
-        && str(request.resource.data, 'name', 100) && request.resource.data.name.size() > 0
-        && validEmail(request.resource.data.email)
-        && str(request.resource.data, 'topic', 40)
-        && optStr(request.resource.data, 'order', 60)
-        && str(request.resource.data, 'message', 5000) && request.resource.data.message.size() > 3
-        && request.resource.data.status == 'new'
-        && request.resource.data.createdAt == request.time;
       allow read, update, delete: if isAdmin();
     }
 
@@ -94,16 +63,9 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
-    // Unique visitors: one anonymous entry per browser per day, id "{day}_{vid}".
+    // Unique visitors: one anonymous entry per browser per day, id "{day}_{vid}",
+    // written by the server (POST /api/visit).
     match /visits/{id} {
-      allow create: if request.resource.data.keys().hasOnly(['day', 'vid', 'page', 'ref', 'device', 'createdAt'])
-        && request.resource.data.day is string && request.resource.data.day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-        && request.resource.data.vid is string && request.resource.data.vid.matches('^[A-Za-z0-9]{12,32}$')
-        && id == request.resource.data.day + '_' + request.resource.data.vid
-        && optStr(request.resource.data, 'page', 200)
-        && optStr(request.resource.data, 'ref', 100)
-        && (!('device' in request.resource.data) || request.resource.data.device in ['mobile', 'tablet', 'desktop'])
-        && request.resource.data.createdAt == request.time;
       allow read, delete: if isAdmin();
     }
 

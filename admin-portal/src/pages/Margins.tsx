@@ -9,7 +9,7 @@ import { productEconomics, retailAtSize, type Economics } from '../lib/economics
 import { aud, pct } from '../lib/format';
 import StatCard from '../components/StatCard';
 import { useToast } from '../components/Toast';
-import { BadgePercent, TrendingDown, Wallet } from 'lucide-react';
+import { SkeletonRows } from '../components/Skeleton';
 
 type SortKey = 'name' | 'margin' | 'contribution' | 'retail';
 
@@ -50,10 +50,10 @@ export default function Margins() {
   return (
     <>
       <div className="page-head"><h1>Margins</h1></div>
-      <div className="grid-3 stagger">
-        <StatCard label="Blended gross margin" value={pct(totRetail ? (totGp / totRetail) * 100 : null)} tone="good" icon={<BadgePercent size={20} />} foot={<>One of each costed piece</>} />
-        <StatCard label="Avg contribution / sale" value={aud(priced.length ? priced.reduce((a, r) => a + r.e!.contributionAUD, 0) / priced.length : null)} tone="ice" icon={<Wallet size={20} />} foot={<>After fees ({(assumptions.paymentFeePct * 100).toFixed(1)}% + {aud(assumptions.paymentFeeFixedAUD, 2)}) and packaging</>} />
-        <StatCard label="Lowest margin" value={lowest ? pct(lowest.e!.grossMarginPct) : '–'} tone="magenta" icon={<TrendingDown size={20} />} foot={lowest ? <b>{lowest.p.name}</b> : null} />
+      <div className="grid-3">
+        <StatCard label="Blended gross margin" value={pct(totRetail ? (totGp / totRetail) * 100 : null)} foot={<>One of each costed piece</>} />
+        <StatCard label="Avg contribution / sale" value={aud(priced.length ? priced.reduce((a, r) => a + r.e!.contributionAUD, 0) / priced.length : null)} foot={<>After fees ({(assumptions.paymentFeePct * 100).toFixed(1)}% + {aud(assumptions.paymentFeeFixedAUD, 2)}) and packaging</>} />
+        <StatCard label="Lowest margin" value={lowest ? pct(lowest.e!.grossMarginPct) : '–'} foot={lowest ? <b>{lowest.p.name}</b> : null} />
       </div>
       <div className="card">
         <div className="private-note"><Lock size={14} /> Private. Factory costs live in an admin-only collection and are never sent to the storefront.</div>
@@ -74,7 +74,7 @@ export default function Margins() {
               <th className="num">Gross profit</th><th className="num">Gross margin</th><th className="num">Contribution</th>
               <th className="num">Break-even ROAS</th><th className="num">Max ad / sale</th>
             </tr></thead>
-            <tbody className="rows-anim">
+            <tbody className={loading ? undefined : 'fade-in'}>
               {rows.map(({ p, c, e }) => (
                 <tr key={p.id}>
                   <td className="clickable" style={{ cursor: 'pointer' }} onClick={() => nav(`/products/${encodeURIComponent(p.id)}`)}>
@@ -98,7 +98,7 @@ export default function Margins() {
               ))}
             </tbody>
           </table>
-          {loading && <div className="empty">Loading…</div>}
+          {loading && <SkeletonRows rows={8} cols={6} />}
         </div>
       </div>
       {toast.node}

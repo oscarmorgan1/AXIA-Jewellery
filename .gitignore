@@ -18,3 +18,9 @@ private/
 .DS_Store
 .env
 .env.local
+
+# Local tool state from editors/agents
+.claude-flow/
+
+# Hallmark run records and screenshots
+.hallmark/

@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, TicketPercent, TrendingUp, Users, Wallet } from 'lucide-react';
+import { Plus, TicketPercent } from 'lucide-react';
 import { useOrders } from '../lib/data';
 import { adminApi } from '../lib/api';
 import { aud } from '../lib/format';
@@ -136,11 +136,11 @@ export default function Promos() {
       )}
       {error && <div className="notice notice--error">{error}</div>}
 
-      <div className="grid-4 stagger" style={{ marginBottom: 20 }}>
-        <StatCard label="Active codes" value={(promos || []).filter(p => status(p)[0] === 'Active').length} icon={<TicketPercent size={20} />} />
-        <StatCard label="Orders with a code" value={totals.n} icon={<TrendingUp size={20} />} tone="ice" />
-        <StatCard label="Sales from codes" value={aud(totals.sales)} icon={<Wallet size={20} />} tone="dark" />
-        <StatCard label="Discount given" value={aud(totals.disc)} icon={<Users size={20} />} tone="magenta" />
+      <div className="grid-4" style={{ marginBottom: 20 }}>
+        <StatCard label="Active codes" value={(promos || []).filter(p => status(p)[0] === 'Active').length} />
+        <StatCard label="Orders with a code" value={totals.n} />
+        <StatCard label="Sales from codes" value={aud(totals.sales)} />
+        <StatCard label="Discount given" value={aud(totals.disc)} />
       </div>
 
       {affiliates.length > 0 && (

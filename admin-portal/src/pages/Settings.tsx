@@ -5,6 +5,7 @@ import { db, usingEmulators } from '../firebase';
 import { useAuth } from '../auth';
 import { useAssumptions } from '../lib/data';
 import { useToast } from '../components/Toast';
+import { LARP_LEVELS, useLarpMode } from '../lib/larp';
 import type { CostAssumptions } from '../types';
 
 const FIELDS: { key: keyof CostAssumptions; label: string; pct?: boolean; step: string }[] = [
@@ -19,6 +20,7 @@ export default function Settings() {
   const { user } = useAuth();
   const { data } = useAssumptions();
   const toast = useToast();
+  const larp = useLarpMode();
   const [form, setForm] = useState<Record<string, string>>({});
   const [plan, setPlan] = useState<{ units?: Record<string, number>; total_units?: number; note?: string } | null>(null);
 
@@ -58,6 +60,26 @@ export default function Settings() {
         </form>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div className="card">
+            <div className="card__head">
+              <h2>Larp mode</h2>
+              <button type="button" className="switch" role="switch" aria-checked={larp.on} aria-label="Larp mode"
+                onClick={() => { larp.set(larp.on ? 0 : 2); toast.show(larp.on ? 'Larp mode off. Back to reality.' : 'Larp mode on: Millionaire'); }} />
+            </div>
+            <div className="card__sub" style={{ margin: 0 }}>
+              Makes the dashboard show made-up numbers. Pick how rich you want to look. Only on this browser, only on the dashboard. Real data and the public site are never touched.
+            </div>
+            <div className="larp-levels" role="radiogroup" aria-label="Larp level">
+              {LARP_LEVELS.map(l => (
+                <button key={l.id} type="button" role="radio" aria-checked={larp.level === l.id}
+                  className={`larp-level${larp.level === l.id ? ' on' : ''}`}
+                  onClick={() => { larp.set(l.id); toast.show(`Larp mode: ${l.name}`); }}>
+                  <span className="larp-level__name"><b>{l.id}</b>{l.name}</span>
+                  <small>{l.blurb}</small>
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="card">
             <div className="card__head"><h2>Environment</h2></div>
             <dl className="kv">

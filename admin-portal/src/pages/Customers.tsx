@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Download, PackageOpen, Search, ShoppingBag, Users, Wallet } from 'lucide-react';
+import { Download, Search, Users } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import CountUp from '../components/CountUp';
 import { aud } from '../lib/format';
 import { personText, usePeople, type Person } from '../lib/customers';
+import { SkeletonRows } from '../components/Skeleton';
 
 export const fmtDate = (d?: Date) => (d ? d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '–');
 export const SOURCE: Record<string, string> = { landing: 'Waitlist page', 'first-drop': 'First Drop page', other: 'Other' };
@@ -65,11 +66,11 @@ export default function Customers() {
         <button className="btn" onClick={exportCsv} disabled={!shown.length}><Download size={16} /> Export CSV</button>
       </div>
 
-      <div className="grid-4 stagger">
-        <StatCard tone="dark" label="Customers" icon={<Users size={22} />} value={<CountUp value={people.length} />} foot={<>{signups.length} waitlist sign-ups in total</>} />
-        <StatCard tone="ice" label="Have ordered" icon={<ShoppingBag size={22} />} value={<CountUp value={counts.buyers} />} foot={`${repeat} ordered more than once`} />
-        <StatCard tone="magenta" label="With open orders" icon={<PackageOpen size={22} />} value={<CountUp value={counts.open} />} foot="New, in progress or shipped" />
-        <StatCard tone="good" label="Average spend" icon={<Wallet size={22} />} value={counts.buyers ? aud(revenue / counts.buyers) : '–'} foot={`${aud(revenue)} in total`} />
+      <div className="grid-4">
+        <StatCard label="Customers" value={<CountUp value={people.length} />} foot={<>{signups.length} waitlist sign-ups in total</>} />
+        <StatCard label="Have ordered" value={<CountUp value={counts.buyers} />} foot={`${repeat} ordered more than once`} />
+        <StatCard label="With open orders" value={<CountUp value={counts.open} />} foot="New, in progress or shipped" />
+        <StatCard label="Average spend" value={counts.buyers ? aud(revenue / counts.buyers) : '–'} foot={`${aud(revenue)} in total`} />
       </div>
 
       <div className="card">
@@ -82,14 +83,14 @@ export default function Customers() {
           <label className="check"><input type="checkbox" checked={smsOnly} onChange={e => setSmsOnly(e.target.checked)} /> SMS opt-in</label>
           <span className="spacer" />
           <div className="search"><Search size={16} />
-            <input placeholder="Name, email, phone, order, engraving…" value={q} onChange={e => setParams(e.target.value ? { q: e.target.value } : {}, { replace: true })} />
+            <input aria-label="Search customers" placeholder="Name, email, phone, order, engraving…" value={q} onChange={e => setParams(e.target.value ? { q: e.target.value } : {}, { replace: true })} />
           </div>
         </div>
         {error && <div className="notice notice--error">{error.message}</div>}
         <div className="table-wrap">
           <table className="table">
             <thead><tr><th>Customer</th><th>Phone</th><th className="num">Orders</th><th className="num">Spent</th><th>Open</th><th>Interested in</th><th>Consent</th><th className="num">Last seen</th></tr></thead>
-            <tbody className="rows-anim">
+            <tbody className={loading ? undefined : 'fade-in'}>
               {shown.map(c => (
                 <tr key={c.id} className="clickable" onClick={() => nav(`/customers/${encodeURIComponent(c.id)}`)}>
                   <td><div className="prod-cell">
@@ -111,7 +112,7 @@ export default function Customers() {
               ))}
             </tbody>
           </table>
-          {loading && <div style={{ padding: 22, display: 'grid', gap: 10 }}>{[0, 1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: 44 }} />)}</div>}
+          {loading && <SkeletonRows rows={6} cols={4} />}
           {!loading && !shown.length && <div className="empty"><Users size={28} /><b>{people.length ? 'No one matches' : 'No customers yet'}</b>{people.length ? 'Try a different search or filter.' : 'People appear here when they order or join the waitlist.'}</div>}
         </div>
       </div>

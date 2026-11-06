@@ -18,7 +18,8 @@
     "build": "npm run admin:build",
     "deploy": "firebase deploy --project axia-jewellery",
     "postinstall": "npm --prefix admin-portal install",
-    "migrate:collections": "node scripts/migrate-collections.mjs"
+    "migrate:collections": "node scripts/migrate-collections.mjs",
+    "images": "node scripts/images.mjs"
   },
   "dependencies": {
     "express": "^5.3.0",
@@ -28,6 +29,7 @@
     "stripe": "^23.0.0"
   },
   "devDependencies": {
-    "firebase-tools": "^14.19.0"
+    "firebase-tools": "^14.19.0",
+    "sharp": "^0.34.5"
   }
 }

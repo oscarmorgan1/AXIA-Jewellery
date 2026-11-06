@@ -10,6 +10,17 @@ export interface WidthOption {
   variants: Variant[];
 }
 
+/** One review video on a product, converted by the server (server/media.js, slot 'review'). */
+export interface ReviewVideo {
+  id: string;
+  src: string;
+  poster: string;
+  width?: number | null;
+  height?: number | null;
+  seconds?: number | null;
+  audio?: boolean;
+}
+
 /** Public product document (Firestore `products/{id}`), same shape the storefront reads. */
 export interface Product {
   id: string;
@@ -30,6 +41,8 @@ export interface Product {
   sizingImage?: string;
   video?: string;
   videoPoster?: string;
+  /** Customer review clips (portrait, with sound), shown in a carousel under the text reviews. */
+  reviewVideos?: ReviewVideo[];
   variants?: Variant[];
   widths?: WidthOption[];
   defaultLength?: string;
