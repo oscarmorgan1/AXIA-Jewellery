@@ -98,7 +98,7 @@ export default function SignInCode() {
           {sending ? 'Sending…' : wait > 0 ? `Send a new code in ${wait}s` : 'Send a new code'}
         </button>
       </form>
-      <p className="auth__hint">No email? Check spam or promotions. Codes come from the AXIA orders address.</p>
+      <p className="auth__hint">No email? Check your spam or promotions folder.</p>
     </AuthShell>
   );
 }
