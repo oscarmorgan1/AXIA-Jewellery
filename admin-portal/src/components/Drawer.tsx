@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 export default function Drawer({ title, onClose, children, footer }: {
@@ -9,7 +10,10 @@ export default function Drawer({ title, onClose, children, footer }: {
     addEventListener('keydown', k);
     return () => removeEventListener('keydown', k);
   }, [onClose]);
-  return (
+  // Portalled to <body>: pages fade in with an animation that leaves them as
+  // their own stacking context, so a drawer rendered in place sat beneath the
+  // sticky top bar and sidebar, leaving them undimmed and hiding its header.
+  return createPortal(
     <>
       <div className="overlay" onClick={onClose} />
       <aside className="drawer" role="dialog" aria-modal="true">
@@ -17,6 +21,7 @@ export default function Drawer({ title, onClose, children, footer }: {
         <div className="drawer__body">{children}</div>
         {footer && <div className="drawer__foot">{footer}</div>}
       </aside>
-    </>
+    </>,
+    document.body,
   );
 }
