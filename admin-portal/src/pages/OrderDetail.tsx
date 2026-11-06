@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Gift, Mail, PenLine, Send, Truck } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ExternalLink, FileText, Gift, Mail, Package, PenLine, Receipt, Send, Truck } from 'lucide-react';
 import { siteUrl } from '../firebase';
 import { useOrders } from '../lib/data';
 import { adminApi } from '../lib/api';
@@ -12,6 +12,86 @@ import ComposeEmail from '../components/ComposeEmail';
 import { statusChip } from './Orders';
 import type { Order, Tracking } from '../types';
 import { SkeletonPage } from '../components/Skeleton';
+import { openBlank, packingSlipHtml, taxInvoiceHtml, writeDocument } from '../lib/documents';
+
+type Receipt = { url: string; card: { brand: string; last4: string } | null };
+const BLOCKED = 'Your browser blocked the new tab. Allow pop-ups for the admin portal and try again.';
+
+/** Paperwork and Stripe links for one order, behind a single Actions button. */
+function OrderActions({ order, stripeUrl, onMessage }: { order: Order; stripeUrl: string; onMessage: (m: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  const paid = !!order.stripe?.paymentIntent && order.status !== 'pending';
+
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => { if (!wrap.current?.contains(e.target as Node)) setOpen(false); };
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); wrap.current?.querySelector('button')?.focus(); } };
+    document.addEventListener('pointerdown', away);
+    document.addEventListener('keydown', key);
+    wrap.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    return () => { document.removeEventListener('pointerdown', away); document.removeEventListener('keydown', key); };
+  }, [open]);
+
+  const receipt = () => adminApi<Receipt>(`/orders/${encodeURIComponent(order.id)}/receipt`);
+
+  function packingSlip() {
+    setOpen(false);
+    const w = openBlank('Preparing packing slip…');
+    if (!w) return onMessage(BLOCKED);
+    writeDocument(w, packingSlipHtml(order));
+  }
+
+  async function invoice() {
+    setOpen(false);
+    const w = openBlank('Preparing tax invoice…');
+    if (!w) return onMessage(BLOCKED);
+    let o = order;
+    // The card used is on the Stripe charge; fetch it once so the invoice can name it.
+    if (paid && !order.stripe?.card) {
+      try { const r = await receipt(); o = { ...order, stripe: { ...order.stripe, card: r.card } }; } catch { /* the invoice still works without it */ }
+    }
+    writeDocument(w, taxInvoiceHtml(o));
+  }
+
+  async function stripeReceipt() {
+    setOpen(false);
+    if (order.stripe?.receiptUrl) { window.open(order.stripe.receiptUrl, '_blank', 'noopener'); return; }
+    const w = openBlank('Opening the Stripe receipt…');
+    if (!w) return onMessage(BLOCKED);
+    try {
+      const r = await receipt();
+      w.opener = null;
+      w.location.replace(r.url);
+    } catch (e) {
+      w.close();
+      onMessage((e as Error).message);
+    }
+  }
+
+  const keys = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    const items = [...e.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+    const at = items.indexOf(document.activeElement as HTMLElement);
+    items[(at + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length]?.focus();
+  };
+
+  return (
+    <div className="menu" ref={wrap}>
+      <button className="btn" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(v => !v)}>Actions <ChevronDown size={16} /></button>
+      {open && (
+        <div className="menu__list" role="menu" aria-label="Order actions" onKeyDown={keys}>
+          <button role="menuitem" onClick={packingSlip}><Package size={16} /><span>Print packing slip<small>Items and address, no prices</small></span></button>
+          <button role="menuitem" onClick={invoice} disabled={!paid}><FileText size={16} /><span>Print tax invoice<small>{paid ? 'GST invoice for the customer' : 'Once the order is paid'}</small></span></button>
+          <div className="menu__rule" role="separator" />
+          <button role="menuitem" onClick={stripeReceipt} disabled={!paid}><Receipt size={16} /><span>Stripe receipt<small>{paid ? 'The receipt Stripe emailed' : 'No payment yet'}</small></span></button>
+          {stripeUrl && <a role="menuitem" href={stripeUrl} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}><ExternalLink size={16} /><span>Open in Stripe<small>Payment, refunds and disputes</small></span></a>}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const when = (d?: { toDate(): Date }) => d ? d.toDate().toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '–';
 const img = (src?: string) => !src ? '' : /^https?:/.test(src) ? src : siteUrl('/' + src.replace(/^\//, ''));
@@ -136,7 +216,7 @@ export default function OrderDetail() {
         {statusChip(order.status)}
         {test && <span className="chip chip--muted">Test</span>}
         <span className="spacer" />
-        {stripeUrl && <a className="btn" href={stripeUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Stripe</a>}
+        <OrderActions order={order} stripeUrl={stripeUrl} onMessage={toast.show} />
         {order.customer?.email && <button className="btn" onClick={() => setComposing(true)}><Send size={16} /> Message customer</button>}
         {!['pending', 'refunded'].includes(order.status || 'pending') && <button className="btn btn--primary" onClick={() => setChanging(true)}>Change status</button>}
       </div>
