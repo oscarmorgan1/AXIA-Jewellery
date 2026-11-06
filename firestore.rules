@@ -13,11 +13,16 @@ rules_version = '2';
 //   orders/{id}          admins only (Stripe webhooks will write via the Admin SDK)
 //
 // "Admin" means a signed-in user whose ID token carries the custom claim
-// admin == true (set with `npm run set-admin -- <email>`).
+// admin == true (set with `npm run set-admin -- <email>`) AND who has entered
+// the code emailed to them for this sign-in: the server adds the token's
+// auth_time to the `mfa` claim once the code checks out (server/twofactor.js).
+// adminSignInCodes/{uid} holds those codes (hashed); only the server touches it.
 service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin() {
-      return request.auth != null && request.auth.token.admin == true;
+      return request.auth != null && request.auth.token.admin == true
+        && request.auth.token.get('mfa', []) is list
+        && request.auth.token.auth_time in request.auth.token.get('mfa', []);
     }
 
     match /products/{productId} {
