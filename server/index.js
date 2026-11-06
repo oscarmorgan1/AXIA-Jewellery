@@ -36,7 +36,14 @@ app.use(signupRoutes());
 app.use(unsubscribeRoutes());
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 app.use(staticSite(root));
-app.use((req, res) => res.status(404).type('text').send('Not found'));
+// Unknown URLs: browsers get the styled 404 page, everything else (missing images, scripts) a plain one.
+app.use((req, res) => {
+  res.status(404);
+  if (req.method === 'GET' && req.accepts(['html', 'text']) === 'html') {
+    return res.set('Cache-Control', 'no-cache').sendFile(path.join(root, '404.html'));
+  }
+  res.type('text').send('Not found');
+});
 app.use((err, req, res, next) => { // bad JSON, oversized bodies and anything unexpected
   if (!err.status || err.status >= 500) console.error(err);
   res.status(err.status || 500).json({ error: err.status && err.status < 500 ? 'Bad request' : 'Server error' });
