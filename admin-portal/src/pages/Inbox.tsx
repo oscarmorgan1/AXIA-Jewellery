@@ -11,6 +11,7 @@ import ComposeEmail from '../components/ComposeEmail';
 import Drawer from '../components/Drawer';
 import { useToast } from '../components/Toast';
 import type { Message } from '../types';
+import { SkeletonRows } from '../components/Skeleton';
 
 type Filter = 'new' | 'done' | 'all';
 
@@ -57,8 +58,8 @@ export default function Inbox() {
 
       <div className="card" style={{ padding: 10 }}>
         {error && <div className="notice notice--error">{error.message}</div>}
-        {loading && <div style={{ display: 'grid', gap: 10, padding: 12 }}>{[0, 1, 2].map(i => <div key={i} className="skeleton" style={{ height: 56 }} />)}</div>}
-        <div className="feed">
+        {loading && <div style={{ padding: '0 12px' }}><SkeletonRows rows={4} cols={2} /></div>}
+        <div className={`feed${loading ? '' : ' fade-in'}`}>
           {shown.map((m, i) => (
             <button key={m.id} className="feed__item" style={{ border: 0, background: 'none', textAlign: 'left', cursor: 'pointer', animation: `rise .4s cubic-bezier(.2,.8,.2,1) ${Math.min(i, 8) * 30}ms both` }} onClick={() => setOpenId(m.id)}>
               <span className={`feed__icon ${m.status === 'done' ? '' : 'stat__icon--magenta'}`}>{m.status === 'done' ? <Check size={18} /> : <Mail size={18} />}</span>

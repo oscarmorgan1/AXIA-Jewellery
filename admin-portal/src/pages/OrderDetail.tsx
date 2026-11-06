@@ -11,6 +11,7 @@ import { useToast } from '../components/Toast';
 import ComposeEmail from '../components/ComposeEmail';
 import { statusChip } from './Orders';
 import type { Order, Tracking } from '../types';
+import { SkeletonPage } from '../components/Skeleton';
 
 const when = (d?: { toDate(): Date }) => d ? d.toDate().toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '–';
 const img = (src?: string) => !src ? '' : /^https?:/.test(src) ? src : siteUrl('/' + src.replace(/^\//, ''));
@@ -116,7 +117,7 @@ export default function OrderDetail() {
   const toast = useToast();
   const order = data.find(o => o.id === id);
 
-  if (loading) return <div className="card empty">Loading…</div>;
+  if (loading) return <SkeletonPage />;
   if (error) return <div className="notice notice--error">{error.message}</div>;
   if (!order) return <div className="card empty"><b>Order not found</b><Link className="btn" to="/orders">Back to orders</Link></div>;
 

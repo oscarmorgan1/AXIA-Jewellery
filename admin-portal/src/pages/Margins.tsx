@@ -9,6 +9,7 @@ import { productEconomics, retailAtSize, type Economics } from '../lib/economics
 import { aud, pct } from '../lib/format';
 import StatCard from '../components/StatCard';
 import { useToast } from '../components/Toast';
+import { SkeletonRows } from '../components/Skeleton';
 
 type SortKey = 'name' | 'margin' | 'contribution' | 'retail';
 
@@ -73,7 +74,7 @@ export default function Margins() {
               <th className="num">Gross profit</th><th className="num">Gross margin</th><th className="num">Contribution</th>
               <th className="num">Break-even ROAS</th><th className="num">Max ad / sale</th>
             </tr></thead>
-            <tbody>
+            <tbody className={loading ? undefined : 'fade-in'}>
               {rows.map(({ p, c, e }) => (
                 <tr key={p.id}>
                   <td className="clickable" style={{ cursor: 'pointer' }} onClick={() => nav(`/products/${encodeURIComponent(p.id)}`)}>
@@ -97,7 +98,7 @@ export default function Margins() {
               ))}
             </tbody>
           </table>
-          {loading && <div className="empty">Loading…</div>}
+          {loading && <SkeletonRows rows={8} cols={6} />}
         </div>
       </div>
       {toast.node}

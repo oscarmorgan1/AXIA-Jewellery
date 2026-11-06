@@ -5,6 +5,7 @@ import StatCard from '../components/StatCard';
 import CountUp from '../components/CountUp';
 import { aud } from '../lib/format';
 import { personText, usePeople, type Person } from '../lib/customers';
+import { SkeletonRows } from '../components/Skeleton';
 
 export const fmtDate = (d?: Date) => (d ? d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '–');
 export const SOURCE: Record<string, string> = { landing: 'Waitlist page', 'first-drop': 'First Drop page', other: 'Other' };
@@ -89,7 +90,7 @@ export default function Customers() {
         <div className="table-wrap">
           <table className="table">
             <thead><tr><th>Customer</th><th>Phone</th><th className="num">Orders</th><th className="num">Spent</th><th>Open</th><th>Interested in</th><th>Consent</th><th className="num">Last seen</th></tr></thead>
-            <tbody>
+            <tbody className={loading ? undefined : 'fade-in'}>
               {shown.map(c => (
                 <tr key={c.id} className="clickable" onClick={() => nav(`/customers/${encodeURIComponent(c.id)}`)}>
                   <td><div className="prod-cell">
@@ -111,7 +112,7 @@ export default function Customers() {
               ))}
             </tbody>
           </table>
-          {loading && <div style={{ padding: 22, display: 'grid', gap: 10 }}>{[0, 1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: 44 }} />)}</div>}
+          {loading && <SkeletonRows rows={6} cols={4} />}
           {!loading && !shown.length && <div className="empty"><Users size={28} /><b>{people.length ? 'No one matches' : 'No customers yet'}</b>{people.length ? 'Try a different search or filter.' : 'People appear here when they order or join the waitlist.'}</div>}
         </div>
       </div>

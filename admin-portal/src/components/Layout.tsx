@@ -10,6 +10,7 @@ import Logo from './Logo';
 import LogOff from './LogOff';
 import { useTheme } from '../lib/theme';
 import CommandPalette from './CommandPalette';
+import { SkeletonPage } from './Skeleton';
 
 const TITLES: [RegExp, string][] = [
   [/^\/$/, 'Dashboard'], [/^\/products\/new/, 'New product'], [/^\/products\//, 'Edit product'], [/^\/products/, 'Products'],
@@ -24,8 +25,8 @@ export default function Layout() {
   const cancelLogOff = useCallback(() => setLeaving(false), []);
   const { theme, toggle } = useTheme();
   const loc = useLocation();
-  const { data: products } = useProducts();
-  const { data: collections } = useCollections();
+  const { data: products, loading: productsLoading } = useProducts();
+  const { data: collections, loading: collectionsLoading } = useCollections();
   const { data: signups } = useSignups();
   const shop = useShop();
   const { data: messages } = useMessages();
@@ -77,14 +78,14 @@ export default function Layout() {
 
         <div className="sidebar__label">Main</div>
         <NavLink to="/" end className={link}><LayoutGrid size={19} /> Dashboard</NavLink>
-        <NavLink to="/customers" className={link}><Users size={19} /> Customers {customers > 0 && <span className="pill">{customers}</span>}</NavLink>
-        <NavLink to="/inbox" className={link}><Inbox size={19} /> Inbox {unread > 0 && <span className="pill pill--hot">{unread}</span>}</NavLink>
-        <NavLink to="/orders" className={link}><Receipt size={19} /> Orders {openOrders > 0 && <span className="pill pill--hot">{openOrders}</span>}</NavLink>
+        <NavLink to="/customers" className={link}><Users size={19} /> Customers {customers > 0 && <span className="pill fade-in">{customers}</span>}</NavLink>
+        <NavLink to="/inbox" className={link}><Inbox size={19} /> Inbox {unread > 0 && <span className="pill pill--hot fade-in">{unread}</span>}</NavLink>
+        <NavLink to="/orders" className={link}><Receipt size={19} /> Orders {openOrders > 0 && <span className="pill pill--hot fade-in">{openOrders}</span>}</NavLink>
         <NavLink to="/promos" className={link}><TicketPercent size={19} /> Promo codes</NavLink>
 
         <div className="sidebar__label">Catalogue</div>
-        <NavLink to="/products" className={link}><Package size={19} /> Products <span className="pill">{liveProducts}</span></NavLink>
-        <NavLink to="/collections" className={link}><FolderHeart size={19} /> Collections <span className="pill">{collections.length}</span></NavLink>
+        <NavLink to="/products" className={link}><Package size={19} /> Products {!productsLoading && <span className="pill fade-in">{liveProducts}</span>}</NavLink>
+        <NavLink to="/collections" className={link}><FolderHeart size={19} /> Collections {!collectionsLoading && <span className="pill fade-in">{collections.length}</span>}</NavLink>
         <NavLink to="/margins" className={link}><BadgePercent size={19} /> Margins</NavLink>
 
         <div className="sidebar__label">General</div>
@@ -106,7 +107,7 @@ export default function Layout() {
           <NavLink to="/" className="header__logo" aria-label="Dashboard"><Logo height={17} /></NavLink>
           <div className="header__title">AXIA / <b>{title}</b></div>
           <span className="spacer" />
-          {!shop.loading && <NavLink to="/website" className={`chip header__shop ${shop.data.open ? 'chip--good' : 'chip--warn'}`} title="Open or close the shop" data-short={shop.data.open ? 'Open' : 'Closed'} aria-label={shop.data.open ? 'Shop open' : 'Shop closed'}><span className="header__shop-text">{shop.data.open ? 'Shop open' : 'Shop closed'}</span></NavLink>}
+          {shop.loading ? <span className="skeleton skeleton--chip" aria-hidden="true" /> : <NavLink to="/website" className={`chip header__shop ${shop.data.open ? 'chip--good' : 'chip--warn'}`} title="Open or close the shop" data-short={shop.data.open ? 'Open' : 'Closed'} aria-label={shop.data.open ? 'Shop open' : 'Shop closed'}><span className="header__shop-text">{shop.data.open ? 'Shop open' : 'Shop closed'}</span></NavLink>}
           <button className="search-trigger" onClick={() => setPalette(true)} aria-label="Search">
             <Search size={16} /><span>Search anything</span><kbd>{isMac ? '⌘' : 'Ctrl'} K</kbd>
           </button>
@@ -118,7 +119,7 @@ export default function Layout() {
             <div><span>{name}</span><small>Admin</small></div>
           </div>
         </header>
-        <div className="page" key={loc.pathname}><Suspense fallback={<div className="page-loading" aria-busy="true" />}><Outlet /></Suspense></div>
+        <div className="page" key={loc.pathname}><Suspense fallback={<SkeletonPage />}><Outlet /></Suspense></div>
       </div>
 
       <CommandPalette open={palette} onClose={() => setPalette(false)} products={products} collections={collections} signups={signups} orders={orders} messages={messages} />
