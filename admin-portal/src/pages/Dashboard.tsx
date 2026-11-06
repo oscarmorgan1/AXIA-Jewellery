@@ -10,6 +10,7 @@ import { productEconomics } from '../lib/economics';
 import { aud, pct } from '../lib/format';
 import { siteUrl, usingEmulators } from '../firebase';
 import { audCompact, fake, useLarpMode } from '../lib/larp';
+import { SkeletonCard, SkeletonStats } from '../components/Skeleton';
 
 export const PALETTE = ['var(--ink)', '#2A6076', '#9FD3EA', '#F3436E', '#B7BDC5', '#6E7781', '#E3DED1'];
 const DAY = 86400000;
@@ -28,13 +29,15 @@ function ago(d?: Date) {
 }
 
 export default function Dashboard() {
-  const { data: products } = useProducts();
+  const { data: products, loading: lp } = useProducts();
   const { data: collections } = useCollections();
   const { byId: costs } = useCosts();
   const { data: assumptions } = useAssumptions();
-  const { data: signups } = useSignups();
-  const { data: messages } = useMessages();
-  const { data: visits } = useVisits();
+  const { data: signups, loading: ls } = useSignups();
+  const { data: messages, loading: lm } = useMessages();
+  const { data: visits, loading: lv } = useVisits();
+  // Hold the layout with skeletons until the figures are in, so nothing counts from zero or jumps.
+  const ready = !lp && !ls && !lm && !lv;
   const [range, setRange] = useState<'daily' | 'weekly'>('daily');
   const [metric, setMetric] = useState<'visitors' | 'signups'>('visitors');
   const larp = useLarpMode().on;
@@ -141,6 +144,13 @@ export default function Dashboard() {
         <Link to="/products/new" className="btn btn--primary"><Plus size={16} /> New product</Link>
       </div>
 
+      {!ready ? (
+        <>
+          <SkeletonStats />
+          <div className="grid-2"><SkeletonCard block={300} /><SkeletonCard rows={4} /></div>
+          <div className="grid-2 grid-2--flip"><SkeletonCard rows={5} /><SkeletonCard rows={4} /></div>
+        </>
+      ) : (<div className="fade-in page-body">
       <div className="grid-4">
         <StatCard label="Visitors, last 7 days"
           value={<CountUp value={v.visitors7} />} foot={<><b>{v.visitorsToday.toLocaleString('en-AU')}</b> so far today</>} />
@@ -256,6 +266,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      </div>)}
     </>
   );
 }

@@ -5,6 +5,7 @@ import { useOrders } from '../lib/data';
 import { aud } from '../lib/format';
 import { STATUS_LABEL, hasEngraving, itemCount, orderNo, statusClass } from '../lib/orders';
 import type { Order } from '../types';
+import { SkeletonRows } from '../components/Skeleton';
 
 export function statusChip(s?: string) {
   return <span className={`chip ${statusClass(s)}`}>{STATUS_LABEL[s || ''] || (s ? s[0].toUpperCase() + s.slice(1) : 'Pending')}</span>;
@@ -75,7 +76,7 @@ export default function Orders() {
           <div className="search"><Search size={16} /><input aria-label="Search orders" placeholder="Search orders, customers, engraving" value={q} onChange={e => setQ(e.target.value)} /></div>
         </div>
         {error && <div className="notice notice--error">{error.message}</div>}
-        {loading ? <div className="empty">Loading…</div> : <OrdersTable orders={shown} empty={filter === 'open' ? 'Nothing waiting on you. New paid orders land here.' : 'No orders match.'} />}
+        {loading ? <SkeletonRows rows={5} cols={5} /> : <div className="fade-in"><OrdersTable orders={shown} empty={filter === 'open' ? 'Nothing waiting on you. New paid orders land here.' : 'No orders match.'} /></div>}
       </div>
     </>
   );

@@ -7,6 +7,7 @@ import { collectionLabel, firstImage, primaryCollection, statusOf, type Status }
 import { productEconomics } from '../lib/economics';
 import { aud, pct, timeAgo } from '../lib/format';
 import { siteUrl } from '../firebase';
+import { SkeletonRows } from '../components/Skeleton';
 
 const STATUS_CHIP: Record<Status, string> = { Live: 'chip--good', 'Coming soon': 'chip--warn', Redirect: 'chip--muted', Archived: 'chip--bad' };
 type Filter = 'all' | 'live' | 'soon' | 'archived';
@@ -69,7 +70,7 @@ export default function Products() {
               <th>Product</th><th>Collection</th><th>Status</th><th>Colours</th><th>Sizes</th>
               <th className="num">From</th><th className="num">Sold</th><th className="num">Revenue</th><th className="num">Gross margin</th><th>Updated</th>
             </tr></thead>
-            <tbody>
+            <tbody className={loading ? undefined : 'fade-in'}>
               {shown.map(p => {
                 const st = statusOf(p);
                 const e = productEconomics(p, costs.get(p.id), assumptions);
@@ -96,7 +97,7 @@ export default function Products() {
             </tbody>
           </table>
           {!loading && !shown.length && <div className="empty"><b>No products match</b>Try a different filter or search.</div>}
-          {loading && <div className="empty">Loading…</div>}
+          {loading && <SkeletonRows rows={8} thumb cols={5} />}
         </div>
       </div>
     </>
