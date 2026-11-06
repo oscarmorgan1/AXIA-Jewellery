@@ -7,11 +7,25 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import express from 'express';
+import { isShopOpen } from './services.js';
 
 const NO_CACHE = 'no-cache';
 const WEEK = 'public, max-age=604800';
 const YEAR = 'public, max-age=31536000, immutable';
 const MEDIA = /\.(jpe?g|png|webp|mp4|svg)$/i;
+
+// The Open shop switch decides where the front door goes: open, / goes to the
+// store; closed, /store goes to the waitlist page at /. Cached for a few
+// seconds so every visit isn't a Firestore read; if Firestore can't be
+// reached the site acts closed, matching checkout.
+const SHOP_TTL = 10_000;
+let shop = { open: false, at: 0 };
+async function shopOpen() {
+  if (Date.now() - shop.at < SHOP_TTL) return shop.open;
+  try { shop = { open: await isShopOpen(), at: Date.now() }; }
+  catch (e) { console.error('shop switch read failed', e); shop = { open: false, at: Date.now() }; }
+  return shop.open;
+}
 
 export function staticSite(root) {
   const router = express.Router();
@@ -44,10 +58,18 @@ export function staticSite(root) {
     sendPage(res, index);
   });
 
-  router.get('/{*page}', (req, res, next) => {
+  // Temporary (302) and uncached, so flipping the switch takes effect at once.
+  const sendTo = (res, url) => res.set('Cache-Control', 'no-store').redirect(302, url);
+
+  router.get('/{*page}', async (req, res, next) => {
     const qs = req.originalUrl.slice(req.path.length);
     const m = req.path.match(/^\/([\w-]+)(\.html)?$/);
-    if (req.path === '/') return sendPage(res, path.join(root, 'index.html'));
+    if (req.path === '/') {
+      if (await shopOpen()) return sendTo(res, '/store' + qs);
+      return sendPage(res, path.join(root, 'index.html'));
+    }
+    // ?preview lets the owner check the store from the admin portal while it's closed.
+    if (m && m[1] === 'store' && !m[2] && !('preview' in req.query) && !(await shopOpen())) return sendTo(res, '/' + qs);
     if (!m || !pages.has(m[1])) return next();
     if (m[2]) return res.redirect(301, (m[1] === 'index' ? '/' : '/' + m[1]) + qs);
     if (m[1] === 'index') return res.redirect(301, '/' + qs);

@@ -49,8 +49,8 @@ function ShopCard() {
           <h2>Shop</h2>
           <div className="card__sub">
             {data.open
-              ? 'Open: “Add to bag” and checkout work, and payments go through Stripe.'
-              : 'Closed: buttons say “Reserve your spot” and checkout is switched off.'}
+              ? 'Open: the site opens on the store, “Add to bag” and checkout work, and payments go through Stripe.'
+              : 'Closed: visitors land on the waitlist page (the store redirects there), buttons say “Reserve your spot” and checkout is switched off.'}
             {data.updatedAt ? ` Changed ${data.updatedAt.toDate().toLocaleString('en-AU')}.` : ''}
           </div>
         </div>
