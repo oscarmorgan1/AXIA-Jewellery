@@ -69,7 +69,7 @@ export default function Products() {
               <th>Product</th><th>Collection</th><th>Status</th><th>Colours</th><th>Sizes</th>
               <th className="num">From</th><th className="num">Sold</th><th className="num">Revenue</th><th className="num">Gross margin</th><th>Updated</th>
             </tr></thead>
-            <tbody className="rows-anim">
+            <tbody>
               {shown.map(p => {
                 const st = statusOf(p);
                 const e = productEconomics(p, costs.get(p.id), assumptions);

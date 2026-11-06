@@ -120,7 +120,7 @@ export default function Collections() {
           const live = products.filter(p => (p.coll || []).includes(c.slug) && statusOf(p) === 'Live').length;
           const img = cover(c);
           return (
-            <div key={c.slug} className="card card--hover" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer', animation: `rise .5s cubic-bezier(.2,.8,.2,1) ${i * 40}ms both` }} onClick={() => open(c)}>
+            <div key={c.slug} className="card card--link" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }} onClick={() => open(c)}>
               <div style={{ height: 150, background: 'var(--obsidian)', position: 'relative', overflow: 'hidden' }}>
                 {img && <img src={siteUrl(img)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: .9 }} />}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 40%, rgba(17,19,21,.75))' }} />

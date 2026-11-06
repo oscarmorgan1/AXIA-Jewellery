@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useState, type FormEvent } from 'react';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { Lock, Sparkles } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { db, usingEmulators } from '../firebase';
 import { useAuth } from '../auth';
 import { useAssumptions } from '../lib/data';
@@ -62,7 +62,7 @@ export default function Settings() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div className="card">
             <div className="card__head">
-              <div className="card__title"><Sparkles size={18} /><h2>Larp mode</h2></div>
+              <h2>Larp mode</h2>
               <button type="button" className="switch" role="switch" aria-checked={larp.on} aria-label="Larp mode"
                 onClick={() => { larp.set(!larp.on); toast.show(larp.on ? 'Larp mode off. Back to reality.' : 'Larp mode on. Welcome to the top.'); }} />
             </div>
