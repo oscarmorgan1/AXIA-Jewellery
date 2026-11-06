@@ -178,7 +178,7 @@ p{text-wrap:pretty}
 .nav__link::after{content:"";position:absolute;left:0;bottom:0;height:1px;width:100%;background:var(--magenta);transform:scaleX(0);transform-origin:left;transition:transform var(--dur-2) var(--ease)}
 .nav__link:hover::after,.nav__link[aria-current="page"]::after{transform:scaleX(1)}
 .nav__right{display:flex;justify-content:flex-end;gap:var(--s-4);align-items:center}
-.nav__icon{width:40px;height:40px;display:grid;place-items:center}
+.nav__icon{position:relative;width:40px;height:40px;display:grid;place-items:center}
 .nav__icon svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4}
 
 /* ---- Ice atmosphere surface (demo/util) ---- */
@@ -274,7 +274,7 @@ body.chrome-light .cdbar__cta:hover{color:var(--ink)}
 .nav__brand{font-family:var(--font-serif);font-weight:600;font-size:1.42rem;letter-spacing:.14em;text-indent:.14em;text-transform:uppercase;text-align:center;color:var(--ink)}
 .nav__brand .x{font-style:normal;font-weight:inherit}
 .menu-btn{display:none}@media(max-width:860px){.menu-btn{display:grid}}
-.cc{position:absolute;top:2px;right:0;min-width:15px;height:15px;padding:0 4px;background:var(--magenta-fill);color:var(--white);border-radius:99px;font-size:.55rem;display:grid;place-items:center;transform:scale(0);transition:transform var(--dur-2) var(--ease-out)}
+.cc{position:absolute;top:5px;right:3px;min-width:16px;height:16px;padding:0 4px;line-height:1;font-weight:600;font-variant-numeric:tabular-nums;background:var(--magenta-fill);color:var(--white);border-radius:99px;font-size:.6rem;display:grid;place-items:center;transform:scale(0);transition:transform var(--dur-2) var(--ease-out)}
 .cc.on{transform:scale(1)}
 
 .ov{position:fixed;inset:0;background:color-mix(in srgb, var(--obsidian) 50%, transparent);backdrop-filter:blur(3px);opacity:0;visibility:hidden;transition:opacity var(--dur-3) var(--ease),visibility var(--dur-3);z-index:var(--z-overlay)}.ov.on{opacity:1;visibility:visible}
@@ -372,25 +372,36 @@ html.js .mm:not(.on) a.big,html.js .mm:not(.on) .mm__label,html.js .mm:not(.on) 
 .promo{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:20px}
 .promo[hidden]{display:none}
 html:has(body.promo-open){overflow:clip}
-.promo__ov{position:absolute;inset:0;background:color-mix(in srgb, var(--deep-02) 74%, transparent);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);animation:promoFade .28s ease}
-.promo__card{position:relative;z-index:2;width:min(400px,100%);background:linear-gradient(180deg,var(--deep-22),var(--deep-12));border:1px solid var(--line-dark-strong);border-radius:20px;padding:32px 28px 28px;text-align:center;color:var(--on-dark);box-shadow:0 30px 90px color-mix(in srgb, var(--black) 65%, transparent);animation:promoIn .34s cubic-bezier(.2,.8,.2,1);--focus:var(--ice)}
-@keyframes promoFade{from{opacity:0}to{opacity:1}}
-@keyframes promoIn{from{opacity:0;transform:translateY(16px) scale(.965)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.promo__ov,.promo__card{animation:none}}
-.promo__x{position:absolute;top:11px;right:13px;width:30px;height:30px;border:0;border-radius:50%;background:transparent;color:var(--on-dark-3);font-size:23px;line-height:1;cursor:pointer;transition:color var(--dur-2) var(--ease)}
-.promo__x:hover{color:var(--on-dark)}
-.promo__eye{display:block;font-size:11px;color:var(--magenta);font-weight:700;margin-bottom:12px}
-.promo__h{font-family:var(--font-display);font-weight:800;font-size:clamp(1.9rem,7vw,2.2rem);text-transform:uppercase;line-height:1.02;margin:0 0 12px}
-.promo__p{font-size:.9rem;color:var(--on-dark-2);max-width:32ch;margin:0 auto 20px;line-height:1.55}
-.promo__coupon{display:flex;align-items:center;justify-content:center;gap:16px;border:1.5px dashed var(--ice);border-radius:13px;padding:12px 20px;margin-bottom:24px;background:color-mix(in srgb, var(--ice) 6%, transparent)}
-.promo__off{font-family:var(--font-display);font-weight:800;font-size:2rem;line-height:1.02;color:var(--ice);text-transform:uppercase;white-space:nowrap}
-.promo__coupontxt{text-align:left;font-size:.8rem;color:var(--on-dark-2);line-height:1.3}
-.promo__coupontxt b{color:var(--on-dark);font-weight:700}
-.promo__btns{display:flex;flex-direction:column;gap:12px}
-.promo__reg{display:block;background:var(--magenta-fill);color:var(--white);font-weight:600;padding:.98em 1.2em;border-radius:999px;text-decoration:none;letter-spacing:.01em;transition:filter var(--dur-2) var(--ease),transform var(--dur-2) var(--ease)}
+.promo__ov{position:absolute;inset:0;background:color-mix(in srgb, var(--deep-02) 72%, transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:promoFade .28s ease}
+/* split card: the piece on one side, the offer on bone on the other. Stacks on phones. */
+.promo__card{position:relative;z-index:2;width:min(760px,100%);display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1fr);background:var(--bone);color:var(--ink);border-radius:var(--r-2);overflow:hidden;box-shadow:0 30px 90px color-mix(in srgb, var(--black) 60%, transparent);animation:promoIn .34s cubic-bezier(.2,.8,.2,1)}
+.promo__card:focus{outline:none}
+.promo__media{position:relative;background:var(--obsidian);min-height:100%;overflow:hidden}
+.promo__media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;transform:scale(var(--wm-crop));transform-origin:50% 0;display:block}
+.promo__body{display:flex;flex-direction:column;align-items:flex-start;padding:clamp(28px,4vw,44px) clamp(24px,3.6vw,40px) clamp(22px,3vw,32px)}
+.promo__off{display:flex;align-items:baseline;gap:.4em;font-size:var(--t-body-s);color:var(--ink-secondary);margin:0 0 var(--s-5)}
+.promo__pct{font-family:var(--font-display);font-weight:700;font-size:clamp(3.2rem,8vw,4.4rem);line-height:.9;letter-spacing:-.02em;color:var(--magenta-fill)}
+.promo__h{font-family:var(--font-display);font-weight:700;font-size:clamp(1.5rem,3.4vw,1.85rem);line-height:1.1;letter-spacing:-.01em;margin:0 0 var(--s-3);overflow-wrap:break-word;min-width:0;text-wrap:balance}
+.promo__p{font-size:.95rem;color:var(--ink-secondary);line-height:1.55;max-width:36ch;margin:0 0 var(--s-6)}
+.promo__reg{display:block;align-self:stretch;text-align:center;background:var(--magenta-fill);color:var(--white);font-weight:600;padding:1em 1.2em;border-radius:var(--r-pill);text-decoration:none;transition:filter var(--dur-2) var(--ease),transform var(--dur-2) var(--ease)}
 .promo__reg:hover{filter:brightness(1.07);transform:translateY(-1px)}
-.promo__no{background:transparent;border:0;color:var(--on-dark-3);font-size:.82rem;cursor:pointer;padding:.35em;text-decoration:underline;text-underline-offset:3px;transition:color var(--dur-2) var(--ease)}
-.promo__no:hover{color:var(--on-dark-2)}
+.promo__reg:active{transform:none;filter:brightness(.96)}
+.promo__no{align-self:center;margin-top:var(--s-3);background:transparent;border:0;color:var(--ink-tertiary);font-size:var(--t-body-s);cursor:pointer;padding:.5em .8em;border-radius:var(--r-pill);transition:color var(--dur-2) var(--ease)}
+.promo__no:hover{color:var(--ink)}
+.promo__x{position:absolute;top:12px;right:12px;width:36px;height:36px;display:grid;place-items:center;border:0;border-radius:50%;background:color-mix(in srgb, var(--bone) 80%, transparent);color:var(--ink);cursor:pointer;transition:background var(--dur-2) var(--ease)}
+.promo__x svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6}
+.promo__x:hover{background:var(--bone-3)}
+.promo__reg:focus-visible,.promo__no:focus-visible,.promo__x:focus-visible{outline:2px solid var(--ink);outline-offset:3px;transition:none}
+@keyframes promoFade{from{opacity:0}to{opacity:1}}
+@keyframes promoIn{from{opacity:0;transform:translateY(16px) scale(.975)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.promo__ov,.promo__card{animation:none}}
+@media (max-width:620px){
+  .promo{align-items:end;padding:12px}
+  .promo__card{grid-template-columns:minmax(0,1fr);max-height:calc(100svh - 24px);overflow-y:auto}
+  .promo__media{aspect-ratio:16/10;min-height:0}
+  .promo__body{padding:24px 22px 18px}
+  .promo__off{margin-bottom:var(--s-4)}
+}
 
 /* Visible to screen readers and search engines only */
 .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
