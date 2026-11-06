@@ -8,7 +8,7 @@
 <meta name="description" content="Shop AXIA: Cuban chains, tennis bracelets and pendants in 925 sterling silver, hand-set with VVS D-colour moissanite. Made to order, shipped worldwide.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="assets/css/tokens.css?v=20260930a">
-<link rel="stylesheet" href="assets/css/axia.css?v=20260930a">
+<link rel="stylesheet" href="assets/css/axia.css?v=20261106a">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111315'/%3E%3Cg fill='%23F4F1EA'%3E%3Cpolygon points='16,5 6,27 9.5,27'/%3E%3Cpolygon points='16,5 22.5,27 26,27'/%3E%3Crect x='9' y='20.4' width='14' height='1.7'/%3E%3C/g%3E%3C/svg%3E">
 <style>
   /* --- signature render world --- */
@@ -65,6 +65,11 @@
   .bcard .n{margin-top:var(--s-3);font-size:var(--t-body-s);font-weight:500}
   .bcard .p{font-size:var(--t-body-s);color:var(--ink-secondary)}
   @media(max-width:900px){.beyond{grid-template-columns:repeat(2,1fr)}}
+  /* the homepage stacks several same-colour sections: trim the doubled padding where they meet */
+  .beyond-sec{padding-top:0}
+  .titans-sec{padding-bottom:clamp(var(--s-7),6vw,var(--s-8))}
+  .craft-sec{padding-block:clamp(var(--s-7),6vw,var(--s-8))}
+  .trust-sec{padding-top:0}
   .shopall-cta{text-align:center;margin-top:clamp(2rem,4vw,3rem)}
   .btn--shopall{font-size:1.05rem;padding:1.05em 2.4em}
 
@@ -104,8 +109,8 @@
 
   /* full-bleed lifestyle banner between sections (Adamans-style): wide media + overlaid headline & CTA.
      the real campaign photo/video drops into .mediabreak__inner as an absolute-inset img/video behind the scrim */
-  /* dark band (no white margin strips): the black runs flush into the First Access section below */
-  .mediabreak{padding-block:clamp(var(--s-7),8vw,var(--s-9));background:var(--obsidian)}
+  /* full-bleed, no padding: the film meets the catalogue above and the First Access band below with no black strips */
+  .mediabreak{background:var(--obsidian)}
   .mediabreak__inner{position:relative;display:block;overflow:hidden;text-decoration:none;aspect-ratio:5/2;min-height:360px;
     background:radial-gradient(120% 130% at 72% 15%,var(--deep-33) 0%,var(--deep-16) 52%,var(--deep-05) 100%)}
   .mediabreak__video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;display:block}
@@ -120,7 +125,7 @@
   .mediabreak__h{font-family:var(--font-display);font-weight:700;font-size:clamp(2.4rem,6vw,5rem);text-transform:uppercase;line-height:.92;margin:var(--s-2) 0 var(--s-4)}
   .mediabreak__cta{display:inline-flex;align-items:center;gap:.5em;background:var(--magenta-fill);color:var(--white);padding:.85em 1.6em;border-radius:var(--r-pill);font-size:var(--t-label);font-weight:600;transition:filter var(--dur-2) var(--ease),transform var(--dur-2) var(--ease)}
   .mediabreak__inner:hover .mediabreak__cta{filter:brightness(1.06);transform:translateY(-1px)}
-  @media(max-width:760px){.mediabreak__inner{aspect-ratio:16/9;min-height:0}.mediabreak__video{object-fit:contain;background:var(--obsidian)}}
+  @media(max-width:760px){.mediabreak__inner{aspect-ratio:4/3;min-height:0}}
 
   /* footer */
   .foot{background:var(--obsidian);color:var(--on-dark-2);padding-top:var(--s-9)}
@@ -149,7 +154,13 @@
   /* hero comes alive */
   .hero::before{animation:heroBreath 12s ease-in-out infinite}
   @keyframes heroBreath{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:.66;transform:scale(1.06)}}
-  .hero__stage{will-change:transform}
+  /* gentle parallax on the hero photo, scroll-linked on the compositor; no fade, so it never blinks out */
+  @supports (animation-timeline: scroll()){
+    @media (prefers-reduced-motion:no-preference) and (min-width:901px){
+      .hero__stage{animation:heroDrift linear both;animation-timeline:scroll(root);animation-range:0 900px}
+      @keyframes heroDrift{from{transform:none}to{transform:translate3d(0,140px,0)}}
+    }
+  }
   @media (prefers-reduced-motion:reduce){.hero::before{animation:none}.intro__logo,.intro__bloom,.intro__line{transition:none}}
   /* First Drop countdown (shown only when a launch date is set) */
   [hidden]{display:none!important}
@@ -217,7 +228,7 @@
 </section>
 
 <!-- BEYOND THE CUBAN -->
-<section class="section--tight container">
+<section class="section--tight container beyond-sec">
   <div class="shead reveal"><div><h2 class="h4" style="font-weight:500">Beyond the Cuban</h2></div></div>
   <div class="grid grid-4" id="homeBeyond"></div>
   <div class="shopall-cta reveal" data-d="1">
@@ -247,7 +258,7 @@
 </section>
 
 <!-- THE TITANS -->
-<section class="section on-obsidian">
+<section class="section on-obsidian titans-sec">
   <div class="container">
     <div class="shead reveal"><div><h2 class="h2" style="color:var(--bone)">The Titans</h2></div><a class="btn btn--titans" href="titans">Meet The Titans</a></div>
     <p class="lead reveal" style="max-width:52ch;color:var(--on-dark-2);margin-bottom:var(--s-6)">Four 18mm Cubans, the highest expression of AXIA.</p>
@@ -256,7 +267,7 @@
 </section>
 
 <!-- CRAFT -->
-<section class="section on-obsidian" id="craft" data-band-dark>
+<section class="section on-obsidian craft-sec" id="craft" data-band-dark>
   <div class="container">
     <div class="shead reveal"><div><h2 class="h3" style="color:var(--bone)">Made to be looked at closely</h2></div></div>
     <p class="reveal" style="max-width:54ch;color:var(--on-dark-2);margin:calc(-1*var(--s-3)) 0 var(--s-6);font-size:var(--t-body-l)">Built for long-term wear with proper care. Made to be worn, not replaced.</p>
@@ -269,7 +280,7 @@
 </section>
 
 <!-- TRUST -->
-<section class="section--tight on-obsidian">
+<section class="section--tight on-obsidian trust-sec">
   <div class="container band reveal">
     <div><div class="k">Worldwide dispatch</div><div class="s">Express, tracked, insured</div></div>
     <div><div class="k">Hand-set to order</div><div class="s">Every piece &middot; approx. 3-5 weeks</div></div>
@@ -315,7 +326,7 @@
 <div class="toast" id="toast"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
 
 <script src="assets/js/catalogue.js?v=20261021b"></script>
-<script type="text/axia-deferred" src="assets/js/axia.js?v=20261002a"></script>
+<script type="text/axia-deferred" src="assets/js/axia.js?v=20261106a"></script>
 <script type="text/axia-deferred">
 (function(){
   const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
@@ -371,19 +382,9 @@
     }
   }
 
-  // scroll-alive hero: subtle parallax + fade on the image only. The copy (which holds the CTAs)
-  // is deliberately NOT transformed - a moving container was making the first click on
-  // "Shop the Cuban" miss the button (hit-test lag during scroll).
-  const stage=document.querySelector('.hero__stage');
-  if(stage && !reduce){
-    let ticking=false;
-    const onScroll=()=>{ if(ticking) return; ticking=true; requestAnimationFrame(()=>{
-      const y=Math.min(window.scrollY||0,900);
-      stage.style.transform='translate3d(0,'+(y*0.16).toFixed(1)+'px,0)';
-      stage.style.opacity=String(Math.max(0,1-y/720));
-      ticking=false; }); };
-    addEventListener('scroll',onScroll,{passive:true});
-  }
+  // Hero parallax lives in CSS (animation-timeline: scroll()), which runs on the compositor.
+  // The old scroll-listener version faded the image to 0 past 720px and lagged behind fast
+  // (momentum) scrolls, so the photo blinked out when scrolling back up to the top.
 
   // "Made for people with motion", kinetic type: the two lines drift apart + a soft glow blooms as it passes
   const stake=document.querySelector('#stake'), l1=document.querySelector('.stake__l1'), l2=document.querySelector('.stake__l2'), sglow=document.querySelector('#stakeGlow');

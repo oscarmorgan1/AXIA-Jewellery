@@ -461,16 +461,16 @@
   m.hidden = true;
   m.innerHTML =
     '<div class="promo__ov" data-promo-close></div>' +
-    '<div class="promo__card">' +
-      '<button class="promo__x" type="button" data-promo-close aria-label="Close">×</button>' +
-      '<span class="promo__eye">First Drop · First Access</span>' +
-      '<h3 class="promo__h" id="promoTitle">Secure your spot</h3>' +
-      '<p class="promo__p">Register for First Access and get in before the First Drop opens to the public.</p>' +
-      '<div class="promo__coupon"><span class="promo__off">15% off</span><span class="promo__coupontxt">your first order<br><b>when you register</b></span></div>' +
-      '<div class="promo__btns">' +
-        '<a class="promo__reg" href="first-drop">Register &amp; enter the draw</a>' +
-        '<button class="promo__no" type="button" data-promo-close data-promo-dismiss>No thanks, I’ll pay full price</button>' +
+    '<div class="promo__card" tabindex="-1">' +
+      '<div class="promo__media"><img src="assets/img/products/two-row-flat-cuban-chain-12mm/silver/2.jpg" alt="" loading="lazy" decoding="async"></div>' +
+      '<div class="promo__body">' +
+        '<p class="promo__off"><span class="promo__pct">15%</span> off your first order</p>' +
+        '<h3 class="promo__h" id="promoTitle">Get in before the First Drop</h3>' +
+        '<p class="promo__p">Register free and we\u2019ll email your code, with early access before the public and an entry to win the chain.</p>' +
+        '<a class="promo__reg" href="first-drop">Register for First Access</a>' +
+        '<button class="promo__no" type="button" data-promo-close data-promo-dismiss>Not now</button>' +
       '</div>' +
+      '<button class="promo__x" type="button" data-promo-close aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>' +
     '</div>';
   document.body.appendChild(m);
 
@@ -480,7 +480,7 @@
     try { sessionStorage.setItem('axia_promo_s', '1'); } catch (e) {} // once shown, don't re-open this session (even across pages)
     prevFocus = document.activeElement;
     m.hidden = false; document.body.classList.add('promo-open');
-    var r = m.querySelector('.promo__reg'); if (r) r.focus();
+    var c = m.querySelector('.promo__card'); if (c) c.focus({ preventScroll: true }); // focus the dialog, not the CTA, so no ring flashes on open
   }
   function close(days) {
     try { sessionStorage.setItem('axia_promo_s', '1'); } catch (e) {}
