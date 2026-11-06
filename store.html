@@ -20,22 +20,52 @@
   .nav__brand{font-family:var(--font-serif);font-weight:600;font-size:1.42rem;letter-spacing:.14em;text-indent:.14em;text-transform:uppercase;text-align:center}
   .nav__brand .x{font-style:normal;font-weight:500}
 
-  /* --- hero: the Cuban dominates --- */
+  /* --- hero: a slideshow of the house pieces. Copy bottom-left, the photo right, progress dashes on the photo --- */
   .hero{background:var(--obsidian);color:var(--on-dark);position:relative;overflow:hidden;--focus:var(--ice)}
   .hero::before{content:"";position:absolute;top:-10%;right:-6%;width:70%;height:90%;background:radial-gradient(50% 50% at 60% 40%,var(--ice-bloom),transparent 66%);opacity:.5;mix-blend-mode:screen;pointer-events:none;z-index:0}
   .hero__grid{display:grid;grid-template-columns:minmax(0,0.82fr) minmax(0,1.18fr);align-items:stretch;min-height:calc(100svh - var(--nav-h));position:relative;z-index:1}
-  .hero__copy{display:flex;flex-direction:column;justify-content:center;padding:var(--s-7) clamp(1.4rem,4vw,4rem) var(--s-7) var(--gutter)}
-  .hero__title{font-family:var(--font-display);font-weight:700;font-size:clamp(3.4rem,8vw,7rem);line-height:1;text-transform:uppercase;letter-spacing:-0.01em}
+  /* the countdown strip sits under the nav: take its height off too, so the dashes and both actions land above the fold */
+  html.has-cdbar .hero__grid{min-height:calc(100svh - var(--nav-h) - 3.6rem)}
+  .hero__copy{display:grid;align-items:end;padding:var(--s-7) clamp(1.4rem,4vw,4rem) clamp(2.4rem,6vw,4.5rem) var(--gutter)}
+  /* every slide's copy shares one grid cell, so the column never jumps as the copy changes length */
+  .hero__slide{grid-area:1/1;min-width:0}
+  .hero__slide:not(.on){visibility:hidden;opacity:0;pointer-events:none}
+  .hero__slide.on>*{animation:heroCapIn var(--dur-5) var(--ease-out) both}
+  .hero__slide.on>:nth-child(2){animation-delay:80ms}
+  .hero__slide.on>:nth-child(3){animation-delay:160ms}
+  @keyframes heroCapIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .hero__title{font-family:var(--font-display);font-weight:700;font-size:clamp(3.4rem,8vw,7rem);line-height:1;text-transform:uppercase;letter-spacing:-0.01em;overflow-wrap:break-word;min-width:0}
   .hero__sub{margin:var(--s-5) 0 var(--s-6);max-width:34ch;color:var(--on-dark-2);font-size:var(--t-body-l)}
-  .hero__sub .num{color:var(--ice)}
   .hero__cta{display:flex;gap:var(--s-3);flex-wrap:wrap}
-  .hero__stage{display:grid;place-items:center;padding:0}
-  .hero__stage svg{width:min(640px,94%);filter:drop-shadow(0 40px 55px color-mix(in srgb, var(--black) 55%, transparent)) drop-shadow(0 0 42px var(--ice-soft))}
-  .hero__photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 45%;transform:scale(var(--wm-crop));transform-origin:50% 0}
+  .hero__stage{position:relative;overflow:hidden;isolation:isolate;padding:0}
+  .hero__stage::after{content:none}
+  .hero__photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 45%;transform-origin:50% 0;
+    opacity:0;transform:scale(calc(var(--wm-crop) * 1.04));transition:opacity 900ms var(--ease),transform 6s linear}
+  .hero__photo.on{opacity:1;transform:scale(var(--wm-crop))}
+  .hero__shade{position:absolute;inset:auto 0 0 0;height:34%;z-index:2;pointer-events:none;
+    background:linear-gradient(180deg,transparent,color-mix(in srgb, var(--deep-02) 70%, transparent))}
+  .hero__dashes{position:absolute;z-index:3;left:clamp(1.2rem,3vw,2.4rem);bottom:clamp(1.2rem,3vw,2.2rem);display:flex;gap:8px}
+  .hero__dash{position:relative;width:44px;height:24px;padding:10px 0;border:0;background:none;cursor:pointer;--focus:var(--bone)}
+  .hero__dash::before{content:"";display:block;height:3px;border-radius:2px;background:color-mix(in srgb, var(--bone) 34%, transparent)}
+  .hero__dash i{position:absolute;left:0;top:10px;height:3px;width:100%;border-radius:2px;background:var(--bone);transform:scaleX(0);transform-origin:0 50%}
+  .hero__dash.on i{animation:heroDash var(--hero-ms,6000ms) linear forwards}
+  .hero__dash.done i{transform:scaleX(1)}
+  .hero.paused .hero__dash.on i{animation-play-state:paused}
+  .hero__dash:focus-visible{outline:2px solid var(--bone);outline-offset:2px;transition:none}
+  @keyframes heroDash{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  /* without scripting the first slide simply stands on its own */
+  html:not(.js) .hero__dashes{display:none}
   @media(max-width:900px){
-    .hero__grid{grid-template-columns:minmax(0,1fr)}
-    .hero__stage{order:-1;min-height:46svh}.hero__copy{padding:var(--s-6) var(--gutter) var(--s-7);text-align:center}
-    .hero__sub{margin-inline:auto}.hero__cta{justify-content:center}
+    .hero::before{content:none} /* the bloom sat under the photo as a smudge once the columns stack */
+    .hero__grid,html.has-cdbar .hero__grid{grid-template-columns:minmax(0,1fr);min-height:0}
+    .hero__stage{order:-1;min-height:min(42svh,520px)}
+    .hero__copy{padding:var(--s-5) var(--gutter) var(--s-7)}
+    .hero__sub{margin:var(--s-4) 0 var(--s-5)}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .hero__photo{transition:opacity 200ms linear;transform:scale(var(--wm-crop))}
+    .hero__slide.on>*{animation:none}
+    .hero__dash.on i{animation:none;transform:scaleX(1)}
   }
 
   /* --- positioning band --- */
@@ -194,18 +224,57 @@
 <div class="announce" aria-label="Store highlights"><div class="announce__track"><span>Passes a diamond tester</span><span class="dot">/</span><span>Hand-set and made to order</span><span class="dot">/</span><span>Free custom engraving</span><span class="dot">/</span><span>Lifetime warranty on defects</span><span class="dot">/</span><span>Ships in an AXIA box</span><span class="dot">/</span><span>Worldwide shipping</span><span class="dot">/</span><span>30-day exchanges</span><span class="dot">/</span><span>Passes a diamond tester</span><span class="dot">/</span><span>Hand-set and made to order</span><span class="dot">/</span><span>Free custom engraving</span><span class="dot">/</span><span>Lifetime warranty on defects</span><span class="dot">/</span><span>Ships in an AXIA box</span><span class="dot">/</span><span>Worldwide shipping</span><span class="dot">/</span><span>30-day exchanges</span><span class="dot">/</span></div></div>
 
 
-<!-- HERO -->
-<section class="hero">
+<!-- HERO: a slideshow of the house pieces (first slide stands alone without scripting) -->
+<section class="hero" id="hero" aria-roledescription="carousel" aria-label="AXIA pieces">
+  <h1 class="sr-only">AXIA: moissanite jewellery in 925 sterling silver</h1>
   <div class="hero__grid">
-    <div class="hero__copy">
-      <h1 class="hero__title reveal" data-d="1" style="margin-top:var(--s-4)">The<br>Cuban</h1>
-      <p class="hero__sub reveal" data-d="2">The foundation of AXIA.</p>
-      <div class="hero__cta reveal" data-d="3">
-        <a href="first-drop" class="btn btn--cart">Join the First Drop</a>
-        <a href="cuban" class="btn">Shop the Cuban</a>
+    <div class="hero__copy reveal" data-d="1" aria-live="off">
+      <div class="hero__slide on" id="hs-cuban" role="group" aria-roledescription="slide" aria-label="1 of 4: The Cuban">
+        <h2 class="hero__title">The<br>Cuban</h2>
+        <p class="hero__sub">The foundation of AXIA. Hand-set VVS moissanite in 925 sterling silver.</p>
+        <div class="hero__cta">
+          <a href="first-drop" class="btn btn--cart">Join the First Drop</a>
+          <a href="cuban" class="btn">Shop the Cuban</a>
+        </div>
+      </div>
+      <div class="hero__slide" id="hs-titans" role="group" aria-roledescription="slide" aria-label="2 of 4: The Titans" aria-hidden="true" inert>
+        <h2 class="hero__title">The<br>Titans</h2>
+        <p class="hero__sub">Four 18mm Cubans, each built for one person. They land after the First Drop.</p>
+        <div class="hero__cta">
+          <a href="first-drop" class="btn btn--cart">Join the First Drop</a>
+          <a href="titans" class="btn">See the Titans</a>
+        </div>
+      </div>
+      <div class="hero__slide" id="hs-tennis" role="group" aria-roledescription="slide" aria-label="3 of 4: The Tennis" aria-hidden="true" inert>
+        <h2 class="hero__title">The<br>Tennis</h2>
+        <p class="hero__sub">One unbroken line of moissanite, from 2mm to 5mm.</p>
+        <div class="hero__cta">
+          <a href="first-drop" class="btn btn--cart">Join the First Drop</a>
+          <a href="collection?cat=Tennis" class="btn">Shop tennis</a>
+        </div>
+      </div>
+      <div class="hero__slide" id="hs-cross" role="group" aria-roledescription="slide" aria-label="4 of 4: The Cross" aria-hidden="true" inert>
+        <h2 class="hero__title">The<br>Cross</h2>
+        <p class="hero__sub">Multicolour moissanite, hand-set around a sterling silver cross.</p>
+        <div class="hero__cta">
+          <a href="first-drop" class="btn btn--cart">Join the First Drop</a>
+          <a href="product?id=cross-set" class="btn">Shop the Cross</a>
+        </div>
       </div>
     </div>
-    <div class="hero__stage stage reveal" data-d="1"><img class="hero__photo" src="assets/img/products/two-row-flat-cuban-chain-12mm/silver/2.jpg?v=20260930a" alt="The Cuban, hand-set moissanite chain"></div>
+    <div class="hero__stage stage reveal" data-d="1">
+      <img class="hero__photo on" src="assets/img/products/two-row-flat-cuban-chain-12mm/silver/2.jpg?v=20260930a" srcset="assets/img/products/two-row-flat-cuban-chain-12mm/silver/2-600.webp 600w, assets/img/products/two-row-flat-cuban-chain-12mm/silver/2-1200.webp 1200w" sizes="(max-width: 900px) 100vw, 60vw" alt="The Iced Cuban Chain, hand-set moissanite" style="object-position:50% 45%" fetchpriority="high">
+      <img class="hero__photo" src="assets/img/products/the-titan/1.jpg?v=20260930a" srcset="assets/img/products/the-titan/1-600.webp 600w, assets/img/products/the-titan/1-1200.webp 1200w" sizes="(max-width: 900px) 100vw, 60vw" alt="The Titan, an 18mm Cuban chain, worn" style="object-position:50% 30%" loading="lazy" decoding="async">
+      <img class="hero__photo" src="assets/img/products/tennis-chain-4mm/1.jpg?v=20260930a" srcset="assets/img/products/tennis-chain-4mm/1-600.webp 600w, assets/img/products/tennis-chain-4mm/1-1200.webp 1200w" sizes="(max-width: 900px) 100vw, 60vw" alt="The Classic Tennis Chain, worn" style="object-position:50% 35%" loading="lazy" decoding="async">
+      <img class="hero__photo" src="assets/img/products/cross-set/1.jpg?v=20260930a" srcset="assets/img/products/cross-set/1-600.webp 600w, assets/img/products/cross-set/1-1200.webp 1200w" sizes="(max-width: 900px) 100vw, 60vw" alt="The Cross Set, worn" style="object-position:50% 30%" loading="lazy" decoding="async">
+      <div class="hero__shade"></div>
+      <div class="hero__dashes">
+        <button type="button" class="hero__dash on" aria-controls="hs-cuban" aria-label="Show The Cuban" aria-current="true"><i></i></button>
+        <button type="button" class="hero__dash" aria-controls="hs-titans" aria-label="Show The Titans"><i></i></button>
+        <button type="button" class="hero__dash" aria-controls="hs-tennis" aria-label="Show The Tennis"><i></i></button>
+        <button type="button" class="hero__dash" aria-controls="hs-cross" aria-label="Show The Cross"><i></i></button>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -311,6 +380,42 @@
 </div>
 <div class="toast" id="toast"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
 
+<script>
+/* ===== Hero slideshow: each dash fills over SLIDE_MS, then the next piece crossfades in.
+   Hovering the copy or focusing inside pauses it; with reduced motion it only moves when a dash is pressed. ===== */
+(function(){
+  var hero=document.getElementById('hero'); if(!hero) return;
+  var slides=[].slice.call(hero.querySelectorAll('.hero__slide'));
+  var photos=[].slice.call(hero.querySelectorAll('.hero__photo'));
+  var dashes=[].slice.call(hero.querySelectorAll('.hero__dash'));
+  var copy=hero.querySelector('.hero__copy');
+  var n=slides.length; if(n<2) return;
+  var SLIDE_MS=6000, at=0;
+  var still=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  hero.style.setProperty('--hero-ms',SLIDE_MS+'ms');
+
+  function show(i){
+    at=(i+n)%n;
+    slides.forEach(function(el,k){ var on=k===at; el.classList.toggle('on',on);
+      if(on){ el.removeAttribute('aria-hidden'); el.inert=false; } else { el.setAttribute('aria-hidden','true'); el.inert=true; } });
+    photos.forEach(function(el,k){ el.classList.toggle('on',k===at); });
+    dashes.forEach(function(el,k){
+      el.classList.remove('on'); el.classList.toggle('done',k<at);
+      if(k===at){ el.setAttribute('aria-current','true'); void el.offsetWidth; el.classList.add('on'); }
+      else el.removeAttribute('aria-current');
+    });
+  }
+  // the dash's fill animation is the clock, so pausing it (hover, focus, hidden tab) pauses the slideshow too
+  dashes.forEach(function(d,k){
+    d.addEventListener('click',function(){ copy.setAttribute('aria-live','polite'); show(k); });
+    d.querySelector('i').addEventListener('animationend',function(){ if(k===at && !still) show(at+1); });
+  });
+  var pause=function(){ hero.classList.add('paused'); }, play=function(){ hero.classList.remove('paused'); };
+  copy.addEventListener('mouseenter',pause); copy.addEventListener('mouseleave',play);
+  hero.addEventListener('focusin',pause);
+  hero.addEventListener('focusout',function(e){ if(!hero.contains(e.relatedTarget)) play(); });
+})();
+</script>
 <script src="assets/js/catalogue.js?v=20261021b"></script>
 <script type="text/axia-deferred" src="assets/js/axia.js?v=20261106a"></script>
 <script type="text/axia-deferred">
