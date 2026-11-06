@@ -159,6 +159,26 @@
   .rev p{font-size:var(--t-body-s);color:var(--ink)}
   .rev .by{margin-top:var(--s-3);font-size:var(--t-label);color:var(--ink-tertiary)}
   @media(max-width:860px){.revs{grid-template-columns:1fr;gap:var(--s-6)}}
+  /* review videos: portrait carousel under the written reviews; the centre clip is full size, its neighbours shrink and fade */
+  .rvc{--rvc-w:clamp(210px,24vw,300px);margin-top:var(--s-7)}
+  .rvc__track{display:flex;align-items:center;gap:clamp(4px,1vw,12px);overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;
+    padding-inline:calc(50% - var(--rvc-w) / 2);padding-block:var(--s-2);overscroll-behavior-x:contain;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+  .rvc__track::-webkit-scrollbar{display:none}
+  .rvc__card{position:relative;flex:0 0 var(--rvc-w);aspect-ratio:9 / 16;scroll-snap-align:center;overflow:hidden;background:var(--obsidian-2);border-radius:0;
+    transform:scale(.84);opacity:.4;cursor:pointer;transition:transform var(--dur-3) var(--ease-out),opacity var(--dur-3) var(--ease-out)}
+  .rvc__card.is-active{transform:none;opacity:1;cursor:default}
+  .rvc__card:not(.is-active):hover{opacity:.6}
+  .rvc__card video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .rvc__mute{position:absolute;right:12px;bottom:12px;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
+    background:color-mix(in srgb, var(--obsidian) 55%, transparent);backdrop-filter:blur(6px);color:var(--bone);--focus:var(--ice)}
+  .rvc__card:not(.is-active) .rvc__mute{pointer-events:none}
+  .rvc__mute svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .rvc__mute .on{display:none}.rvc__mute[aria-pressed="true"] .on{display:block}.rvc__mute[aria-pressed="true"] .off{display:none}
+  .rvc__nav{display:flex;justify-content:center;align-items:center;gap:var(--s-4);margin-top:var(--s-4);color:var(--on-dark-3);font-size:var(--t-label);font-variant-numeric:tabular-nums}
+  .rvc__nav button{width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line-dark);color:var(--on-dark);--focus:var(--ice)}
+  .rvc__nav button:disabled{opacity:.3;cursor:default}
+  .rvc__nav svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6}
 
   /* sticky mobile buy */
   .sticky-buy{position:fixed;bottom:0;left:0;right:0;z-index:55;background:color-mix(in srgb, var(--bone) 96%, transparent);backdrop-filter:blur(12px);border-top:1px solid var(--line);
@@ -334,9 +354,17 @@
 <section class="section on-obsidian" data-band-dark>
   <div class="container">
     <div class="rev-head"><h2 class="h3">Reviews</h2><span class="rev-note">Verified buyers only</span></div>
-    <div style="border-top:1px solid var(--line-dark);padding:var(--s-7) 0;text-align:center">
+    <div id="revEmpty" style="border-top:1px solid var(--line-dark);padding:var(--s-7) 0;text-align:center">
       <p class="lead" style="margin-inline:auto;max-width:42ch">No reviews yet. Be the first once your piece arrives.</p>
       <p class="small" style="margin-top:var(--s-3);color:var(--on-dark-3)">Only verified purchases can leave a review. Genuine reviews appear here as orders ship.</p>
+    </div>
+    <div class="rvc" id="revVideos" hidden aria-roledescription="carousel" aria-label="Review videos">
+      <div class="rvc__track" id="rvcTrack"></div>
+      <div class="rvc__nav">
+        <button type="button" id="rvcPrev" aria-label="Previous video"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <span id="rvcCount" aria-live="polite"></span>
+        <button type="button" id="rvcNext" aria-label="Next video"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
     </div>
   </div>
 </section>
@@ -646,6 +674,56 @@
       +'<span class="bnudge__arw">&rarr;</span>';
     el.hidden=false;
   }
+  /* Review videos (Admin > Products > Review videos): a portrait carousel under the written reviews.
+     Only the centre clip loads and plays (muted until the shopper turns the sound on), and only
+     while the carousel is on screen; the rest show their poster until they're scrolled to. */
+  function renderReviewVideos(){
+    const list=(Array.isArray(p.reviewVideos)?p.reviewVideos:[]).filter(v=>v&&v.src);
+    const wrap=$('#revVideos'), track=$('#rvcTrack'); if(!wrap||!track||!list.length) return;
+    const empty=$('#revEmpty'); if(empty) empty.hidden=true;
+    wrap.hidden=false;
+    const still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const ICON_OFF='<svg class="off" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+    const ICON_ON='<svg class="on" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
+    let sound=false, active=-1, inView=false;
+    const cards=list.map((v,i)=>{
+      const c=document.createElement('div'); c.className='rvc__card'; c.setAttribute('role','group'); c.setAttribute('aria-roledescription','slide'); c.setAttribute('aria-label','Review video '+(i+1)+' of '+list.length);
+      const vid=document.createElement('video'); vid.muted=true; vid.loop=true; vid.playsInline=true; vid.setAttribute('playsinline',''); vid.preload='none';
+      if(v.poster) vid.poster=v.poster;
+      c.appendChild(vid);
+      if(v.audio!==false){ const b=document.createElement('button'); b.type='button'; b.className='rvc__mute'; b.setAttribute('aria-label','Sound'); b.setAttribute('aria-pressed','false'); b.innerHTML=ICON_OFF+ICON_ON; c.appendChild(b); }
+      track.appendChild(c); return {c,vid,src:v.src};
+    });
+    const syncMute=()=>$$('.rvc__mute',track).forEach(b=>b.setAttribute('aria-pressed',String(sound)));
+    // play the clip; if the browser blocks it with sound, fall back to muted
+    const play=k=>{ const x=cards[k]; if(!x) return; if(!x.vid.src) x.vid.src=x.src; x.vid.muted=!sound; const go=x.vid.play(); if(go&&go.catch) go.catch(()=>{ if(!x.vid.muted){ x.vid.muted=true; sound=false; syncMute(); x.vid.play().catch(()=>{}); } }); };
+    function activate(k){
+      if(k===active) return; active=k;
+      cards.forEach((x,i)=>{ x.c.classList.toggle('is-active',i===k); if(i!==k&&!x.vid.paused) x.vid.pause(); });
+      $('#rvcCount').textContent=(k+1)+' / '+cards.length;
+      $('#rvcPrev').disabled=k===0; $('#rvcNext').disabled=k===cards.length-1;
+      if(inView&&!still) play(k);
+    }
+    const centre=k=>{ const x=cards[k]; if(!x) return; track.scrollTo({left:x.c.offsetLeft-(track.clientWidth-x.c.offsetWidth)/2,behavior:still?'auto':'smooth'}); };
+    let raf=0;
+    track.addEventListener('scroll',()=>{ if(raf) return; raf=requestAnimationFrame(()=>{ raf=0;
+      const mid=track.scrollLeft+track.clientWidth/2; let best=0, d=Infinity;
+      cards.forEach((x,i)=>{ const dd=Math.abs(x.c.offsetLeft+x.c.offsetWidth/2-mid); if(dd<d){ d=dd; best=i; } });
+      activate(best); }); },{passive:true});
+    track.addEventListener('click',e=>{
+      const card=e.target.closest('.rvc__card'); if(!card) return; const k=cards.findIndex(x=>x.c===card);
+      if(k!==active){ centre(k); return; }
+      const x=cards[k];
+      if(e.target.closest('.rvc__mute')){ sound=!sound; syncMute(); x.vid.muted=!sound; if(x.vid.paused) play(k); return; }
+      if(x.vid.paused) play(k); else x.vid.pause();
+    });
+    $('#rvcPrev').addEventListener('click',()=>centre(active-1));
+    $('#rvcNext').addEventListener('click',()=>centre(active+1));
+    if('IntersectionObserver' in window){
+      new IntersectionObserver(es=>{ inView=es[0].isIntersecting; const x=cards[active]; if(!x) return; if(inView&&!still) play(active); else if(!inView) x.vid.pause(); },{threshold:.35}).observe(track);
+    } else inView=true;
+    activate(0);
+  }
   function renderPairings(){
     const wrap=$('#pairWrap'); if(!wrap) return;
     let picks=P.filter(x=>x.id!==p.id && !x.hidden && (!relBundle||x.id!==relBundle.id)).sort((a,b)=>((b.badge==='Bestseller')-(a.badge==='Bestseller'))||(a.level-b.level)).slice(0,relBundle?3:4);
@@ -679,7 +757,7 @@
   (function(){ const n=FIRST_DROP_MADE[p.id]; if(!n) return;
     const s=$('#storyDrop'); if(s){ $('#storyDropN').textContent=n; s.hidden=false; }
     const t=$('#pdpDrop'); if(t){ $('#pdpDropN').textContent=n; t.hidden=false; } })();
-  renderArt(); sync(); renderPairings(); renderBundleNudge();
+  renderArt(); sync(); renderPairings(); renderBundleNudge(); renderReviewVideos();
   // Hidden pieces are teasers (locked for a future drop) - replace the buy area with a Drop 02 lock.
   if(p.hidden){
     const buy=$('.buy'); if(buy) buy.innerHTML='<button class="btn btn--cart" disabled style="opacity:.55;cursor:not-allowed;flex:1">Coming soon</button>';

@@ -9,6 +9,7 @@ import { economics, retailAtSize } from '../lib/economics';
 import { aud, pct, timeAgo } from '../lib/format';
 import ImageList from '../components/ImageList';
 import ProductVideo from '../components/ProductVideo';
+import ReviewVideos from '../components/ReviewVideos';
 import VariantsTable from '../components/VariantsTable';
 import { useToast } from '../components/Toast';
 import ProductSales from '../components/ProductSales';
@@ -262,6 +263,12 @@ export default function ProductEdit() {
           <div className="card">
             <div className="card__head"><div><h2>Video</h2></div></div>
             <ProductVideo productId={id} video={draft.video} poster={draft.videoPoster} onError={setError} onChange={v => set(v)} />
+          </div>
+
+          <div className="card">
+            <div className="card__head"><div><h2>Review videos</h2></div></div>
+            <ReviewVideos productId={id} videos={draft.reviewVideos ?? []} onError={setError}
+              onChange={next => set({ reviewVideos: next.length ? next : undefined })} />
           </div>
 
           <details className="card">
