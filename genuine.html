@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Check it's genuine | AXIA</title>
-<meta name="description" content="Check your AXIA piece is genuine. Enter the serial number from the NFC authenticity card that ships with every piece.">
+<title>One of one | AXIA</title>
+<meta name="description" content="Every AXIA piece is hand-set to order and carries its own serial number. Enter the serial from your authenticity card to see your piece's record.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="assets/css/tokens.css?v=20260930a">
 <link rel="stylesheet" href="assets/css/axia.css?v=20260930a">
@@ -97,13 +97,13 @@
     <div class="glow" aria-hidden="true"></div>
     <div class="gen-grid">
       <div class="gen-copy">
-        <h1 id="genTitle">Check it's genuine</h1>
-        <p class="lead">Every AXIA piece ships with its own authenticity card. Enter the serial number from yours to confirm the piece is one of ours.</p>
+        <h1 id="genTitle">One of one</h1>
+        <p class="lead">Every AXIA piece is hand-set to order and carries its own serial number. Enter the one on your authenticity card to see your piece's record.</p>
         <form class="gen-form" id="genForm" action="genuine" method="get" role="search" novalidate>
           <label for="genSerial">Serial number</label>
           <div class="gen-field">
             <input id="genSerial" name="serial" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40" placeholder="Printed on your card" aria-describedby="genMsg genHint">
-            <button class="btn btn--cart" type="submit">Check serial</button>
+            <button class="btn btn--cart" type="submit">Find my piece</button>
           </div>
           <p class="gen-msg" id="genMsg" role="status" aria-live="polite"></p>
           <p class="gen-hint" id="genHint">Tap the card on your phone and the serial fills in for you.</p>
@@ -194,7 +194,7 @@
     msg.classList.remove('err');
     if(!serial){ msg.classList.add('err'); msg.textContent='Enter the serial number from your card.'; input.focus(); return; }
     input.value=serial;
-    msg.textContent='Serial checks are coming soon. Keep your card safe with your piece.';
+    msg.textContent='Piece records are coming soon. Keep your card safe with your piece.';
   });
 })();
 </script>
