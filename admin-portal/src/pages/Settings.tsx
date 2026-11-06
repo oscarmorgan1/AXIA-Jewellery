@@ -1,10 +1,11 @@
 import { Fragment, useEffect, useState, type FormEvent } from 'react';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { Lock } from 'lucide-react';
+import { Lock, Sparkles } from 'lucide-react';
 import { db, usingEmulators } from '../firebase';
 import { useAuth } from '../auth';
 import { useAssumptions } from '../lib/data';
 import { useToast } from '../components/Toast';
+import { useLarpMode } from '../lib/larp';
 import type { CostAssumptions } from '../types';
 
 const FIELDS: { key: keyof CostAssumptions; label: string; pct?: boolean; step: string }[] = [
@@ -19,6 +20,7 @@ export default function Settings() {
   const { user } = useAuth();
   const { data } = useAssumptions();
   const toast = useToast();
+  const larp = useLarpMode();
   const [form, setForm] = useState<Record<string, string>>({});
   const [plan, setPlan] = useState<{ units?: Record<string, number>; total_units?: number; note?: string } | null>(null);
 
@@ -58,6 +60,16 @@ export default function Settings() {
         </form>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div className="card">
+            <div className="card__head">
+              <div className="card__title"><Sparkles size={18} /><h2>Larp mode</h2></div>
+              <button type="button" className="switch" role="switch" aria-checked={larp.on} aria-label="Larp mode"
+                onClick={() => { larp.set(!larp.on); toast.show(larp.on ? 'Larp mode off. Back to reality.' : 'Larp mode on. Welcome to the top.'); }} />
+            </div>
+            <div className="card__sub" style={{ margin: 0 }}>
+              Makes the dashboard show made-up, millionaire-level numbers. Only on this browser, only on the dashboard. Real data and the public site are never touched.
+            </div>
+          </div>
           <div className="card">
             <div className="card__head"><h2>Environment</h2></div>
             <dl className="kv">
