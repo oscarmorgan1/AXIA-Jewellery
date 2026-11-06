@@ -5,6 +5,7 @@ import Layout from './components/Layout';
 import Logo from './components/Logo';
 import Login from './pages/Login';
 import NotAuthorised from './pages/NotAuthorised';
+import SignInCode from './pages/SignInCode';
 
 // Each page loads when it's first opened, so the portal starts faster.
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -22,10 +23,11 @@ const InboxPage = lazy(() => import('./pages/Inbox'));
 const Website = lazy(() => import('./pages/Website'));
 
 export default function App() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, verified, loading } = useAuth();
   if (loading) return <div className="loading-screen"><Logo height={34} className="logo--loading" /></div>;
   if (!user) return <Login />;
   if (!isAdmin) return <NotAuthorised />;
+  if (!verified) return <SignInCode />;
   return (
     <Routes>
       <Route element={<Layout />}>

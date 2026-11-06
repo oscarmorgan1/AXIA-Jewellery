@@ -3,7 +3,8 @@
 // the customer) and managing promo codes in Stripe.
 //
 // Every request must carry the signed-in admin's Firebase ID token
-// (Authorization: Bearer <token>) with the `admin: true` custom claim.
+// (Authorization: Bearer <token>) with the `admin: true` custom claim, from a
+// sign-in that has passed the emailed code (server/twofactor.js).
 import express from 'express';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
@@ -11,6 +12,7 @@ import { db, stripe } from './services.js';
 import { createHash } from 'node:crypto';
 import { videoUploadUrl, processVideo, resetVideo } from './media.js';
 import { STATUS_EMAILS, statusEmail, messageEmail, sendEmail } from './email.js';
+import { isVerifiedAdmin } from './twofactor.js';
 import { emailEntry, historyEntry, push, upsertCustomer, customerId } from './orders.js';
 
 /** Statuses an admin can set. `refunded` only comes from Stripe, with the money. */
@@ -24,6 +26,7 @@ async function requireAdmin(req, res, next) {
     if (!token) throw new HttpError(401, 'Sign in again');
     const user = await getAuth().verifyIdToken(token);
     if (user.admin !== true) throw new HttpError(403, 'Not an admin');
+    if (!isVerifiedAdmin(user)) throw new HttpError(401, 'Enter the code we emailed you to finish signing in');
     req.admin = { uid: user.uid, email: user.email || '' };
     next();
   } catch (err) {

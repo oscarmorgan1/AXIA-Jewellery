@@ -272,3 +272,28 @@ export async function sendEmail({ to, subject, html, text, idempotencyKey }) {
   if (error) throw new Error(`Resend: ${error.message || JSON.stringify(error)}`);
   return { id: data && data.id };
 }
+
+/**
+ * The admin portal's sign-in code (server/twofactor.js). Plain and short, with
+ * no marketing footer or unsubscribe link: it's a security email, not news.
+ */
+export function signInCodeEmail({ code, minutes, ip, agent }) {
+  const device = [agent && agent.slice(0, 160), ip && `IP ${ip}`].filter(Boolean).join(' · ');
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Your AXIA admin sign-in code</title></head>
+<body style="margin:0;padding:0;background:${C.page}">
+<span style="display:none!important;visibility:hidden;opacity:0;height:0;width:0;overflow:hidden">${esc(code)} is your AXIA admin sign-in code</span>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.page}"><tr><td align="center" style="padding:32px 14px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px">
+  <tr><td style="background:${C.bone};border:1px solid ${C.line};border-radius:6px;padding:32px 30px">
+    <p style="margin:0 0 6px;${font};font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:${C.soft}">AXIA admin</p>
+    <h1 style="margin:0 0 14px;${font};font-size:22px;line-height:1.2;color:${C.ink}">Your sign-in code</h1>
+    ${p(`Enter this code in the admin portal to finish signing in. It works for ${esc(minutes)} minutes.`)}
+    <p style="margin:18px 0;${font};font-size:34px;font-weight:700;letter-spacing:.28em;color:${C.ink}">${esc(code)}</p>
+    ${device ? p(`<span style="font-size:13px">Requested from ${esc(device)}</span>`, C.soft) : ''}
+    ${p('<span style="font-size:13px">If you didn’t just sign in, someone has your password. Don’t share this code: change your password, or ask the owner to remove your admin access.</span>', C.soft)}
+  </td></tr>
+</table></td></tr></table></body></html>`;
+  const text = [`${code} is your AXIA admin sign-in code. It works for ${minutes} minutes.`, device ? `Requested from ${device}` : '',
+    'If you didn’t just sign in, someone has your password. Don’t share this code: change your password, or ask the owner to remove your admin access.'].filter(Boolean).join('\n\n');
+  return { subject: `${code} is your AXIA admin sign-in code`, html, text };
+}

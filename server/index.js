@@ -7,6 +7,7 @@ import { staticSite } from './static.js';
 import { checkoutRoutes } from './checkout.js';
 import { webhookRoutes } from './webhook.js';
 import { adminRoutes } from './admin.js';
+import { twoFactorRoutes } from './twofactor.js';
 import { signupRoutes } from './signup.js';
 import { unsubscribeRoutes } from './unsubscribe.js';
 import { publicFormRoutes } from './forms.js';
@@ -37,6 +38,7 @@ app.use((req, res, next) => {
 
 app.use(webhookRoutes()); // before any JSON parsing: Stripe signs the raw body
 app.use(checkoutRoutes());
+app.use(twoFactorRoutes());
 app.use(adminRoutes());
 app.use(signupRoutes());
 app.use(unsubscribeRoutes());
