@@ -93,7 +93,7 @@ export default function AuthShell({ children, foot }: { children: ReactNode; foo
           <Logo height={24} className="auth__logo" />
           {children}
         </div>
-        <p className="auth__foot">{foot ?? 'Staff only. Every sign-in is confirmed with a code sent to your email.'}</p>
+        <p className="auth__foot">{foot ?? <>By continuing, you agree to our <a href={siteUrl('terms')} target="_blank" rel="noreferrer">Terms &amp; Conditions</a><br />and acknowledge our <a href={siteUrl('terms#privacy')} target="_blank" rel="noreferrer">Privacy Policy</a>.</>}</p>
       </main>
       <Showcase />
     </div>
