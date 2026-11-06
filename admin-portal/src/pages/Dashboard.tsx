@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, BadgePercent, DollarSign, Eye, Gem, Inbox as InboxIcon, Mail, Package, PenLine, Sparkles, UserPlus, Users } from 'lucide-react';
+import { Mail, PenLine, Plus, UserPlus } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import CountUp from '../components/CountUp';
-import Donut from '../components/Donut';
 import { BarChart } from '../components/Charts';
 import { sydneyDay, useAssumptions, useCollections, useCosts, useMessages, useProducts, useSignups, useVisits } from '../lib/data';
 import { collectionLabel, firstImage, primaryCollection, statusOf } from '../lib/catalogue';
@@ -12,7 +11,7 @@ import { aud, pct } from '../lib/format';
 import { siteUrl, usingEmulators } from '../firebase';
 import { audCompact, fake, useLarpMode } from '../lib/larp';
 
-export const PALETTE = ['var(--bar-strong)', '#2A6076', '#9FD3EA', '#F3436E', '#B7BDC5', '#6E7781', '#E3DED1'];
+export const PALETTE = ['var(--ink)', '#2A6076', '#9FD3EA', '#F3436E', '#B7BDC5', '#6E7781', '#E3DED1'];
 const DAY = 86400000;
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN);
 // keeps big larp-mode numbers inside the chart tooltip
@@ -131,40 +130,37 @@ export default function Dashboard() {
     };
   }, [s, larp, metric, range]);
 
-  const hello = new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening';
+  const today = new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
     <>
       <div className="page-head">
-        <div>
-          <h1>{hello}</h1>
-          <p className="lede" style={{ margin: 0 }}>Here’s what’s happening across AXIA.</p>
-        </div>
+        <h1>{today}</h1>
         <span className="spacer" />
         {usingEmulators && <span className="env-badge">Local emulators</span>}
-        <Link to="/products/new" className="btn btn--primary"><Sparkles size={16} /> New product</Link>
+        <Link to="/products/new" className="btn btn--primary"><Plus size={16} /> New product</Link>
       </div>
 
-      <div className="grid-4 stagger">
-        <StatCard tone="dark" label="Visitors, last 7 days" icon={<Eye size={22} />}
+      <div className="grid-4">
+        <StatCard label="Visitors, last 7 days"
           value={<CountUp value={v.visitors7} />} foot={<><b>{v.visitorsToday.toLocaleString('en-AU')}</b> so far today</>} />
-        <StatCard tone="ice" label="Customers" icon={<Users size={22} />}
+        <StatCard label="Customers"
           value={<CountUp value={v.customers} />} foot={<><b>+{v.newThisWeek.toLocaleString('en-AU')}</b> this week</>} />
         {larp ? (
-          <StatCard tone="magenta" label="Revenue, last 30 days" icon={<DollarSign size={22} />}
+          <StatCard label="Revenue, last 30 days"
             value={<CountUp value={v.revenue30} format={audCompact} />} foot={<><b>+312%</b> on last month</>} />
         ) : (
-          <StatCard tone={v.unread ? 'magenta' : ''} label="Unread messages" icon={<InboxIcon size={22} />}
-            value={<CountUp value={v.unread} />} foot={<Link to="/inbox" style={{ color: 'var(--accent)' }}>Open inbox</Link>} />
+          <StatCard label="Unread messages"
+            value={<CountUp value={v.unread} />} foot={<Link to="/inbox">Open inbox</Link>} />
         )}
-        <StatCard tone="good" label="Avg gross margin" icon={<BadgePercent size={22} />}
-          value={<CountUp value={v.avgGross} format={n => pct(n)} />} foot={<Link to="/margins" style={{ color: 'var(--accent)' }}>See margins</Link>} />
+        <StatCard label="Avg gross margin"
+          value={<CountUp value={v.avgGross} format={n => pct(n)} />} foot={<Link to="/margins">See margins</Link>} />
       </div>
 
       <div className="grid-2">
         <div className="card">
           <div className="card__head">
-            <div className="card__title"><Activity size={18} /><h2>Traffic</h2></div>
+            <h2>Traffic</h2>
             <span className="spacer" />
             <div className="segmented">
               <button className={metric === 'visitors' ? 'on' : ''} onClick={() => setMetric('visitors')}>Visitors</button>
@@ -177,7 +173,7 @@ export default function Dashboard() {
           </div>
           <div className="card__sub" style={{ marginTop: -6 }}>
             <b>{v.spanVisitors.toLocaleString('en-AU')}</b> unique visitor{v.spanVisitors === 1 ? '' : 's'} and <b>{v.spanSignups.toLocaleString('en-AU')}</b> new sign-up{v.spanSignups === 1 ? '' : 's'} in the last {range === 'daily' ? '14 days' : '8 weeks'}
-            {v.spanVisitors > 0 && <> · <b>{Math.round((v.spanSignups / v.spanVisitors) * 1000) / 10}%</b> signed up</>}
+            {v.spanVisitors > 0 && <>, so <b>{Math.round((v.spanSignups / v.spanVisitors) * 1000) / 10}%</b> signed up</>}
           </div>
           <BarChart key={range + metric} data={v.series} format={n => metric === 'visitors' ? `${tip(n)} visitor${n === 1 ? '' : 's'}` : `${tip(n)} sign-up${n === 1 ? '' : 's'}`} />
           {metric === 'visitors' && v.sources.length > 0 && (
@@ -193,12 +189,15 @@ export default function Dashboard() {
         </div>
         <div className="card">
           <div className="card__head">
-            <div className="card__title"><Package size={18} /><h2>Collections</h2></div>
+            <h2>Collections</h2>
             <span className="spacer" /><Link to="/collections" className="btn btn--sm">Manage</Link>
           </div>
           {v.donut.length ? (
             <>
-              <Donut data={v.donut} centerLabel="Live pieces" centerValue={String(v.live.length)} />
+              <div className="share-total"><b>{v.live.length}</b><span>live piece{v.live.length === 1 ? '' : 's'}</span></div>
+              <div className="share-bar" role="img" aria-label={v.donut.map(d => `${d.label}: ${d.value}`).join(', ')}>
+                {v.donut.map(d => <span key={d.label} style={{ flexGrow: d.value, background: d.color }} title={`${d.label}: ${d.value}`} />)}
+              </div>
               <div className="rank">
                 {v.donut.map(d => (
                   <div className="rank__row" key={d.label}>
@@ -214,14 +213,14 @@ export default function Dashboard() {
 
       <div className="grid-2 grid-2--flip">
         <div className="card">
-          <div className="card__head"><div className="card__title"><Activity size={18} /><h2>Recent activity</h2></div><span className="spacer" /><Link to="/customers" className="btn btn--sm">See all</Link></div>
+          <div className="card__head"><h2>Recent activity</h2><span className="spacer" /><Link to="/customers" className="btn btn--sm">See all</Link></div>
           {v.feed.length ? (
             <div className="feed">
               {v.feed.map((f, i) => (
                 <Link key={i} to={f.to} className="feed__item">
                   <span className={`feed__icon stat__icon--${f.tone || 'x'}`}>{f.icon}</span>
                   <div className="feed__body"><b>{f.title}</b><small>{f.sub}</small></div>
-                  <small style={{ color: 'var(--faint)', whiteSpace: 'nowrap' }}>{ago(f.t)}</small>
+                  <small className="feed__time">{ago(f.t)}</small>
                 </Link>
               ))}
             </div>
@@ -230,13 +229,13 @@ export default function Dashboard() {
 
         <div className="card">
           <div className="card__head">
-            <div className="card__title"><Gem size={18} /><h2>{v.wanted.length ? 'Most wanted' : 'Top pieces'}</h2></div>
+            <h2>{v.wanted.length ? 'Most wanted' : 'Top pieces'}</h2>
             <span className="spacer" /><span className="card__sub" style={{ margin: 0 }}>{v.wanted.length ? 'By waitlist interest' : 'Highest priced live pieces'}</span>
           </div>
           <div className="table-wrap">
             <table className="table">
               <thead><tr><th>Product</th><th className="hide-sm">Collection</th><th className="num">From</th><th className="num">{v.wanted.length ? 'Interest' : 'Margin'}</th></tr></thead>
-              <tbody className="rows-anim">
+              <tbody>
                 {(v.wanted.length ? v.wanted.map(x => ({ p: x.p!, n: v.interest(x.id, x.n) as number | null })) : v.fallbackTop.map(p => ({ p, n: null }))).map(({ p, n }) => {
                   const img = firstImage(p);
                   const e = productEconomics(p, costs.get(p.id), assumptions);

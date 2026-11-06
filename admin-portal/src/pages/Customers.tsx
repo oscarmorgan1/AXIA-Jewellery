@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Download, PackageOpen, Search, ShoppingBag, Users, Wallet } from 'lucide-react';
+import { Download, Search, Users } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import CountUp from '../components/CountUp';
 import { aud } from '../lib/format';
@@ -65,11 +65,11 @@ export default function Customers() {
         <button className="btn" onClick={exportCsv} disabled={!shown.length}><Download size={16} /> Export CSV</button>
       </div>
 
-      <div className="grid-4 stagger">
-        <StatCard tone="dark" label="Customers" icon={<Users size={22} />} value={<CountUp value={people.length} />} foot={<>{signups.length} waitlist sign-ups in total</>} />
-        <StatCard tone="ice" label="Have ordered" icon={<ShoppingBag size={22} />} value={<CountUp value={counts.buyers} />} foot={`${repeat} ordered more than once`} />
-        <StatCard tone="magenta" label="With open orders" icon={<PackageOpen size={22} />} value={<CountUp value={counts.open} />} foot="New, in progress or shipped" />
-        <StatCard tone="good" label="Average spend" icon={<Wallet size={22} />} value={counts.buyers ? aud(revenue / counts.buyers) : '–'} foot={`${aud(revenue)} in total`} />
+      <div className="grid-4">
+        <StatCard label="Customers" value={<CountUp value={people.length} />} foot={<>{signups.length} waitlist sign-ups in total</>} />
+        <StatCard label="Have ordered" value={<CountUp value={counts.buyers} />} foot={`${repeat} ordered more than once`} />
+        <StatCard label="With open orders" value={<CountUp value={counts.open} />} foot="New, in progress or shipped" />
+        <StatCard label="Average spend" value={counts.buyers ? aud(revenue / counts.buyers) : '–'} foot={`${aud(revenue)} in total`} />
       </div>
 
       <div className="card">
@@ -89,7 +89,7 @@ export default function Customers() {
         <div className="table-wrap">
           <table className="table">
             <thead><tr><th>Customer</th><th>Phone</th><th className="num">Orders</th><th className="num">Spent</th><th>Open</th><th>Interested in</th><th>Consent</th><th className="num">Last seen</th></tr></thead>
-            <tbody className="rows-anim">
+            <tbody>
               {shown.map(c => (
                 <tr key={c.id} className="clickable" onClick={() => nav(`/customers/${encodeURIComponent(c.id)}`)}>
                   <td><div className="prod-cell">
