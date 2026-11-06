@@ -21,3 +21,6 @@ private/
 
 # Local tool state from editors/agents
 .claude-flow/
+
+# Hallmark run records and screenshots
+.hallmark/

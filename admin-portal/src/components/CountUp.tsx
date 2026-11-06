@@ -21,6 +21,6 @@ export default function CountUp({ value, format = n => Math.round(n).toLocaleStr
     raf = requestAnimationFrame(tick);
     return () => { cancelAnimationFrame(raf); from.current = b; };
   }, [value, duration]);
-  if (value == null || Number.isNaN(value)) return <>–</>;
+  if (value == null || Number.isNaN(value)) return <>n/a</>;
   return <>{format(shown)}</>;
 }

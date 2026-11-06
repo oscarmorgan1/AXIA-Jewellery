@@ -12,8 +12,8 @@
 <style>
   .sup-hero{padding-block:clamp(var(--s-8),8vw,var(--s-9)) var(--s-6)}
   .sup-hero .eyebrow{display:block;margin-bottom:var(--s-3)}
-  .sup-hero h1{font-family:var(--font-display);font-weight:700;font-size:var(--t-64);text-transform:uppercase;line-height:.95}
-  .sup{display:grid;grid-template-columns:220px 1fr;gap:clamp(2rem,5vw,5rem);align-items:start;padding-bottom:var(--s-9)}
+  .sup-hero h1{font-family:var(--font-display);font-weight:700;font-size:var(--t-64);text-transform:uppercase;line-height:1}
+  .sup{display:grid;grid-template-columns:220px minmax(0,1fr);gap:clamp(2rem,5vw,5rem);align-items:start;padding-bottom:var(--s-9)}
   .sup-nav{position:sticky;top:calc(var(--chrome-h) + 16px)}
   .sup-nav a{display:block;font-size:var(--t-body-s);color:var(--ink-secondary);padding:.5rem 0;border-left:2px solid transparent;padding-left:var(--s-3);transition:color var(--dur-2) var(--ease),border-color var(--dur-2) var(--ease)}
   .sup-nav a:hover{color:var(--ink)}
@@ -28,11 +28,11 @@
   .sup-sec .k{color:var(--ink);font-weight:500}
   .deftable{margin-top:var(--s-4)}
   .deftable div{display:flex;justify-content:space-between;gap:1rem;padding:.7rem 0;border-top:1px solid var(--line-soft);font-size:var(--t-body-s)}
-  .deftable .k{color:var(--ink-secondary);letter-spacing:.06em;text-transform:uppercase;font-size:var(--t-label)}
+  .deftable .k{color:var(--ink-secondary);font-size:var(--t-label)}
   .note{font-size:var(--t-body-s);color:var(--ink-tertiary);font-style:italic;margin-top:var(--s-3)}
   @media(max-width:860px){
-    .sup{grid-template-columns:1fr;gap:var(--s-6)}
-    .sup-nav{position:sticky;top:var(--chrome-h);z-index:30;background:rgba(244,241,234,.94);backdrop-filter:blur(10px);margin-inline:calc(-1*var(--gutter));padding:var(--s-3) var(--gutter);border-bottom:1px solid var(--line);display:flex;gap:var(--s-4);overflow-x:auto}
+    .sup{grid-template-columns:minmax(0,1fr);gap:var(--s-6)}
+    .sup-nav{position:sticky;top:var(--chrome-h);z-index:30;background:color-mix(in srgb, var(--bone) 94%, transparent);backdrop-filter:blur(10px);margin-inline:calc(-1*var(--gutter));padding:var(--s-3) var(--gutter);border-bottom:1px solid var(--line);display:flex;gap:var(--s-4);overflow-x:auto}
     .sup-nav a{border-left:0;border-bottom:2px solid transparent;padding:.2rem 0;white-space:nowrap}
     .sup-nav a.active{border-color:var(--magenta)}
   }
@@ -41,9 +41,9 @@
   .cf-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-4)}
   @media(max-width:600px){.cf-row{grid-template-columns:1fr;gap:0}}
   .cf-field{display:flex;flex-direction:column;gap:.5rem;margin-bottom:var(--s-4)}
-  .cf-field label{font-size:var(--t-label);letter-spacing:var(--ls-mid);text-transform:uppercase;color:var(--ink-secondary)}
+  .cf-field label{font-size:var(--t-label);color:var(--ink-secondary)}
   .cf-field label .opt{color:var(--ink-tertiary);text-transform:none;letter-spacing:0;font-weight:400}
-  .cf-field input,.cf-field select,.cf-field textarea{font-family:var(--font-sans);font-size:var(--t-body);padding:.9em 1em;border:1px solid var(--line-strong);border-radius:var(--r-1);background:var(--bone);color:var(--ink);width:100%;transition:border-color var(--dur-2) var(--ease)}
+  .cf-field input,.cf-field select,.cf-field textarea{font-family:var(--font-sans);font-size:var(--t-body);padding:.9em 1em;border:1px solid var(--field-edge);border-radius:var(--r-1);background:var(--bone);color:var(--ink);width:100%;transition:border-color var(--dur-2) var(--ease)}
   .cf-field textarea{resize:vertical;min-height:120px;line-height:1.55}
   .cf-field input:focus,.cf-field select:focus,.cf-field textarea:focus{outline:none;border-color:var(--ink)}
   .cf-err{color:var(--magenta);font-size:var(--t-body-s);min-height:1.2em;margin-bottom:var(--s-2)}
@@ -60,16 +60,15 @@
   <nav class="nav__links" aria-label="Primary"><a class="nav__link" href="collection">Shop</a><a class="nav__link" href="cuban">The Cuban</a><a class="nav__link" href="about">About</a><a class="nav__link" href="support" aria-current="page">Support</a></nav>
   <a class="nav__brand" href="store" aria-label="AXIA home"><span class="wm-img" aria-hidden="true"></span></a>
   <div class="nav__right">
-    <button class="nav__icon" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
-    <button class="nav__icon" aria-label="Account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></button>
-    <button class="nav__icon" data-cart aria-label="Bag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="cc" id="cc" aria-hidden="true">0</span></button>
-    <button class="nav__icon menu-btn" data-menu aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <button class="nav__icon" aria-label="Search"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+    <button class="nav__icon" aria-label="Account"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></button>
+    <button class="nav__icon" data-cart aria-label="Bag"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="cc" id="cc" aria-hidden="true">0</span></button>
+    <button class="nav__icon menu-btn" data-menu aria-label="Menu"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </div>
 </header>
 <div class="announce" aria-label="Store highlights"><div class="announce__track"><span>Passes a diamond tester</span><span class="dot">/</span><span>Hand-set and made to order</span><span class="dot">/</span><span>Free custom engraving</span><span class="dot">/</span><span>Lifetime warranty on defects</span><span class="dot">/</span><span>Ships in an AXIA box</span><span class="dot">/</span><span>Worldwide shipping</span><span class="dot">/</span><span>30-day exchanges</span><span class="dot">/</span><span>Passes a diamond tester</span><span class="dot">/</span><span>Hand-set and made to order</span><span class="dot">/</span><span>Free custom engraving</span><span class="dot">/</span><span>Lifetime warranty on defects</span><span class="dot">/</span><span>Ships in an AXIA box</span><span class="dot">/</span><span>Worldwide shipping</span><span class="dot">/</span><span>30-day exchanges</span><span class="dot">/</span></div></div>
 
 <div class="container sup-hero">
-  <span class="eyebrow eyebrow--ice">Client care</span>
   <h1>Support</h1>
 </div>
 
@@ -163,7 +162,7 @@
         <li>Not sure on size? Free exchanges mean it's an easy fix.</li>
         <li>Ordering for an occasion? Message us and we'll help you choose and time delivery.</li>
       </ul>
-      <a class="link-u" href="collection" style="margin-top:var(--s-4)">Shop the collection <span class="arw">→</span></a>
+      <a class="link-u" href="collection" style="margin-top:var(--s-4)">Shop the collection</a>
     </section>
 
     <section class="sup-sec" id="packaging">
@@ -199,7 +198,7 @@
         <p class="note" style="margin-top:var(--s-3)">By sending you agree to AXIA contacting you about your message. We never sell your details.</p>
       </form>
       <div class="cf-success" id="cOk" aria-live="polite">
-        <div class="cf-tick"><svg viewBox="0 0 24 24" fill="none" stroke="var(--ice)" stroke-width="1.6"><path d="m5 13 4 4 10-11"/></svg></div>
+        <div class="cf-tick"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="var(--ice)" stroke-width="1.6"><path d="m5 13 4 4 10-11"/></svg></div>
         <h3>Message sent.</h3>
         <p>Your message has been sent. We'll reply to <span id="cOkEmail">you</span> by email, usually within one business day.</p>
       </div>
@@ -221,12 +220,12 @@
 
 <div class="ov" id="ov"></div>
 <aside class="drw" id="drw" role="dialog" aria-modal="true" aria-label="Your bag">
-  <div class="drw__h"><span class="t">Your Bag</span><button data-cart-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="drw__h"><span class="t">Your Bag</span><button data-cart-close aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
   <div class="drw__b" id="drwb"></div>
   <div class="drw__f" id="drwf"><div class="drw__r"><span class="label">Subtotal</span><span class="t num" id="ctot">$0</span></div><p class="drw__note">Lifetime warranty on manufacturing defects. Shipping &amp; taxes calculated at checkout.</p><button class="btn btn--cart btn--block">Checkout</button></div>
 </aside>
 <div class="mm" id="mm">
-  <div class="mm__h"><a class="nav__brand" href="store" aria-label="AXIA"><span class="wm-img" aria-hidden="true"></span></a><button data-menu-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" style="width:22px;height:22px"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="mm__h"><a class="nav__brand" href="store" aria-label="AXIA"><span class="wm-img" aria-hidden="true"></span></a><button data-menu-close aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" style="width:22px;height:22px"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
   <nav class="mm__links"><a class="big" href="collection" data-menu-close>Shop</a><a class="big" href="cuban" data-menu-close>The Cuban</a><a class="big" href="about" data-menu-close>About</a><a class="big" href="support" data-menu-close>Support</a></nav>
   <div class="mm__shop">
     <span class="mm__label">Shop by</span>
@@ -240,7 +239,7 @@
     </div>
   </div>
 </div>
-<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
+<div class="toast" id="toast"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
 
 <script src="assets/js/catalogue.js?v=20261021b"></script>
 <script type="text/axia-deferred" src="assets/js/axia.js?v=20261002a"></script>

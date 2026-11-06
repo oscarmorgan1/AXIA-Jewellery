@@ -124,7 +124,7 @@ export default function Collections() {
               <div style={{ height: 150, background: 'var(--obsidian)', position: 'relative', overflow: 'hidden' }}>
                 {img && <img src={siteUrl(img)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: .9 }} />}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 40%, rgba(17,19,21,.75))' }} />
-                <div style={{ position: 'absolute', left: 18, bottom: 14, color: '#F4F1EA' }}>
+                <div style={{ position: 'absolute', left: 18, bottom: 14, color: 'var(--bone)' }}>
                   <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600 }}>{c.name}</div>
                   <div style={{ fontSize: 12.5, opacity: .8 }}>{n} piece{n === 1 ? '' : 's'} · {live} live</div>
                 </div>

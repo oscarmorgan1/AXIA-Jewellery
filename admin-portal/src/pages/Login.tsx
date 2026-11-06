@@ -31,7 +31,7 @@ export default function Login() {
         <Logo height={26} className="login__wm" />
         <div>
           <h2>Every piece, in your hands.</h2>
-          <p>Products, collections, customers and margins for the AXIA store, all in one place.</p>
+          <p>Run the AXIA store: products, collections, customers and margins.</p>
         </div>
         <p style={{ fontSize: 12 }}>Staff only</p>
       </div>
