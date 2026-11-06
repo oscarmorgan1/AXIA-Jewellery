@@ -428,6 +428,7 @@ tr:hover .thumb { transform: scale(1.06); }
   .search-trigger { min-width: 0; width: 42px; height: 42px; padding: 0; justify-content: center; flex: none; }
   .search-trigger span, .search-trigger kbd, .user-chip div { display: none; }
   .user-chip { padding: 3px; }
+  .header .icon-btn, .header .user-chip, .menu-btn { flex: none; }
   .grid-4, .grid-3, .grid-2--even, .form-grid { grid-template-columns: 1fr; }
   .page-head h1 { font-size: 26px; }
   .login { grid-template-columns: 1fr; }
@@ -435,6 +436,9 @@ tr:hover .thumb { transform: scale(1.06); }
 }
 @media (max-width: 600px) {
   .hide-sm { display: none; }
+  /* Phones: the shop status shrinks to its coloured dot so the header fits */
+  .header__shop { margin-right: 0; min-width: 32px; min-height: 32px; justify-content: center; padding: 0; }
+  .header__shop .header__shop-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .prod-cell { min-width: 0; gap: 10px; }
   .table th, .table td { padding-left: 10px; padding-right: 10px; }
   .table th:first-child, .table td:first-child { padding-left: 18px; }

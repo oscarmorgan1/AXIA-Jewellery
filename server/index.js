@@ -9,11 +9,14 @@ import { webhookRoutes } from './webhook.js';
 import { adminRoutes } from './admin.js';
 import { signupRoutes } from './signup.js';
 import { unsubscribeRoutes } from './unsubscribe.js';
+import { publicFormRoutes } from './forms.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const app = express();
 app.disable('x-powered-by');
-app.set('trust proxy', true); // App Hosting sits behind Google's load balancer
+// App Hosting sits behind Google's load balancer (used for req.protocol). Rate
+// limits don't use req.ip, which a forged X-Forwarded-For can set: see clientIp() in limit.js.
+app.set('trust proxy', true);
 
 // Browser hardening on every response: no MIME sniffing, no framing by other
 // sites (clickjacking), HTTPS only, and no referrer leaking full URLs (order ids).
@@ -21,7 +24,10 @@ app.use((req, res, next) => {
   res.set({
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'SAMEORIGIN',
-    'Content-Security-Policy': "frame-ancestors 'self'; base-uri 'self'; object-src 'none'",
+    // Scripts only from this site (inline ones included, the pages rely on them)
+    // and Google's sign-in scripts for the portal's Google button.
+    'Content-Security-Policy': "frame-ancestors 'self'; base-uri 'self'; object-src 'none'; "
+      + "script-src 'self' 'unsafe-inline' https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com",
     'Strict-Transport-Security': 'max-age=31536000',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
@@ -34,6 +40,7 @@ app.use(checkoutRoutes());
 app.use(adminRoutes());
 app.use(signupRoutes());
 app.use(unsubscribeRoutes());
+app.use(publicFormRoutes());
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 app.use(staticSite(root));
 app.use((req, res) => res.status(404).type('text').send('Not found'));

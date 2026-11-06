@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import express from 'express';
 import { isShopOpen } from './services.js';
+import { renderPage } from './seo.js';
 
 const NO_CACHE = 'no-cache';
 const WEEK = 'public, max-age=604800';
@@ -32,11 +33,27 @@ export function staticSite(root) {
   const pages = new Set(fs.readdirSync(root).filter(f => f.endsWith('.html')).map(f => f.slice(0, -5)));
   const adminDir = path.join(root, 'admin');
   const sendPage = (res, file) => res.set('Cache-Control', NO_CACHE).sendFile(file);
+  // Storefront pages go out with their canonical, preview and robots tags (seo.js).
+  const sendSitePage = async (req, res, name) => {
+    const html = await renderPage(path.join(root, name + '.html'), name, req.path === '/' ? '/' : '/' + name, req.query);
+    res.set('Cache-Control', NO_CACHE).type('html').send(html);
+  };
 
   // Crawlers ask for these on every visit; answering saves a stream of 404s.
   router.get('/robots.txt', (req, res) => res.set('Cache-Control', WEEK).type('text')
-    .send('User-agent: *\nDisallow: /admin\nDisallow: /api/\nDisallow: /checkout\nDisallow: /unsubscribe\n'));
+    .send('User-agent: *\nDisallow: /admin\nDisallow: /api/\nDisallow: /checkout\nDisallow: /unsubscribe\nDisallow: /styleguide\n'));
   router.get('/favicon.ico', (req, res) => res.set('Cache-Control', WEEK).redirect(301, '/assets/img/favicon.svg'));
+
+  // Web-sized photos (scripts/images.mjs). If a WebP version hasn't been made
+  // for a photo yet, serve the original instead of a broken image.
+  router.get(/^\/assets\/img\/(.+)-(600|1200)\.webp$/, (req, res, next) => {
+    const want = path.join(root, decodeURIComponent(req.path));
+    if (!want.startsWith(path.join(root, 'assets', 'img') + path.sep) || fs.existsSync(want)) return next();
+    const base = want.replace(/-(600|1200)\.webp$/, '');
+    const original = ['.jpg', '.jpeg', '.png'].map(x => base + x).find(f => fs.existsSync(f));
+    if (!original) return next();
+    res.set('Cache-Control', NO_CACHE).sendFile(original);
+  });
 
   router.use('/assets', express.static(path.join(root, 'assets'), {
     index: false, redirect: false, dotfiles: 'ignore',
@@ -64,13 +81,13 @@ export function staticSite(root) {
   router.get('/{*page}', async (req, res, next) => {
     const qs = req.originalUrl.slice(req.path.length);
     const m = req.path.match(/^\/([\w-]+)(\.html)?$/);
-    if (req.path === '/') return sendPage(res, path.join(root, (await shopOpen()) ? 'store.html' : 'index.html'));
+    if (req.path === '/') return sendSitePage(req, res, (await shopOpen()) ? 'store' : 'index');
     // Open, the store lives at the main address, so /store goes there. Closed, /store stays reachable.
     if (m && m[1] === 'store' && !m[2] && (await shopOpen())) return sendTo(res, '/' + qs);
     if (!m || !pages.has(m[1])) return next();
     if (m[2]) return res.redirect(301, (m[1] === 'index' ? '/' : '/' + m[1]) + qs);
     if (m[1] === 'index') return res.redirect(301, '/' + qs);
-    sendPage(res, path.join(root, m[1] + '.html'));
+    sendSitePage(req, res, m[1]).catch(next);
   });
 
   return router;

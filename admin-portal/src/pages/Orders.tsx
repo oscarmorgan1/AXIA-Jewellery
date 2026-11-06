@@ -72,7 +72,7 @@ export default function Orders() {
             ))}
           </div>
           <span className="spacer" />
-          <div className="search"><Search size={16} /><input placeholder="Search orders, customers, engraving" value={q} onChange={e => setQ(e.target.value)} /></div>
+          <div className="search"><Search size={16} /><input aria-label="Search orders" placeholder="Search orders, customers, engraving" value={q} onChange={e => setQ(e.target.value)} /></div>
         </div>
         {error && <div className="notice notice--error">{error.message}</div>}
         {loading ? <div className="empty">Loading…</div> : <OrdersTable orders={shown} empty={filter === 'open' ? 'Nothing waiting on you. New paid orders land here.' : 'No orders match.'} />}

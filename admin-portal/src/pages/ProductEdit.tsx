@@ -269,7 +269,7 @@ export default function ProductEdit() {
               Advanced: edit raw JSON (bundles, colour photos…)
             </summary>
             <p className="card__sub">Every field the storefront reads. Apply to load it into the form, then Save.</p>
-            <textarea className="textarea textarea--code" value={json} onChange={e => setJson(e.target.value)} spellCheck={false} />
+            <textarea className="textarea textarea--code" aria-label="Product JSON" value={json} onChange={e => setJson(e.target.value)} spellCheck={false} />
             <div style={{ marginTop: 10 }}><button type="button" className="btn btn--sm" onClick={applyJson}>Apply JSON</button></div>
           </details>
         </div>

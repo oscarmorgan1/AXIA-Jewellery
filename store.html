@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AXIA | The Cuban</title>
-<meta name="description" content="AXIA. The Cuban and the full moissanite collection. 925 sterling silver, hand-set VVS D-colour moissanite, shipped worldwide.">
+<title>AXIA | Moissanite Jewellery in Sterling Silver</title>
+<meta name="description" content="Shop AXIA: Cuban chains, tennis bracelets and pendants in 925 sterling silver, hand-set with VVS D-colour moissanite. Made to order, shipped worldwide.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="assets/css/tokens.css?v=20260930a">
 <link rel="stylesheet" href="assets/css/axia.css?v=20260930a">
@@ -329,7 +329,7 @@
     const meta=(p.col&&p.col.length>1)?p.col.join(' / '):'925 silver';
     const bdg=p.badge?('<span class="'+(p.badge==='Bestseller'?'tag tag--new card__tag':'tag card__tag')+'"'+(p.badge==='Bestseller'?'':' style="border-color:var(--ice);color:var(--ice)"')+'>'+p.badge+'</span>'):'';
     const ph=(p.images&&p.images[0])||(p.imagesByColor&&(Object.values(p.imagesByColor).find(a=>a&&a.length)||[])[0])||(p.widths&&((p.widths.find(w=>w.image)||{}).image))||'';
-    const media=(p.showBoth&&p.images&&p.images.length>=2)?'<div class="card__split">'+p.images.slice(0,2).map(im=>'<img src="'+im+'" alt="'+p.name+'" loading="lazy">').join('')+'</div>':(ph?'<img class="card__photo" src="'+ph+'" alt="'+p.name+'" loading="lazy">':'<svg class="card__art" viewBox="'+vb+'" data-cg="'+gen+'"></svg>');
+    const media=(p.showBoth&&p.images&&p.images.length>=2)?'<div class="card__split">'+p.images.slice(0,2).map(im=>'<img '+AXIA_IMG(im,'(max-width: 760px) 25vw, 17vw')+' alt="'+p.name+'" loading="lazy">').join('')+'</div>':(ph?'<img class="card__photo" '+AXIA_IMG(ph)+' alt="'+p.name+'" loading="lazy">':'<svg class="card__art" viewBox="'+vb+'" data-cg="'+gen+'"></svg>');
     return '<a class="card" href="'+(p.linkTo||'product?id='+p.id)+'"><div class="card__media">'+bdg+media+'<span class="card__edge"></span></div><div class="card__body"><div class="card__name">'+p.name+(p.width?', '+p.width:'')+'</div><div class="card__meta">'+meta+'</div><div class="card__price num'+(deal?' card__price--deal':'')+'">'+price+'</div></div></a>';
   }
   const fill=(sel,list)=>{const el=$(sel); if(el) el.innerHTML=list.map(card).join('');};

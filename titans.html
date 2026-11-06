@@ -141,6 +141,10 @@
   .thero__scroll{display:inline-flex;flex-direction:column;align-items:center;gap:.55rem;margin-top:clamp(1.7rem,4vw,2.8rem);font-size:var(--t-label);letter-spacing:.24em;text-transform:uppercase;color:var(--on-dark-3);transition:color var(--dur-2,.3s) var(--ease,ease)}
   .thero__scroll svg{width:22px;height:22px;stroke:var(--ice);fill:none;stroke-width:1.4;animation:theroBob 2.2s ease-in-out infinite}
   .thero__scroll:hover{color:var(--ice)}
+  /* Keep the copy readable where it sits over the chain photo */
+  .thero__eye.eyebrow--ice{color:var(--ice)}
+  .thero__eye,.thero__sub,.thero__scroll{text-shadow:0 1px 3px rgba(8,10,14,.85),0 0 18px rgba(8,10,14,.75)}
+  @media(max-width:760px){.thero__chain{opacity:.26}.thero__vignette{background:radial-gradient(90% 70% at 50% 50%,rgba(8,10,14,.5) 0%,rgba(8,10,14,.72) 100%)}}
   @keyframes theroBob{0%,100%{transform:translateY(0);opacity:.65}50%{transform:translateY(5px);opacity:1}}
   /* staggered entrance */
   .thero__eye,.thero__title,.thero__sub,.thero__scroll{opacity:0;transform:translateY(28px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1)}
@@ -267,7 +271,7 @@
     const lengths=p.variants.map(v=>v.length).join(', ');
     const photo=(p.images&&p.images[0])||(p.imagesByColor&&Object.values(p.imagesByColor)[0]&&Object.values(p.imagesByColor)[0][0])||'';
     const lock=`<div class="ttn-lock"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span class="d">Soon</span><span class="s">Coming soon</span></div>`;
-    const stage=(photo?`<img class="ttn-photo" src="${photo}" alt="${p.name}" loading="lazy">`:`<svg viewBox="0 0 1000 620" data-tt></svg>`)+lock;
+    const stage=(photo?`<img class="ttn-photo" ${AXIA_IMG(photo,'(max-width: 760px) 100vw, 50vw')} alt="${p.name}" loading="lazy">`:`<svg viewBox="0 0 1000 620" data-tt></svg>`)+lock;
     return `<article class="ttn-row ttn-row--locked reveal">
       <div class="ttn-stage">${stage}</div>
       <div class="ttn-copy">

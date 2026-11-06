@@ -87,7 +87,7 @@ export default function CommandPalette({ open, onClose, products, collections, s
       <div className="overlay" onClick={onClose} />
       <div className="palette" role="dialog" aria-label="Search">
         <div className="palette__input"><Search size={18} />
-          <input ref={input} autoFocus value={q} onChange={e => setQ(e.target.value)} onKeyDown={onKey} placeholder="Search orders, customers, engraving, products, codes…" />
+          <input ref={input} aria-label="Search" autoFocus value={q} onChange={e => setQ(e.target.value)} onKeyDown={onKey} placeholder="Search orders, customers, engraving, products, codes…" />
           <kbd style={{ fontSize: 11, color: 'var(--faint)' }}>esc</kbd>
         </div>
         <div className="palette__list">

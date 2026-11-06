@@ -7,8 +7,8 @@
    (the launch countdown, from site/countdown, and whether the shop is
    open, from site/shop) into window.AXIA_SITE,
    with window.AXIA_CD.run() to drive the countdown on any page, and
-   provides window.AXIA_DB.add() so the public forms can save sign-ups
-   and messages to Firestore. Counts unique daily visitors (see trackVisit).
+   provides window.AXIA_DB.signup() for the waitlist forms (saved by the
+   server, /api/signup). Counts unique daily visitors (see trackVisit).
 
    Page scripts that read the catalogue are marked
    <script type="text/axia-deferred"> and run here, in document order,
@@ -166,53 +166,52 @@
     }, Promise.resolve());
   }
 
-  /* ---- Public form writes (sign-ups, support messages) ----
-     Creates one document with a random id; createdAt is stamped by the server.
-     Security rules only allow creating entries with the expected fields. */
-  function enc(v) {
-    if (v === null || v === undefined) return { nullValue: null };
-    if (typeof v === 'boolean') return { booleanValue: v };
-    if (typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
-    return { stringValue: String(v) };
-  }
+  /* ---- Public forms: sign-ups, support messages and visits all go through
+     the server (/api/...), which rate limits them; Firestore is closed to
+     public writes. ---- */
   function randomId() {
     var a = new Uint8Array(15), abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', out = '';
     (window.crypto || window.msCrypto).getRandomValues(a);
     for (var i = 0; i < a.length; i++) out += abc[a[i] % abc.length];
     return out + Date.now().toString(36);
   }
+  /* ---- Web-sized photos ----
+     AXIA_IMG(src, sizes) returns the src/srcset/sizes attributes for an <img>.
+     Site photos (assets/img/....jpg) get their 600px and 1200px WebP versions
+     (made by `npm run images`); anything else, such as photos uploaded in the
+     portal, is used as it is. */
+  var CARD_SIZES = '(max-width: 760px) 50vw, 33vw';
+  function imgBase(src) {
+    var m = /^(\/?assets\/img\/[^?#"]+)\.(jpe?g|png)$/i.exec(String(src || ''));
+    return m && !/logo/i.test(m[1]) ? m[1] : null;
+  }
+  window.AXIA_IMG = function (src, sizes) {
+    var q = function (v) { return String(v || '').replace(/"/g, '&quot;'); };
+    var b = imgBase(src);
+    if (!b) return 'src="' + q(src) + '"';
+    b = q(b);
+    return 'src="' + b + '-1200.webp" srcset="' + b + '-600.webp 600w, ' + b + '-1200.webp 1200w" sizes="' + (sizes || CARD_SIZES) + '"';
+  };
+  /* The URL of one size (600 or 1200), e.g. for preloading. */
+  window.AXIA_IMG.url = function (src, w) { var b = imgBase(src); return b ? b + '-' + (w || 1200) + '.webp' : src; };
+  /* Swaps the photo on an existing <img> (srcset wins over src, so both change). */
+  window.AXIA_IMG.set = function (img, src, sizes) {
+    var b = imgBase(src);
+    if (!b) { img.removeAttribute('srcset'); img.src = src; return; }
+    img.sizes = sizes || img.getAttribute('sizes') || CARD_SIZES;
+    img.srcset = b + '-600.webp 600w, ' + b + '-1200.webp 1200w';
+    img.src = b + '-1200.webp';
+  };
+
   window.AXIA_DB = {
-    add: function (collection, data, id) {
-      var fields = {};
-      Object.keys(data).forEach(function (k) { if (data[k] !== undefined) fields[k] = enc(data[k]); });
-      var name = 'projects/' + PROJECT + '/databases/(default)/documents/' + collection + '/' + (id || randomId());
-      var body = { writes: [{
-        update: { name: name, fields: fields },
-        currentDocument: { exists: false },
-        updateTransforms: [{ fieldPath: 'createdAt', setToServerValue: 'REQUEST_TIME' }]
-      }] };
-      var wbase = source === 'static' ? 'https://firestore.googleapis.com/v1' : base;
-      var wkey = source === 'emulator' ? '' : '?key=' + API_KEY;
-      return fetch(wbase + '/projects/' + PROJECT + '/databases/(default)/documents:commit' + wkey, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-      }).then(function (r) {
-        if (!r.ok) return r.text().then(function (t) { throw new Error('Save failed (' + r.status + '): ' + t.slice(0, 200)); });
-        return true;
-      });
-    },
-    /* Waitlist sign-up through the server, which also sends the welcome email
-       with the first-order code. Falls back to saving straight to Firestore if
-       the server can't be reached (e.g. the static site), just without the email. */
+    /* Waitlist sign-up through the server, which saves it and sends the
+       welcome email with the first-order code. */
     signup: function (data) {
-      var self = this;
       return fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
         .then(function (r) {
           if (r.ok) return true;
-          if (r.status >= 400 && r.status < 500 && r.status !== 404) {
-            return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.error || 'Sign-up failed (' + r.status + ')'); });
-          }
-          return self.add('signups', data);
-        }, function () { return self.add('signups', data); });
+          return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.error || 'Sign-up failed (' + r.status + ')'); });
+        });
     }
   };
 
@@ -312,10 +311,10 @@
       var ref = '';
       try { var r = document.referrer && new URL(document.referrer); if (r && r.host !== location.host) ref = r.host.replace(/^www\./, '').slice(0, 100); } catch (e) {}
       var w = Math.min(screen.width, screen.height), touch = matchMedia('(pointer: coarse)').matches;
-      window.AXIA_DB.add('visits', {
-        day: day, vid: vid, page: (location.pathname || '/').slice(0, 200), ref: ref,
+      fetch('/api/visit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true, body: JSON.stringify({
+        vid: vid, page: (location.pathname || '/').slice(0, 200), ref: ref,
         device: !touch ? 'desktop' : w < 600 ? 'mobile' : 'tablet'
-      }, day + '_' + vid).catch(function () {});
+      }) }).catch(function () {});
     } catch (e) {}
   }
   if ('requestIdleCallback' in window) requestIdleCallback(trackVisit, { timeout: 4000 }); else setTimeout(trackVisit, 1500);

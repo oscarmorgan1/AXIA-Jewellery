@@ -379,3 +379,10 @@ body.promo-open{overflow:hidden}
 .promo__reg:hover{filter:brightness(1.07);transform:translateY(-1px)}
 .promo__no{background:transparent;border:0;color:var(--on-dark-3);font-size:.82rem;cursor:pointer;padding:.35em;text-decoration:underline;text-underline-offset:3px;transition:color var(--dur-2) var(--ease)}
 .promo__no:hover{color:var(--on-dark-2)}
+
+/* Visible to screen readers and search engines only */
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* Comfortable tap areas on phones without changing the look */
+[data-cart-close],[data-menu-close]{min-width:44px;min-height:44px;display:inline-grid;place-items:center}
+.link-u{padding-top:4px}

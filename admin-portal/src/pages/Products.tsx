@@ -59,7 +59,7 @@ export default function Products() {
           </select>
           <span className="spacer" />
           <div className="search"><Search size={16} />
-            <input placeholder="Search" value={q} onChange={e => setParams(e.target.value ? { q: e.target.value } : {}, { replace: true })} />
+            <input aria-label="Search products" placeholder="Search" value={q} onChange={e => setParams(e.target.value ? { q: e.target.value } : {}, { replace: true })} />
           </div>
         </div>
         {error && <div className="notice notice--error">{error.message}</div>}
