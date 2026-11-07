@@ -93,7 +93,12 @@ export interface OrderItem {
 }
 
 export interface OrderEmail { type: string; to: string; subject: string; resendId: string | null; status: 'sent' | 'skipped'; sentAt?: Stamp; body?: string; by?: string; inquiryId?: string; orderId?: string }
-export interface OrderHistory { status: string; at?: Stamp; by: string; emailed?: boolean; note?: string; tracking?: Tracking }
+export interface OrderHistory {
+  status: string; at?: Stamp; by: string; emailed?: boolean; note?: string; tracking?: Tracking;
+  /** status 'piece_swapped': an exchange's replacement took a returned piece's place (server/returns.js). */
+  returnId?: string; returnNumber?: string;
+  swaps?: { line: number; productName: string; from: string | null; fromSerial: string | null; to: string; toSerial: string }[];
+}
 export interface Tracking { carrier?: string; number?: string; url?: string }
 
 export interface Order {
@@ -354,7 +359,16 @@ export interface Piece {
   returnId?: string | null;
   /** Date it came back in a closed return, YYYY-MM-DD, and each return it's been in. */
   returnedOn?: string | null;
-  returns?: { returnId: string; number: string; orderId: string; orderNumber: string; on: string }[];
+  returns?: {
+    returnId: string; number: string; orderId: string; orderNumber: string;
+    /** The day it came back into stock. */
+    on: string;
+    /** Recorded from the return-to-stock change on: when that order shipped it, the goal, and who owned it then. */
+    shippedOn?: string | null; outcome?: 'refund' | 'exchange';
+    owners?: { uid?: string | null; email: string; via: 'order' | 'transfer'; transferId?: string; at?: Ts | null }[];
+    /** It had gone out as the replacement for this piece (key). */
+    wasReplacementFor?: string | null;
+  }[];
   notes?: string;
   createdAt?: Ts;
   updatedAt?: Ts;

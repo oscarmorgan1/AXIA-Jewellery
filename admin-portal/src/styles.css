@@ -650,6 +650,13 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--text-md);
 .timeline li:first-child::before { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .timeline small { color: var(--muted); font-size: 12.5px; }
 .timeline p { margin: 4px 0 0; font-size: 13.5px; }
+/* Piece history: oldest first, so the latest (last) entry is the highlighted one. */
+.timeline--compact { gap: 10px; margin: 6px 0 4px; font-weight: 400; color: var(--ink); }
+.timeline--compact li:first-child::before { background: var(--obsidian); box-shadow: none; }
+.timeline--compact li:last-child::before { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.timeline--compact li.is-muted::before { background: var(--line); }
+.timeline--compact li.is-warn::before { background: var(--warn, #b7791f); }
+.timeline--compact a { color: var(--accent); }
 .kv--left dd { text-align: left; overflow-wrap: anywhere; }
 .kv--left { grid-template-columns: auto 1fr; }
 .address { font-style: normal; font-size: 14px; line-height: 1.55; }

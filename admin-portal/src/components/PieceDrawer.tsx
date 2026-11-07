@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import type { ReactNode } from 'react';
 import { Search, Shuffle } from 'lucide-react';
 import Drawer from './Drawer';
 import { useProducts, useSuppliers } from '../lib/data';
@@ -99,6 +100,53 @@ const blank = (item?: OrderItem): PieceDraft => ({
   receivedOn: item ? '' : today(), shippedOn: '', notes: '',
 });
 
+type Owner = { email: string; via: 'order' | 'transfer'; at?: { toDate(): Date } | null };
+const tsDate = (at?: { toDate(): Date } | null) => at ? at.toDate().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+
+/**
+ * Everything that has happened to a piece, oldest first: made, each order it went out
+ * on, who owned it (transfers), each return and what replaced it, and where it is now.
+ * Built from the piece itself (`returns`, `owners`, `replaces`), so nothing is stored twice.
+ */
+function PieceHistory({ piece, pieces }: { piece: Piece; pieces: Piece[] }) {
+  const serial = (key?: string | null) => (key && pieces.find(p => p.key === key)?.serial) || key || 'a piece';
+  const ev: { when: string; body: ReactNode; tone?: 'muted' | 'warn' }[] = [];
+  const owners = (list: Owner[] | undefined) => (list || []).forEach(o => ev.push({
+    when: tsDate(o.at),
+    body: o.via === 'order' ? <>Bought by <Link to={`/customers/${encodeURIComponent(o.email)}`}>{o.email}</Link></> : <>Transferred to <Link to={`/customers/${encodeURIComponent(o.email)}`}>{o.email}</Link></>,
+  }));
+  const sent = (orderId: string, orderNumber: string, shippedOn: string | null | undefined, wasFor: string | null | undefined, retId?: string | null) => ev.push({
+    when: shortDate(shippedOn) === '–' ? '' : shortDate(shippedOn),
+    body: wasFor || retId
+      ? <>Sent on order <Link to={`/orders/${encodeURIComponent(orderId)}`}>#{orderNumber}</Link> as the replacement for <b className="mono">{serial(wasFor)}</b>{retId ? <> (<Link to={`/returns/${encodeURIComponent(retId)}`}>exchange</Link>)</> : null}</>
+      : <>{shippedOn ? 'Sent' : 'Assigned'} on order <Link to={`/orders/${encodeURIComponent(orderId)}`}>#{orderNumber}</Link></>,
+  });
+
+  ev.push({ when: shortDate(piece.purchasedOn), body: <>Ordered from {piece.supplier || 'the maker'}{piece.supplierOrderNo ? ` (No. ${piece.supplierOrderNo})` : ''}</> });
+  if (piece.receivedOn) ev.push({ when: shortDate(piece.receivedOn), body: 'Received from the maker' });
+  for (const r of piece.returns || []) {
+    sent(r.orderId, r.orderNumber, r.shippedOn, r.wasReplacementFor, null);
+    owners(r.owners);
+    const by = pieces.find(p => p.replaces === piece.key && (p.replacesReturnId === r.returnId || p.returns?.some(x => x.wasReplacementFor === piece.key)));
+    ev.push({ when: shortDate(r.on), body: <>Returned in <Link to={`/returns/${encodeURIComponent(r.returnId)}`}>{r.number}</Link>
+      {r.outcome === 'exchange' ? <> for an exchange{by ? <>, replaced by <b className="mono">{by.serial}</b></> : null}</> : r.outcome === 'refund' ? ' for a refund' : null}. Back in stock.</> });
+  }
+  if (piece.orderId) {
+    sent(piece.orderId, piece.orderNumber || '', piece.shippedOn, piece.replaces, piece.replacesReturnId);
+    owners(piece.owners);
+  }
+  if (piece.transfer) ev.push({ when: '', tone: 'muted', body: <>Transfer to {piece.transfer.toEmail} waiting for them to accept{piece.transfer.expiresAt ? `, until ${tsDate(piece.transfer.expiresAt)}` : ''}</> });
+  if (piece.returnId) ev.push({ when: '', tone: 'warn', body: <>In a <Link to={`/returns/${encodeURIComponent(piece.returnId)}`}>return</Link> now</> });
+
+  return (
+    <div className="field">Piece history
+      <ol className="timeline timeline--compact">
+        {ev.map((e, i) => <li key={i} className={e.tone ? `is-${e.tone}` : undefined}><span>{e.body}</span>{e.when && <small>{e.when}</small>}</li>)}
+      </ol>
+    </div>
+  );
+}
+
 /** Add a piece to the registry, or edit one. */
 export function PieceDrawer({ piece, pieces, onClose, onDone }: {
   piece?: Piece; pieces: Piece[]; onClose: () => void; onDone: (msg: string) => void;
@@ -156,20 +204,7 @@ export function PieceDrawer({ piece, pieces, onClose, onDone }: {
           </> : <span className="muted">Not tied to an order. Assign it from the order page.</span>}
         </div>
       )}
-      {piece && (piece.owners?.length || piece.transfer) && (
-        <div className="field">Owners
-          <ol className="owners">
-            {(piece.owners || []).map((o, i) => (
-              <li key={i}>
-                <Link to={`/customers/${encodeURIComponent(o.email)}`}>{o.email}</Link>
-                <small className="muted">{o.via === 'order' ? ` bought it${piece.orderNumber ? ` (order #${piece.orderNumber})` : ''}` : ` by transfer${o.at ? `, ${o.at.toDate().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}`}</small>
-              </li>
-            ))}
-            {piece.transfer && <li><span>{piece.transfer.toEmail}</span><small className="muted"> transfer waiting for them to accept{piece.transfer.expiresAt ? `, until ${piece.transfer.expiresAt.toDate().toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : ''}</small></li>}
-          </ol>
-          <small className="muted">Customers transfer pieces from their account. /genuine never shows who owns a piece.</small>
-        </div>
-      )}
+      {piece && <PieceHistory piece={piece} pieces={pieces} />}
       {piece && isMaking(piece) && (
         <div className="piece-link">
           <span className="chip chip--warn">With maker</span>

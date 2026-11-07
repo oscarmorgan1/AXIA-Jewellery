@@ -351,7 +351,8 @@ export default function OrderDetail() {
               <ol className="timeline">
                 {history.map((h, n) => (
                   <li key={n}>
-                    <b>{STATUS_LABEL[h.status] || h.status}</b>
+                    <b>{h.status === 'piece_swapped' ? 'Piece exchanged' : STATUS_LABEL[h.status] || h.status}</b>
+                    {h.swaps?.map((x, i) => <small key={i}>Serial <span className="mono">{x.fromSerial || 'without a serial'}</span> replaced by <span className="mono">{x.toSerial}</span> ({x.productName}){h.returnId ? <> · <Link to={`/returns/${encodeURIComponent(h.returnId)}`}>{h.returnNumber || 'return'}</Link></> : null}</small>)}
                     <small>{when(h.at)} · {h.by === 'stripe' ? 'Stripe' : h.by}{h.emailed ? ' · customer emailed' : ''}</small>
                     {h.tracking?.number && <small>Tracking: {h.tracking.carrier} {h.tracking.number}</small>}
                     {h.note && <p>“{h.note}”</p>}
