@@ -32,6 +32,8 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => onAuthStateChanged(auth, u => {
     setUser(u); setAccount(null); setError(null);
+    // Tells the storefront (assets/js/axia.js) to show the signed-in dot and sync the bag.
+    try { if (u) localStorage.setItem('axia_account', '1'); else localStorage.removeItem('axia_account'); } catch { /* storage blocked */ }
     setLoading(!!u);
     if (!u) setLoading(false);
   }), []);

@@ -3,16 +3,7 @@ import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { connectStorageEmulator, getStorage } from 'firebase/storage';
 
-// Public web config (safe to ship: access is enforced by Auth + security rules).
-const firebaseConfig = {
-  apiKey: 'AIzaSyAXFXM3znoKUCD2ZPFfB8saBwV9r4eKItA',
-  authDomain: 'axia-jewellery.firebaseapp.com',
-  projectId: 'axia-jewellery',
-  storageBucket: 'axia-jewellery.firebasestorage.app',
-  messagingSenderId: '1028035994102',
-  appId: '1:1028035994102:web:bf9d61e9af5db0ace527d7',
-  measurementId: 'G-CEJCB75B6B',
-};
+import { firebaseConfig } from './firebaseConfig';
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);

@@ -13,9 +13,12 @@ export default defineConfig({
   build: {
     outDir: '../../portal', emptyOutDir: true, chunkSizeWarningLimit: 600,
     rollupOptions: {
+      // sync.ts is the storefront's saved-bag sync, loaded by assets/js/axia.js
+      // from a fixed address (/portal/sync.js), so it isn't hashed.
+      input: { index: 'portal/index.html', sync: 'portal/sync.ts' },
       output: {
-        manualChunks: (id: string) => /node_modules\/(@firebase|firebase)\//.test(id) ? 'firebase'
-          : /node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(id) ? 'react' : undefined,
+        entryFileNames: chunk => chunk.name === 'sync' ? 'sync.js' : 'assets/[name]-[hash].js',
+        manualChunks: (id: string) => /node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(id) ? 'react' : undefined,
       },
     },
   },

@@ -4,7 +4,8 @@ import Logo from '../src/components/Logo';
 import Login from './pages/Login';
 import Claim from './pages/Claim';
 import Reset from './pages/Reset';
-import AccountPage from './pages/Account';
+import { AddressPage, DetailsPage, EmailsPage, SecurityPage } from './pages/Account';
+import Bag from './pages/Bag';
 import Layout from './Layout';
 
 function Loading() {
@@ -35,8 +36,12 @@ export default function App() {
   return (
     <Layout>
       <Routes>
-        <Route path="/account" element={<AccountPage />} />
-        <Route path="*" element={<Navigate to="/account" replace />} />
+        <Route path="/bag" element={<Bag />} />
+        <Route path="/details" element={<DetailsPage />} />
+        <Route path="/address" element={<AddressPage />} />
+        <Route path="/emails" element={<EmailsPage />} />
+        <Route path="/security" element={<SecurityPage />} />
+        <Route path="*" element={<Navigate to="/details" replace />} />
       </Routes>
     </Layout>
   );

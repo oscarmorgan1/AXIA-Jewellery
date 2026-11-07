@@ -201,6 +201,8 @@ At cutover, add a live-mode webhook endpoint in Stripe with the same URL and eve
 
 Customers get an account at `/portal` (source in `admin-portal/portal/`, built to `/portal` by `npm run build`; it shares the admin's sign-in design and styles but none of its code). When an order is paid and that email has no account yet, the webhook sends a separate "Claim your AXIA account" email with a link to `/portal/claim?t=…` (works for 30 days; an expired link offers a fresh one). Claiming sets a password and the "new drops and offers" choice, which uses the same `unsubscribed` flag as the unsubscribe link. Customers can also sign in with Google using the same email. Forgot password emails a link to `/portal/reset` through Resend.
 
+The portal has a sidebar: Saved bag, Details, Address, Emails and Sign-in. The person icon in the store header opens `/portal` (with a dot once signed in). Signed in, the bag is saved to the account (`accounts/{uid}/saved/cart`, through `/api/account/cart`) by `/portal/sync.js` (source `admin-portal/portal/sync.ts`), which `assets/js/axia.js` loads only for signed-in visitors: the first sync on a browser merges the guest bag with the saved one, then the most recently changed bag wins, so checking out on one device empties it everywhere.
+
 Admins can send or resend an invite from a customer's page (Portal account card). Customers who ordered before accounts launched aren't invited automatically.
 
 Locally, with no Resend key, `npm run serve` prints invite and reset links in its terminal. Develop the portal with `npm --prefix admin-portal run dev:portal` (http://127.0.0.1:5174/portal/). Rules tests: `npm run test:rules` (needs Java for the emulator).

@@ -28,7 +28,7 @@ export default function Reset() {
       await confirmPasswordReset(auth, code, password);
       if (auth.currentUser) await signOut(auth);
       await signInWithEmailAndPassword(auth, email!, password);
-      nav('/account', { replace: true });
+      nav('/details', { replace: true });
     } catch (err) {
       const c = (err as { code?: string }).code || '';
       setError(c === 'auth/weak-password' ? 'Choose a longer password.' : c === 'auth/expired-action-code' || c === 'auth/invalid-action-code'

@@ -19,6 +19,8 @@
 //   POST /api/account/session         signed in: makes sure accounts/{uid} exists
 //   POST /api/account/profile         signed in: name, phone, address
 //   POST /api/account/marketing       signed in: news and offers on or off
+//   POST /api/account/cart/get        signed in: their saved bag
+//   POST /api/account/cart            signed in: saves the bag (accounts/{uid}/saved/cart)
 import express from 'express';
 import { createHash, randomBytes } from 'node:crypto';
 import { getAuth } from 'firebase-admin/auth';
@@ -157,6 +159,23 @@ function cleanAddress(a) {
   return out.line1 || out.city || out.postal_code ? out : null;
 }
 
+const MAX_LINES = 40;
+const num = (v, min, max) => { const n = Number(v); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : min; };
+const imgPath = v => { const t = str(v, 400); return /^(assets\/|\/assets\/|https:\/\/)[^"'<>\s]*$/.test(t) ? t : ''; };
+
+/**
+ * The storefront bag (assets/js/axia.js lines), cleaned. It's only a saved list:
+ * checkout prices every line again on the server (server/pricing.js).
+ */
+export function cleanCart(lines) {
+  if (!Array.isArray(lines)) return [];
+  return lines.slice(0, MAX_LINES).filter(l => l && typeof l === 'object' && str(l.name, 160)).map(l => ({
+    id: str(l.id, 100), name: str(l.name, 160), price: Math.round(num(l.price, 0, 100000) * 100) / 100, opt: str(l.opt, 200),
+    img: imgPath(l.img), width: str(l.width, 40), length: str(l.length, 40), colour: str(l.colour, 40), engraving: str(l.engraving, 60),
+    q: Math.round(num(l.q, 1, 20)),
+  }));
+}
+
 export function accountRoutes() {
   const router = express.Router();
   const json = express.json({ limit: '8kb' });
@@ -230,7 +249,7 @@ export function accountRoutes() {
     return { ok: true };
   }));
 
-  router.use(['/api/account/session', '/api/account/profile', '/api/account/marketing'], json, requireCustomer);
+  router.use(['/api/account/session', '/api/account/profile', '/api/account/marketing', '/api/account/cart'], express.json({ limit: '64kb' }), requireCustomer);
 
   router.post('/api/account/session', handle(async req => {
     await ensureAccount(req.customer.uid, req.customer.email, { name: req.customer.name });
@@ -261,6 +280,21 @@ export function accountRoutes() {
     await setSubscribed(email, on, 'portal');
     await db.collection('accounts').doc(uid).update({ marketing: { email: on }, updatedAt: FieldValue.serverTimestamp() });
     return { ok: true };
+  }));
+
+  // The saved bag. `at` is when the bag last changed on the device that sent it,
+  // so the newest bag wins when they shop on more than one device.
+  const cartRef = uid => db.collection('accounts').doc(uid).collection('saved').doc('cart');
+  router.post('/api/account/cart/get', handle(async req => {
+    const snap = await cartRef(req.customer.uid).get();
+    return snap.exists ? { lines: cleanCart(snap.get('lines')), at: Number(snap.get('at')) || 0 } : { lines: [], at: 0 };
+  }));
+  router.post('/api/account/cart', handle(async req => {
+    const b = req.body || {};
+    const lines = cleanCart(b.lines);
+    const at = Math.min(Number(b.at) || Date.now(), Date.now() + 5 * 60 * 1000);
+    await cartRef(req.customer.uid).set({ lines, at, updatedAt: FieldValue.serverTimestamp() });
+    return { ok: true, at };
   }));
 
   return router;

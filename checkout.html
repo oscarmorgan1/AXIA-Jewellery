@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="assets/css/tokens.css?v=20260930a">
-<link rel="stylesheet" href="assets/css/axia.css?v=20261106a">
+<link rel="stylesheet" href="assets/css/axia.css?v=20261107b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111315'/%3E%3Cg fill='%23F4F1EA'%3E%3Cpolygon points='16,5 6,27 9.5,27'/%3E%3Cpolygon points='16,5 22.5,27 26,27'/%3E%3Crect x='9' y='20.4' width='14' height='1.7'/%3E%3C/g%3E%3C/svg%3E">
 <style>
   body{background:var(--bone-2)}
@@ -221,7 +221,7 @@
       if(o.status!=='complete'){ // back from Stripe without paying: show the bag again
         history.replaceState(null,'',location.pathname); location.reload(); return;
       }
-      try{ localStorage.setItem(KEY,'[]'); }catch(e){}
+      try{ localStorage.setItem(KEY,'[]'); localStorage.setItem('axia_cart_at',String(Date.now())); }catch(e){}
       if(!o.paid) $('#doneLine').innerHTML='Thank you. We\'ll email <span id="doneEmail">you</span> as soon as your payment clears.';
       if(o.email) $('#doneEmail').textContent=o.email;
       $('#doneNo').textContent='#'+o.orderNumber; $('#doneNoWrap').hidden=false;
@@ -232,7 +232,7 @@
         '<div class="co-total"><span class="l">Total paid</span><span class="v">'+fmtA(o.totalAUD)+'</span></div>';
     }catch(e){
       $('#doneLine').textContent='Thank you. Your payment went through and a confirmation email is on its way.';
-      try{ localStorage.setItem(KEY,'[]'); }catch(e){}
+      try{ localStorage.setItem(KEY,'[]'); localStorage.setItem('axia_cart_at',String(Date.now())); }catch(e){}
     }
     window.scrollTo(0,0);
   }
