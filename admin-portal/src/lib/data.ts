@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { collection, doc, onSnapshot, query, where, type DocumentData } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Collection, CostAssumptions, Message, Order, Piece, Product, Supplier, ProductCost, Signup, Countdown, ShopSettings, SiteMedia, Visit } from '../types';
+import type { Collection, CostAssumptions, Message, Order, Piece, Product, Supplier, ProductCost, Signup, Countdown, ShopSettings, SiteMedia, Visit, ReviewVideo } from '../types';
 import { DEFAULT_ASSUMPTIONS } from './economics';
 
 interface Live<T> { data: T; loading: boolean; error: Error | null }
@@ -72,6 +72,20 @@ export function useSiteMedia(): Live<SiteMedia> {
   useEffect(() => onSnapshot(
     doc(db, 'site', 'media'),
     snap => setState({ data: (snap.data() as SiteMedia | undefined) || {}, loading: false, error: null }),
+    error => setState(s => ({ ...s, loading: false, error })),
+  ), []);
+  return state;
+}
+
+/** The review videos every product page shows (`site/reviews`), in order. */
+export function useReviewVideos(): Live<ReviewVideo[]> & { saved: boolean } {
+  const [state, setState] = useState<Live<ReviewVideo[]> & { saved: boolean }>({ data: [], loading: true, error: null, saved: false });
+  useEffect(() => onSnapshot(
+    doc(db, 'site', 'reviews'),
+    snap => {
+      const list = snap.get('videos');
+      setState({ data: Array.isArray(list) ? list.filter((v: ReviewVideo) => v && v.src) : [], loading: false, error: null, saved: snap.exists() });
+    },
     error => setState(s => ({ ...s, loading: false, error })),
   ), []);
   return state;
