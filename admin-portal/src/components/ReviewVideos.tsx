@@ -5,6 +5,7 @@ import { db, siteUrl } from '../firebase';
 import { uploadVideo, type VideoStage } from '../lib/video';
 import type { Product, ReviewVideo } from '../types';
 import VideoProgress from './VideoProgress';
+import { useConfirm } from './Confirm';
 
 type Made = ReviewVideo & { sizeBytes: number; trimmed: boolean };
 
@@ -22,6 +23,7 @@ export function saveReviewVideos(videos: ReviewVideo[]) {
  */
 export default function ReviewVideos({ videos, products, onError }: { videos: ReviewVideo[]; products: Product[]; onError: (msg: string) => void }) {
   const input = useRef<HTMLInputElement>(null);
+  const confirm = useConfirm();
   const [stage, setStage] = useState<VideoStage>('');
   const [progress, setProgress] = useState(0);
   const [note, setNote] = useState('');
@@ -48,8 +50,8 @@ export default function ReviewVideos({ videos, products, onError }: { videos: Re
     } catch (e) { onError(`Couldn’t update the review videos: ${(e as Error).message}`); }
   }
 
-  function remove(i: number) {
-    if (!confirm('Remove this review video? It comes off every product page.')) return;
+  async function remove(i: number) {
+    if (!(await confirm({ title: 'Remove this review video?', body: 'It comes off every product page.', tone: 'danger', confirmLabel: 'Remove video' }))) return;
     commit(videos.filter((_, k) => k !== i), 'Review video removed.');
   }
 

@@ -3,13 +3,16 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './auth';
 import App from './App';
+import { ConfirmProvider } from './components/Confirm';
 import './styles.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
       <BrowserRouter basename="/admin">
-        <App />
+        <ConfirmProvider>
+          <App />
+        </ConfirmProvider>
       </BrowserRouter>
     </AuthProvider>
   </StrictMode>,
