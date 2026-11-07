@@ -143,7 +143,6 @@ function PieceHistory({ piece, pieces }: { piece: Piece; pieces: Piece[] }) {
       <ol className="timeline timeline--compact">
         {ev.map((e, i) => <li key={i} className={e.tone ? `is-${e.tone}` : undefined}><span>{e.body}</span>{e.when && <small>{e.when}</small>}</li>)}
       </ol>
-      <small className="muted">/genuine never shows who owns a piece or its history.</small>
     </div>
   );
 }
