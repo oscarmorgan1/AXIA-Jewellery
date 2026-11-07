@@ -13,6 +13,7 @@ import { createHash } from 'node:crypto';
 import { videoUploadUrl, processVideo, resetVideo } from './media.js';
 import { STATUS_EMAILS, statusEmail, messageEmail, sendEmail } from './email.js';
 import { isVerifiedAdmin } from './twofactor.js';
+import { sydneyDay } from './forms.js';
 import { emailEntry, historyEntry, push, upsertCustomer, customerId } from './orders.js';
 
 /** Statuses an admin can set. `refunded` only comes from Stripe, with the money. */
@@ -79,7 +80,23 @@ async function changeStatus(req) {
     emailed: !!(email && email.resendId), ...(note ? { note } : {}), ...(tracking ? { tracking } : {}),
   }));
   await ref.update(update);
-  return { status, email: email && { resendId: email.resendId, status: email.status } };
+  const pieces = status === 'shipped' ? await markPiecesShipped(ref.id) : 0;
+  return { status, pieces, email: email && { resendId: email.resendId, status: email.status } };
+}
+
+/**
+ * The ship date on each registry piece assigned to the order (pieces/{key}),
+ * the day it's marked shipped. Pieces that already have a date keep it.
+ */
+async function markPiecesShipped(orderId) {
+  const snap = await db.collection('pieces').where('orderId', '==', orderId).get();
+  const day = sydneyDay();
+  const todo = snap.docs.filter(d => !d.get('shippedOn'));
+  if (!todo.length) return 0;
+  const batch = db.batch();
+  todo.forEach(d => batch.update(d.ref, { shippedOn: day, updatedAt: FieldValue.serverTimestamp() }));
+  await batch.commit();
+  return todo.length;
 }
 
 // ---- Stripe receipt: the hosted receipt Stripe made for the order's charge.

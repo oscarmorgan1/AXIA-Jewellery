@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { collection, doc, onSnapshot, query, where, type DocumentData } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Collection, CostAssumptions, Message, Order, Product, ProductCost, Signup, Countdown, ShopSettings, SiteMedia, Visit } from '../types';
+import type { Collection, CostAssumptions, Message, Order, Piece, Product, ProductCost, Signup, Countdown, ShopSettings, SiteMedia, Visit } from '../types';
 import { DEFAULT_ASSUMPTIONS } from './economics';
 
 interface Live<T> { data: T; loading: boolean; error: Error | null }
@@ -107,5 +107,10 @@ export function useSignups() {
 
 export function useMessages() {
   const s = useLiveCollection<Message>('messages', (id, d) => ({ ...(d as Message), id }));
+  return { ...s, data: [...s.data].sort(byNewest) };
+}
+
+export function usePieces() {
+  const s = useLiveCollection<Piece>('pieces', (id, d) => ({ ...(d as Piece), key: id }));
   return { ...s, data: [...s.data].sort(byNewest) };
 }

@@ -21,6 +21,7 @@ const Customers = lazy(() => import('./pages/Customers'));
 const CustomerDetail = lazy(() => import('./pages/CustomerDetail'));
 const InboxPage = lazy(() => import('./pages/Inbox'));
 const Website = lazy(() => import('./pages/Website'));
+const Pieces = lazy(() => import('./pages/Pieces'));
 
 export default function App() {
   const { user, isAdmin, verified, loading } = useAuth();
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="products/new" element={<ProductEdit />} />
         <Route path="products/:id" element={<ProductEdit />} />
         <Route path="collections" element={<Collections />} />
+        <Route path="pieces" element={<Pieces />} />
         <Route path="customers" element={<Customers />} />
         <Route path="customers/:id" element={<CustomerDetail />} />
         <Route path="inbox" element={<InboxPage />} />

@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  ArrowUpRight, Bell, Globe, BadgePercent, Menu, X, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Receipt, Search, Settings as SettingsIcon, TicketPercent, Timer, Users,
+  ArrowUpRight, Bell, Globe, BadgePercent, Menu, X, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Gem, Receipt, Search, Settings as SettingsIcon, TicketPercent, Timer, Users,
 } from 'lucide-react';
 import { useAuth } from '../auth';
 import { siteUrl } from '../firebase';
@@ -85,6 +85,7 @@ export default function Layout() {
 
         <div className="sidebar__label">Catalogue</div>
         <NavLink to="/products" className={link}><Package size={19} /> Products {!productsLoading && <span className="pill fade-in">{liveProducts}</span>}</NavLink>
+        <NavLink to="/pieces" className={link}><Gem size={19} /> Pieces</NavLink>
         <NavLink to="/collections" className={link}><FolderHeart size={19} /> Collections {!collectionsLoading && <span className="pill fade-in">{collections.length}</span>}</NavLink>
         <NavLink to="/margins" className={link}><BadgePercent size={19} /> Margins</NavLink>
 
