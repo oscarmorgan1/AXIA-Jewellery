@@ -1,10 +1,9 @@
-import { lazy } from 'react';
+import { lazy, useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth';
 import Layout from './components/Layout';
 import Logo from './components/Logo';
 import Login from './pages/Login';
-import NotAuthorised from './pages/NotAuthorised';
 import SignInCode from './pages/SignInCode';
 
 // Each page loads when it's first opened, so the portal starts faster.
@@ -25,11 +24,27 @@ const Pieces = lazy(() => import('./pages/Pieces'));
 const Suppliers = lazy(() => import('./pages/Suppliers'));
 const Reviews = lazy(() => import('./pages/Reviews'));
 
+/**
+ * Signed in, but not an admin: a customer. Checks once more for a freshly granted
+ * admin claim, then sends them to their account at /portal (same sign-in).
+ */
+function ToPortal() {
+  const { refresh } = useAuth();
+  useEffect(() => {
+    let cancelled = false; // a fresh token that turns out to be an admin re-renders the app instead
+    const go = () => { if (!cancelled) location.replace('/portal/'); };
+    const fallback = setTimeout(go, 2000);
+    refresh().catch(() => {}).finally(() => setTimeout(go, 300));
+    return () => { cancelled = true; clearTimeout(fallback); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return <div className="loading-screen"><Logo height={34} className="logo--loading" /></div>;
+}
+
 export default function App() {
   const { user, isAdmin, verified, loading } = useAuth();
   if (loading) return <div className="loading-screen"><Logo height={34} className="logo--loading" /></div>;
   if (!user) return <Login />;
-  if (!isAdmin) return <NotAuthorised />;
+  if (!isAdmin) return <ToPortal />;
   if (!verified) return <SignInCode />;
   return (
     <Routes>

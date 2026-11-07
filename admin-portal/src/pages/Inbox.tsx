@@ -46,8 +46,9 @@ export default function Inbox() {
   const refsFor = (m: { order?: string; message: string }) => findOrderRefs([m.order, m.message], orders);
 
   async function setStatus(m: Message, status: 'new' | 'done') {
-    try { await updateDoc(doc(db, 'messages', m.id), { status }); } catch (e) { return toast.show(`Couldn’t save: ${(e as Error).message}`); }
-    toast.show(status === 'done' ? 'Marked as done' : 'Moved back to new');
+    // Portal conversations go through the server, which updates the customer's copy too.
+    try { await (m.uid ? adminApi(`/messages/${encodeURIComponent(m.id)}/status`, { status }) : updateDoc(doc(db, 'messages', m.id), { status })); } catch (e) { return toast.show(`Couldn’t save: ${(e as Error).message}`); }
+    toast.show(m.uid ? (status === 'done' ? 'Case closed. They’ll see it in their account.' : 'Case reopened') : status === 'done' ? 'Marked as done' : 'Moved back to new');
     if (status === 'done') setOpenId(null);
   }
   async function remove(m: Message) {
@@ -99,13 +100,14 @@ export default function Inbox() {
             <button className="btn btn--danger" onClick={() => remove(open)}><Trash2 size={15} /> Delete</button>
             <span style={{ flex: 1 }} />
             {open.status === 'done'
-              ? <button className="btn" onClick={() => setStatus(open, 'new')}><RotateCcw size={15} /> Mark as new</button>
-              : <button className="btn" onClick={() => setStatus(open, 'done')}><Check size={15} /> Mark done</button>}
+              ? <button className="btn" onClick={() => setStatus(open, 'new')}><RotateCcw size={15} /> {open.uid ? 'Reopen case' : 'Mark as new'}</button>
+              : <button className="btn" onClick={() => setStatus(open, 'done')}><Check size={15} /> {open.uid ? 'Close case' : 'Mark done'}</button>}
             <button className="btn btn--primary" onClick={() => setReplying(true)}><CornerUpLeft size={15} /> Reply</button>
           </>}>
           <dl className="kv">
             <dt>From</dt><dd>{open.email}</dd>
             <dt>Topic</dt><dd>{open.topic}{open.uid ? ' · sent from their account' : ''}</dd>
+            {open.uid && <><dt>Case</dt><dd>{open.closedAt ? `Closed ${open.closedAt.toDate().toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : 'Open'}</dd></>}
             <dt>Order number given</dt><dd>{open.order || '–'}</dd>
             <dt>Received</dt><dd>{open.createdAt?.toDate().toLocaleString('en-AU') ?? '–'}</dd>
           </dl>

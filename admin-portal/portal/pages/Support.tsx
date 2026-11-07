@@ -51,6 +51,7 @@ export default function Support() {
                   <span className="pt-thread__meta">
                     <small>{when(t.lastAt)}</small>
                     {t.unread ? <span className="chip chip--ice">New reply</span>
+                      : t.closedAt ? <span className="chip chip--muted chip--plain">Case closed</span>
                       : t.state === 'open' ? <span className="chip chip--muted chip--plain">Waiting for us</span>
                       : <span className="chip chip--good chip--plain">Replied</span>}
                   </span>

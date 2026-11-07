@@ -14,6 +14,8 @@ export interface MyThread {
   lastAt: number | null;
   /** `replied`: the newest message is from the team. `open`: waiting on the team. */
   state: 'open' | 'replied';
+  /** Closed by the team. Replying reopens it. */
+  closedAt?: number | null;
   unread: boolean;
 }
 

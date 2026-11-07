@@ -21,7 +21,8 @@ export interface ComposeTarget {
 export default function ComposeEmail({ target, onClose, onSent }: { target: ComposeTarget; onClose: () => void; onSent: (msg: string) => void }) {
   const [subject, setSubject] = useState(target.subject || 'A note from AXIA');
   const [body, setBody] = useState('');
-  const [markDone, setMarkDone] = useState(true);
+  // A portal reply usually invites an answer, so it leaves the case open unless ticked.
+  const [markDone, setMarkDone] = useState(!target.portal);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -53,7 +54,7 @@ export default function ComposeEmail({ target, onClose, onSent }: { target: Comp
         <label className="field">Message
           <textarea className="textarea" style={{ minHeight: 220 }} value={body} autoFocus placeholder={target.portal ? 'Write your reply. They’ll see it in their account exactly as written.' : 'Write your message. A greeting, sign-off and help centre link are added for you.'} onChange={e => setBody(e.target.value)} />
         </label>
-        {target.inquiryId && <label className="check"><input type="checkbox" checked={markDone} onChange={e => setMarkDone(e.target.checked)} /> Mark the inquiry done after sending</label>}
+        {target.inquiryId && <label className="check"><input type="checkbox" checked={markDone} onChange={e => setMarkDone(e.target.checked)} /> {target.portal ? 'Close the case after sending (they see “Case closed”)' : 'Mark the inquiry done after sending'}</label>}
         {target.portal
           ? <div className="card__sub">They sent this from their account. Your reply appears there, and they get a “You have a new message” email with a preview and a link.</div>
           : target.quote && <div className="card__sub">Their message is quoted under your reply.</div>}

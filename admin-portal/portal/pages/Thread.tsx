@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Send } from 'lucide-react';
 import { accountApi } from '../api';
 import { useMyThread, when } from '../support';
 
@@ -39,7 +39,7 @@ export default function Thread() {
         <h1>{thread.subject}</h1>
         <p className="lede">
           {thread.orderId ? <>About <Link to={`/orders/${encodeURIComponent(thread.orderId)}`}>order #{thread.orderNumber}</Link>. </> : null}
-          {thread.state === 'open' ? 'We’ll reply here and email you when we do.' : 'Reply below if there’s anything else.'}
+          {thread.closedAt ? 'This case is closed.' : thread.state === 'open' ? 'We’ll reply here and email you when we do.' : 'Reply below if there’s anything else.'}
         </p>
       </div>
       <div className="card">
@@ -50,11 +50,14 @@ export default function Thread() {
               <p>{m.body}</p>
             </div>
           ))}
+          {thread.closedAt && (
+            <div className="pt-closed" role="status"><CheckCircle2 size={16} /> <span><b>Case closed</b> · {when(thread.closedAt, true)}. Still need help? Reply below and we’ll reopen it.</span></div>
+          )}
           <div ref={endRef} />
         </div>
         <form className="pt-reply" onSubmit={reply}>
           <label className="sr-only" htmlFor="pt-reply">Your reply</label>
-          <textarea id="pt-reply" className="textarea" value={body} onChange={e => setBody(e.target.value)} maxLength={5000} placeholder="Write a reply…" required />
+          <textarea id="pt-reply" className="textarea" value={body} onChange={e => setBody(e.target.value)} maxLength={5000} placeholder={thread.closedAt ? 'Write to reopen this case…' : 'Write a reply…'} required />
           {sendError && <div className="notice notice--error" role="alert">{sendError}</div>}
           <div className="pt-actions" style={{ marginTop: 0 }}>
             <button className="btn btn--primary" disabled={busy || body.trim().length < 2}><Send size={15} /> {busy ? 'Sending…' : 'Send reply'}</button>

@@ -183,6 +183,8 @@ export interface Message {
   subject?: string;
   orderId?: string | null;
   customerReplies?: { body: string; at?: Ts }[];
+  /** Portal conversations: when the case was closed (shown to the customer). Cleared when it reopens. */
+  closedAt?: Ts | null;
   /** Last message either way; the Inbox sorts by it. */
   lastAt?: Ts;
 }

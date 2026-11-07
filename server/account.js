@@ -395,7 +395,7 @@ export function accountRoutes() {
     if (n >= MAX_REPLIES) throw new HttpError(400, 'This conversation is full. Please start a new one.');
     const now = Timestamp.now();
     // Back to "new" in the Inbox, and read up to now (they're looking at it).
-    await ref.update({ customerReplies: FieldValue.arrayUnion({ body: text, at: now }), status: 'new', lastAt: now, customerReadAt: now });
+    await ref.update({ customerReplies: FieldValue.arrayUnion({ body: text, at: now }), status: 'new', closedAt: null, lastAt: now, customerReadAt: now });
     await syncThread(ref.id);
     alert({ ...m, message: text, reply: true }, ref.id, `inquiry-alert/${ref.id}/${n + 1}`);
     return { ok: true };

@@ -55,6 +55,8 @@ test('customerThread shows their messages and the team’s replies in order, wit
   const json = JSON.stringify(out);
   for (const secret of ['admin@axia', 're_1', 'a@b.c']) assert.ok(!json.includes(secret), `leaked ${secret}`);
   assert.equal(customerThread({ message: 'x', createdAt: ts(1), replies: [{ body: 'y', sentAt: ts(2) }], customerReadAt: ts(5) }).unread, false);
+  assert.equal(out.closedAt, null);
+  assert.equal(customerThread({ message: 'x', createdAt: ts(1), closedAt: ts(9) }).closedAt, 9);
 });
 
 test('a piece passed on hides the original buyer’s order, and a pending transfer shows to the sender', async () => {

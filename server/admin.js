@@ -276,7 +276,9 @@ async function sendMessage(req) {
     ...(inquiryRef ? { inquiryId: inquiryRef.id } : {}), ...(orderRef ? { orderId: orderRef.id } : {}) };
 
   const writes = [db.collection('customers').doc(to).set({ email: to, emails: push(entry), updatedAt: FieldValue.serverTimestamp() }, { merge: true })];
-  if (inquiryRef) writes.push(inquiryRef.update({ replies: push(entry), lastAt: entry.sentAt, ...(req.body.markDone !== false ? { status: 'done' } : {}) }));
+  // Done on a portal conversation also closes the case in their account.
+  const done = req.body.markDone !== false;
+  if (inquiryRef) writes.push(inquiryRef.update({ replies: push(entry), lastAt: entry.sentAt, ...(done ? { status: 'done', ...(portal ? { closedAt: entry.sentAt } : {}) } : {}) }));
   if (orderRef) writes.push(orderRef.update({ emails: push(entry), updatedAt: FieldValue.serverTimestamp() }));
   await Promise.all(writes);
   if (portal) await syncThread(inquiryRef.id);
@@ -305,6 +307,18 @@ export function adminRoutes() {
   // The portal writes pieces itself (firestore.rules); this refreshes the owner's portal copy after.
   router.post('/api/admin/pieces/:key/sync', handle(async req => ({ owner: await syncPiece(str(req.params.key, 40).toUpperCase().replace(/[^A-Z0-9]/g, '')) })));
   router.post('/api/admin/messages/send', handle(sendMessage));
+  // Done / New. On a conversation from the portal, Done closes the case ("Case closed" in their
+  // account) and New reopens it, so it goes through here to refresh their copy.
+  router.post('/api/admin/messages/:id/status', handle(async req => {
+    const status = req.body.status === 'done' ? 'done' : 'new';
+    const ref = db.collection('messages').doc(str(req.params.id, 100));
+    const snap = await ref.get();
+    if (!snap.exists) throw new HttpError(404, 'Message not found');
+    const portal = typeof snap.get('uid') === 'string' && !!snap.get('uid');
+    await ref.update({ status, ...(portal ? { closedAt: status === 'done' ? Timestamp.now() : null } : {}) });
+    if (portal) await syncThread(ref.id);
+    return { ok: true };
+  }));
   // Deletes an Inbox message, and the customer's portal copy if they sent it from their account.
   router.post('/api/admin/messages/:id/delete', handle(async req => {
     const ref = db.collection('messages').doc(str(req.params.id, 100));
