@@ -145,11 +145,11 @@ export default function Settings() {
               Makes the dashboard show made-up numbers. Pick how rich you want to look. Only on this browser, only on the dashboard. Real data and the public site are never touched.
             </div>
             <div className="larp-levels" role="radiogroup" aria-label="Larp level">
-              {LARP_LEVELS.map(l => (
+              {LARP_LEVELS.map((l, i) => (
                 <button key={l.id} type="button" role="radio" aria-checked={larp.level === l.id}
                   className={`larp-level${larp.level === l.id ? ' on' : ''}`}
                   onClick={() => { larp.set(l.id); toast.show(`Larp mode: ${l.name}`); }}>
-                  <span className="larp-level__name"><b>{l.id}</b>{l.name}</span>
+                  <span className="larp-level__name"><b>{i + 1}</b>{l.name}</span>
                   <small>{l.blurb}</small>
                 </button>
               ))}
