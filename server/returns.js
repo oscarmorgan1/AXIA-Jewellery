@@ -16,13 +16,16 @@
 //
 //   requested      started by the customer (portal) or the team (admin)
 //   label_created  the prepaid return label is made (carrier, tracking, label link)
-//   received       the parcel is back
+//   received       the parcel is back. Returned pieces leave the order and go back
+//                  into stock in the registry now, so they can be sold (or sent as
+//                  someone's replacement) again. The piece keeps a record of the order,
+//                  its owners and this return in `returns` (its Piece history in admin).
 //   refunded       refund: the money has gone back (refunded in Stripe from here, or marked as done)
 //   replacement_sent  exchange: the replacement is on its way (tracking, and the registry
-//                  piece it is, which joins the order line in place of the returned one)
+//                  piece it is, which joins the order line in place of the returned one;
+//                  the order's history notes "serial X replaced by serial Y")
 //   closed         finished. A full return cancels the order (the status it has today);
-//                  a partial one, or any exchange, puts the order back where it was. Returned pieces
-//                  leave the order and go back into stock in the registry.
+//                  a partial one, or any exchange, puts the order back where it was.
 //   declined / withdrawn   ended early (by the team, or by the customer while it's
 //                  still a request); the order goes back to where it was.
 //
@@ -179,6 +182,40 @@ async function tellCustomer(id, ret, kind, note) {
   }
 }
 
+/**
+ * The update that takes a returned piece off its order and back into stock. What it
+ * was (the order, when it shipped, who owned it) goes onto its `returns` record, and
+ * `owners` starts again for whoever has it next.
+ */
+function backToStock(p, id, r, day) {
+  const owners = (p.get('owners') || []).length ? p.get('owners')
+    : p.get('ownerEmail') || (r.customer && r.customer.email) ? [{ uid: p.get('ownerUid') || null, email: p.get('ownerEmail') || customerId(r.customer.email), via: 'order', at: null }] : [];
+  return {
+    returnId: null, orderId: null, orderNumber: null, orderLine: null, shippedOn: null,
+    ownerUid: null, ownerEmail: null, transfer: null, owners: [], returnedOn: day,
+    replacesReturnId: FieldValue.delete(), replaces: FieldValue.delete(),
+    returns: FieldValue.arrayUnion({
+      returnId: id, number: r.number, orderId: r.orderId, orderNumber: r.orderNumber, on: day,
+      shippedOn: p.get('shippedOn') || null, outcome: outcomeOf(r), owners,
+      ...(p.get('replacesReturnId') ? { wasReplacementFor: p.get('replaces') || null } : {}),
+    }),
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+}
+
+/** On `received`: the pieces that came back go into stock (see backToStock). Returns their keys. */
+async function receivePieces(id, r) {
+  const day = sydneyDay();
+  const keys = (r.items || []).map(i => i.key).filter(Boolean);
+  if (!keys.length) return [];
+  return db.runTransaction(async tx => {
+    const pieces = await Promise.all(keys.map(k => tx.get(db.collection('pieces').doc(k))));
+    const moved = pieces.filter(p => p.exists && p.get('returnId') === id);
+    moved.forEach(p => tx.update(p.ref, backToStock(p, id, r, day)));
+    return moved.map(p => p.id);
+  });
+}
+
 /** Ends a return: closed (finished), declined (by the team) or withdrawn (by the customer). */
 async function finish(id, to, by, note, emailed = false) {
   const ref = db.collection('returns').doc(id);
@@ -212,13 +249,8 @@ async function finish(id, to, by, note, emailed = false) {
     }
     for (const p of pieces) {
       if (!p.exists || p.get('returnId') !== id) continue;
-      tx.update(p.ref, to === 'closed' ? {
-        // Back in stock: off the order, so its owner's portal copy goes and /genuine stops answering for it.
-        returnId: null, orderId: null, orderNumber: null, orderLine: null, shippedOn: null,
-        ownerUid: null, ownerEmail: null, transfer: null, returnedOn: day,
-        returns: FieldValue.arrayUnion({ returnId: id, number: r.number, orderId: r.orderId, orderNumber: r.orderNumber, on: day }),
-        updatedAt: FieldValue.serverTimestamp(),
-      } : { returnId: null, updatedAt: FieldValue.serverTimestamp() });
+      // Usually already back in stock from `received`; this catches returns received before that.
+      tx.update(p.ref, to === 'closed' ? backToStock(p, id, r, day) : { returnId: null, updatedAt: FieldValue.serverTimestamp() });
     }
     return { r: { ...r, status: to }, keys };
   });
@@ -256,7 +288,7 @@ async function placeReplacements(id, r, keys, by) {
         orderId: r.orderId, orderNumber: r.orderNumber, orderLine: item.line, shippedOn: day, replacesReturnId: id,
         ...(item.key ? { replaces: item.key } : {}), updatedAt: FieldValue.serverTimestamp(),
       });
-      out.push({ key, serial: p.get('serial') || key, productName: p.get('productName') || '', variant: p.get('variant') || '', line: item.line, replaces: item.key || null });
+      out.push({ key, serial: p.get('serial') || key, productName: p.get('productName') || '', variant: p.get('variant') || '', line: item.line, replaces: item.key || null, replacesSerial: item.serial || item.key || null });
     });
     return out;
   });
@@ -337,6 +369,8 @@ async function step(req) {
     update.refund = { amountAUD: amount, via: stripeRefund ? 'stripe' : 'manual', ...(stripeRefund ? { stripeRefundId: stripeRefund.id } : {}), at: Timestamp.now(), by };
   }
   let linked = [];
+  let swaps = null;
+  if (to === 'received') linked = await receivePieces(id, r);
   if (to === 'replacement_sent') {
     const t = cleanLabel(req.body.replacement);
     if (!t) throw new HttpError(400, 'Add the replacement’s tracking number or link.');
@@ -344,6 +378,7 @@ async function step(req) {
     const pieces = await placeReplacements(id, r, keys, by);
     linked = [...new Set([...pieces, ...((r.replacement && r.replacement.pieces) || [])].map(p => p.key).filter(Boolean))]; // earlier picks leave their Pieces
     update.replacement = { ...t, pieces, at: Timestamp.now(), by };
+    swaps = pieces.map(p => ({ line: p.line, productName: p.productName, from: p.replaces, fromSerial: p.replacesSerial, to: p.key, toSerial: p.serial }));
     if (r.status === 'replacement_sent') extra.updated = true;
   }
   const fresh = { ...r, ...update, status: to };
@@ -351,8 +386,15 @@ async function step(req) {
   const email = notify ? await tellCustomer(id, fresh, to, note) : null;
   update.history = push(historyEntry(to, by, { ...(note ? { note } : {}), ...extra, emailed: !!(email && email.resendId) }));
   await ref.update(update);
+  if (swaps && swaps.length) {
+    // The order's history says which serial took which one's place.
+    await db.collection('orders').doc(r.orderId).update({
+      statusHistory: push(historyEntry('piece_swapped', by, { returnId: id, returnNumber: r.number, swaps })), updatedAt: FieldValue.serverTimestamp(),
+    });
+  }
   await syncReturn(id);
-  await Promise.all(linked.map(k => syncPiece(k))); // the replacement shows in their Pieces
+  if (to === 'received' || swaps) await syncOrder(r.orderId); // the order copy's serials
+  await Promise.all(linked.map(k => syncPiece(k))); // returned pieces leave their Pieces; the replacement joins them
   return { status: to, refund: stripeRefund ? { id: stripeRefund.id, status: stripeRefund.status } : null, email: email && { resendId: email.resendId, status: email.status } };
 }
 

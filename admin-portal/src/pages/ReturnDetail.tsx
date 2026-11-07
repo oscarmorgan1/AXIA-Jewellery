@@ -173,10 +173,12 @@ function StepDrawer({ ret, order, pieces, to, onClose, onDone }: { ret: Return; 
             </>
           )}
           {to === 'closed' && exchange && <p className="card__sub" style={{ margin: 0 }}>
-            The exchange is done, so order #{ret.orderNumber} goes back to <b>{back}</b>. Returned pieces with a serial go back into stock in the registry; the replacement stays on the order.</p>}
+            The exchange is done, so order #{ret.orderNumber} goes back to <b>{back}</b>. The replacement stays on the order.</p>}
+          {to === 'received' && ret.items.some(i => i.key) && <p className="card__sub" style={{ margin: 0 }}>
+            Returned pieces with a serial leave order #{ret.orderNumber} and go back into stock in the registry now, ready to sell or send as a replacement. Each piece’s history keeps this order and return.</p>}
           {to === 'closed' && !exchange && <p className="card__sub" style={{ margin: 0 }}>
             {ret.full ? <>Every piece on the order came back, so order #{ret.orderNumber} becomes <b>Cancelled</b>.</> : <>Part of the order came back, so order #{ret.orderNumber} goes back to <b>{back}</b>.</>}
-            {' '}Returned pieces with a serial leave the order and go back into stock in the registry.</p>}
+</p>}
           <label className="field">{to === 'declined' ? 'Why (emailed to the customer)' : 'Note (optional)'}
             <textarea className="textarea" value={note} onChange={e => setNote(e.target.value)} placeholder={to === 'declined' ? 'e.g. “Engraved pieces can only be returned if faulty.”' : willEmail ? 'Added to the email and shown in their account' : 'Kept on the return'} />
           </label>
