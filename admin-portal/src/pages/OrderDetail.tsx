@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Check, ChevronDown, ExternalLink, FileText, Gem, Gift, Mail, Package, PenLine, Plus, Receipt, Send, Truck, Undo2 } from 'lucide-react';
 import { siteUrl } from '../firebase';
 import { useOrders, usePieces, useReturns } from '../lib/data';
-import { RETURNABLE, RETURN_LABEL, RETURN_STEPS, isOpen, returnChip, stepAt, stepIndex } from '../lib/returns';
+import { OUTCOME_LABEL, RETURNABLE, isOpen, outcomeOf, returnChip, statusText, stepIndex, trackerSteps } from '../lib/returns';
 import ReturnDrawer from '../components/ReturnDrawer';
 import ReturnTracker from '../components/ReturnTracker';
 import { isMaking, orderPieceStage, orderSlots, shortDate, stageLabel } from '../lib/pieces';
@@ -235,13 +235,14 @@ function StatusDrawer({ order, pieces, initial, onClose, onDone, onAssign, onRet
 /** A return on this order: where it's at, and a link to manage it. */
 function ReturnCard({ ret }: { ret: Return }) {
   const day = (d: Date | null) => (d ? d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '');
-  const steps = RETURN_STEPS.map(s => ({ label: s.key === 'closed' && !ret.full ? 'Closed' : s.label, when: day(stepAt(ret, s.key)) }));
+  const steps = trackerSteps(ret, day);
   return (
     <div className="card return-card">
       <div className="return-card__head">
         <Undo2 size={16} />
         <b>Return {ret.number}</b>
-        <span className={`chip ${returnChip(ret.status)}`}>{ret.status === 'closed' && ret.full ? 'Cancelled' : RETURN_LABEL[ret.status]}</span>
+        <span className="chip chip--muted">{OUTCOME_LABEL[outcomeOf(ret)]}{ret.exchange?.wanted ? `: ${ret.exchange.wanted}` : ''}</span>
+        <span className={`chip ${returnChip(ret.status)}`}>{statusText(ret)}</span>
         <small className="muted mono">{ret.items.map(i => i.serial).filter(Boolean).join(', ')}</small>
         <span className="spacer" />
         <Link className={`btn btn--sm${isOpen(ret) ? ' btn--primary' : ''}`} to={`/returns/${encodeURIComponent(ret.id)}`}>{isOpen(ret) ? 'Manage return' : 'View return'}</Link>

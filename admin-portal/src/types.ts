@@ -127,7 +127,7 @@ export interface Order {
   stripe?: { sessionId?: string; paymentIntent?: string; livemode?: boolean; receiptUrl?: string; card?: { brand: string; last4: string } | null; refundedAUD?: number };
 }
 
-export type ReturnStatus = 'requested' | 'label_created' | 'received' | 'refunded' | 'closed' | 'declined' | 'withdrawn';
+export type ReturnStatus = 'requested' | 'label_created' | 'received' | 'refunded' | 'replacement_sent' | 'closed' | 'declined' | 'withdrawn';
 
 /** One unit coming back: an order line, and its registry piece when it has a serial. */
 export interface ReturnItem { line: number; key: string | null; serial: string; productId: string; productName: string; variant: string; engraving?: string }
@@ -149,11 +149,16 @@ export interface Return {
   /** Internal note from whoever opened it. */
   notes?: string;
   status: ReturnStatus;
+  /** The end goal: money back, or a replacement (what they'd like instead in exchange.wanted). Older returns without it are refunds. */
+  outcome?: 'refund' | 'exchange';
+  exchange?: { wanted: string } | null;
+  /** Exchange: the replacement's tracking and the registry pieces sent in place of the returned ones. */
+  replacement?: (Tracking & { pieces?: { key: string; serial: string; productName: string; variant: string; line: number; replaces: string | null }[]; at?: Ts; by?: string }) | null;
   source: 'portal' | 'admin';
   orderStatusBefore?: string;
   label?: Tracking | null;
   refund?: { amountAUD: number; via: 'stripe' | 'manual'; stripeRefundId?: string; at?: Ts; by?: string } | null;
-  history?: { status: string; at?: Ts; by: string; note?: string; emailed?: boolean; updated?: boolean }[];
+  history?: { status: string; at?: Ts; by: string; note?: string; emailed?: boolean; updated?: boolean; outcome?: string }[];
   emails?: OrderEmail[];
   createdAt?: Ts;
   updatedAt?: Ts;
@@ -342,6 +347,9 @@ export interface Piece {
   owners?: { uid: string; email: string; via: 'order' | 'transfer'; transferId?: string; at?: Ts | null }[];
   /** A transfer waiting on the recipient. */
   transfer?: { id: string; toEmail: string; expiresAt?: Ts } | null;
+  /** Sent as the replacement in an exchange (returns/{id}), for the piece `replaces`. */
+  replacesReturnId?: string | null;
+  replaces?: string | null;
   /** The open return it's in (returns/{id}). */
   returnId?: string | null;
   /** Date it came back in a closed return, YYYY-MM-DD, and each return it's been in. */

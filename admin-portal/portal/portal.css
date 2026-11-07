@@ -152,3 +152,7 @@
   .pt-bag__foot .spacer { display: none; }
   .pt-bag__foot .btn { flex: 1; justify-content: center; }
 }
+
+/* returns: the end goal (refund or exchange) on a return card */
+.pt-goal { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--accent-soft); color: var(--ice-ink); font-size: var(--text-md); }
+.pt-goal b { color: var(--ink); }

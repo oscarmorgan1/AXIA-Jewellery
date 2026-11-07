@@ -252,7 +252,14 @@ export function customerReturn(r, { returnTo = '' } = {}) {
     full: !!r.full,
     items: (r.items || []).map(i => ({ key: i.key || null, serial: i.serial || '', productName: i.productName || '', variant: i.variant || '' })),
     label,
+    // The end goal: a refund, or an exchange for what they asked for.
+    outcome: r.outcome === 'exchange' ? 'exchange' : 'refund',
+    wanted: (r.outcome === 'exchange' && r.exchange && r.exchange.wanted) || '',
     refund: r.refund ? { amountAUD: Number(r.refund.amountAUD) || 0, at: ms(r.refund.at) } : null,
+    replacement: r.replacement && (r.replacement.number || r.replacement.url) ? {
+      carrier: r.replacement.carrier || '', number: r.replacement.number || '', url: httpsOnly(r.replacement.url),
+      pieces: (r.replacement.pieces || []).map(p => ({ serial: p.serial || '', productName: p.productName || '', variant: p.variant || '' })),
+    } : null,
     // Each step and when. A note is shown only if it went to them by email.
     timeline: (r.history || []).map(h => ({ status: h.status, at: ms(h.at), ...(h.emailed && h.note ? { note: h.note } : {}) })),
     createdAt: ms(r.createdAt),

@@ -200,6 +200,8 @@ At cutover, add a live-mode webhook endpoint in Stripe with the same URL and eve
 
 ### Returns
 
+Every return has an end goal, chosen when it's opened (by you or the customer) and switchable until the money or replacement goes out: a **refund**, or an **exchange** for what they asked for instead. The tracker follows it: a refund ends **Payment refunded → Cancelled**, an exchange ends **Replacement sent → Exchanged**. Sending a replacement records its tracking and lets you pick in-stock registry pieces; each joins the order line in place of the returned piece, dated shipped, and appears in the customer's Pieces. Finishing an exchange puts the order back to where it was (it's never cancelled).
+
 A shipped order is cancelled by bringing it back. Picking Cancelled on a shipped or delivered order (or Actions, Start a return) opens a return instead: choose the pieces coming back by serial, the reason, and the return label if it's made. The order shows **In return** while the return is open, and Returns in the sidebar lists every return (with a count of new customer requests). Each return has a tracker: **Return started → Label created → Product received → Payment refunded → Cancelled**. Every step can email the customer, and you see what's sent before it goes.
 
 - **Label created:** carrier, tracking number and an optional link to the label. Return slip prints the packing slip for inside the parcel (return number, serials, the return address from Returns).
@@ -207,7 +209,7 @@ A shipped order is cancelled by bringing it back. Picking Cancelled on a shipped
 - **Finish:** a return of everything on the order cancels it; a partial one puts the order back to the status it had. Returned pieces leave the order and go back into stock in the registry (their portal copy goes and /genuine stops answering for them), with the return kept on the piece (`returns`, `returnedOn`).
 - **Decline:** with a note that's emailed; the order goes back to where it was.
 
-Customers start a return from Pieces (Return, on a delivered piece from their own order). The server applies the published policy: change of mind within 30 days of delivery, engraved pieces only if faulty. The request alerts `INQUIRY_ALERT_TO`, and they follow it on the order page (`accounts/{uid}/returns/{id}`), print the return slip once the label is ready, or withdraw it while it's still a request. While a return is open its pieces can't be transferred, and Stripe's `charge.refunded` doesn't override the In return status (it records `stripe.refundedAUD`).
+Customers start a return from Pieces (Return, on a delivered piece from their own order). They choose refund or exchange (and what they'd like instead). The Return button shows for 30 days from the ship date and the server refuses requests after that; engraved pieces only if faulty. The request alerts `INQUIRY_ALERT_TO`, and they follow it on the order page (`accounts/{uid}/returns/{id}`), print the return slip once the label is ready, or withdraw it while it's still a request. While a return is open its pieces can't be transferred, and Stripe's `charge.refunded` doesn't override the In return status (it records `stripe.refundedAUD`).
 
 ## Customer portal (/portal)
 

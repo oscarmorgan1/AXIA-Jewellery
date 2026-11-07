@@ -4,7 +4,7 @@ import { MapPin, Search, Undo2 } from 'lucide-react';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useReturnAddress, useReturns } from '../lib/data';
-import { RETURN_LABEL, isOpen, returnChip } from '../lib/returns';
+import { OUTCOME_LABEL, isOpen, outcomeOf, returnChip, statusText } from '../lib/returns';
 import { SkeletonRows } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 
@@ -53,7 +53,7 @@ export default function Returns() {
       if (filter === 'open' && !isOpen(r)) return false;
       if (filter === 'requests' && r.status !== 'requested') return false;
       if (filter === 'closed' && isOpen(r)) return false;
-      return !s || JSON.stringify([r.number, r.orderNumber, r.customer, r.items.map(i => [i.serial, i.productName]), r.label?.number]).toLowerCase().includes(s);
+      return !s || JSON.stringify([r.number, r.orderNumber, r.outcome, r.exchange, r.customer, r.items.map(i => [i.serial, i.productName]), r.label?.number]).toLowerCase().includes(s);
     });
   }, [data, q, filter]);
 
@@ -76,7 +76,7 @@ export default function Returns() {
         ) : (
           <div className="table-wrap fade-in">
             <table className="table">
-              <thead><tr><th>Return</th><th>Started</th><th>Customer</th><th>Pieces</th><th>Status</th></tr></thead>
+              <thead><tr><th>Return</th><th>Started</th><th>Customer</th><th>Pieces</th><th>End goal</th><th>Status</th></tr></thead>
               <tbody>
                 {shown.map(r => (
                   <tr key={r.id} className="clickable" onClick={() => nav(`/returns/${encodeURIComponent(r.id)}`)}>
@@ -84,7 +84,8 @@ export default function Returns() {
                     <td>{r.createdAt ? r.createdAt.toDate().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '–'}</td>
                     <td>{r.customer.name || r.customer.email}{r.source === 'portal' && <span className="chip chip--muted chip--plain" style={{ marginLeft: 6 }}>Portal</span>}</td>
                     <td>{r.items.map(i => i.productName).join(', ')}<br /><small className="muted mono">{r.items.map(i => i.serial).filter(Boolean).join(', ')}</small></td>
-                    <td><span className={`chip ${returnChip(r.status)}`}>{r.status === 'closed' && r.full ? 'Cancelled' : RETURN_LABEL[r.status]}</span></td>
+                    <td>{OUTCOME_LABEL[outcomeOf(r)]}{r.exchange?.wanted ? <><br /><small className="muted">{r.exchange.wanted}</small></> : null}</td>
+                    <td><span className={`chip ${returnChip(r.status)}`}>{statusText(r)}</span></td>
                   </tr>
                 ))}
               </tbody>

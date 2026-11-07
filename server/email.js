@@ -447,17 +447,26 @@ export function inquiryAlertEmail({ name, email, topic, order, message, reply })
 
 // ---- Returns (server/returns.js). One email per step of the return tracker.
 
-const RETURN_STAGES = [
-  { key: 'requested', label: 'Requested' },
-  { key: 'label_created', label: 'Label sent' },
-  { key: 'received', label: 'Received' },
-  { key: 'refunded', label: 'Refunded' },
-];
+const RETURN_STAGES = {
+  refund: [
+    { key: 'requested', label: 'Requested' },
+    { key: 'label_created', label: 'Label sent' },
+    { key: 'received', label: 'Received' },
+    { key: 'refunded', label: 'Refunded' },
+  ],
+  exchange: [
+    { key: 'requested', label: 'Requested' },
+    { key: 'label_created', label: 'Label sent' },
+    { key: 'received', label: 'Received' },
+    { key: 'replacement_sent', label: 'Replacement sent' },
+  ],
+};
 
-function returnProgress(status) {
-  const at = RETURN_STAGES.findIndex(s => s.key === status);
+function returnProgress(status, outcome) {
+  const stages = RETURN_STAGES[outcome] || RETURN_STAGES.refund;
+  const at = stages.findIndex(s => s.key === status);
   if (at < 0) return '';
-  const cells = RETURN_STAGES.map((s, i) => {
+  const cells = stages.map((s, i) => {
     const done = i <= at;
     return `<td width="25%" style="padding:0 3px;vertical-align:top">
       <div style="height:4px;border-radius:2px;background:${done ? C.ice : C.line}"></div>
@@ -492,6 +501,16 @@ export const RETURN_EMAILS = {
     heading: 'Your refund is on its way',
     intro: 'We’ve refunded you to your original payment method. It usually shows on your statement within 5 to 10 business days.',
   },
+  replacement_sent: {
+    subject: n => `Your AXIA replacement is on its way (#${n})`,
+    heading: 'Your replacement is on its way',
+    intro: 'We’ve checked your return and your replacement has shipped in its AXIA box, with its own authenticity card. Its serial is now registered to your account.',
+  },
+  exchanged: {
+    subject: n => `Your AXIA exchange is complete (#${n})`,
+    heading: 'Your exchange is complete',
+    intro: 'Your exchange is complete. We hope the new piece is exactly right. If there’s anything else we can help with, reply to this email.',
+  },
   closed: {
     subject: n => `Your AXIA return is complete (#${n})`,
     heading: 'Your return is complete',
@@ -517,33 +536,45 @@ export function returnEmail(ret, kind, siteUrl, { note } = {}) {
   const labelBlock = kind === 'label_created' && (label.number || label.url)
     ? `${sectionTitle('Return label')}<p style="margin:0;${font};font-size:15px;color:${C.ink}">${esc(label.carrier || 'Carrier')}${label.number ? `: <b>${esc(label.number)}</b>` : ''}</p>${label.url ? button(label.url, 'Get your label') : ''}`
     : '';
+  const exchange = ret.outcome === 'exchange';
+  const goalBlock = `${sectionTitle('You asked for')}<p style="margin:0;${font};font-size:15px;color:${C.ink}"><b>${exchange ? 'An exchange' : 'A refund'}</b>${exchange && ret.exchange && ret.exchange.wanted ? `: ${esc(ret.exchange.wanted)}` : ''}</p>`;
+  const rep = ret.replacement || {};
+  const replacementBlock = kind === 'replacement_sent' && (rep.number || rep.url)
+    ? `${sectionTitle('Tracking')}<p style="margin:0;${font};font-size:15px;color:${C.ink}">${esc(rep.carrier || 'Carrier')}${rep.number ? `: <b>${esc(rep.number)}</b>` : ''}</p>${(rep.pieces || []).length ? `<p style="margin:6px 0 0;${font};font-size:13px;color:${C.soft}">${(rep.pieces || []).map(x => `${esc(x.productName)}${x.variant ? ` (${esc(x.variant)})` : ''}, serial ${esc(x.serial)}`).join('<br>')}</p>` : ''}${rep.url ? button(rep.url, 'Track your replacement') : ''}`
+    : '';
   const refundBlock = kind === 'refunded' && ret.refund && ret.refund.amountAUD
     ? `${sectionTitle('Refund')}<p style="margin:0;${font};font-size:15px;color:${C.ink}">${aud(ret.refund.amountAUD)} AUD</p>` : '';
   const items = (ret.items || []).map(i => `<tr><td style="padding:10px 0;border-bottom:1px solid ${C.line};${font};font-size:14px;color:${C.ink}"><b>${esc(i.productName)}</b>${i.variant ? `<br><span style="font-size:13px;color:${C.soft}">${esc(i.variant)}</span>` : ''}${i.serial ? `<br><span style="font-size:12px;color:${C.soft}">Serial ${esc(i.serial)}</span>` : ''}</td></tr>`).join('');
   const step = kind === 'opened' ? 'requested' : kind;
+  // The intros that mention the refund say "replacement" for an exchange.
+  const intro = exchange && kind === 'received' ? 'Your parcel is back with us. We’re inspecting the piece, and once it’s checked we’ll send your replacement.' : t.intro;
   const body = [
     p(`${first ? `Hi ${esc(first)},` : 'Hi,'}`),
-    p(t.intro),
+    p(intro),
     note ? `<div style="margin:6px 0 4px;padding:14px 16px;border-left:3px solid ${C.ice};background:${C.iceBg};${font};font-size:14px;line-height:1.55;color:${C.ink}">${esc(note).replace(/\n/g, '<br>')}</div>` : '',
-    returnProgress(step),
+    returnProgress(step, exchange ? 'exchange' : 'refund'),
+    ['requested', 'opened', 'label_created'].includes(kind) ? goalBlock : '',
     labelBlock,
+    replacementBlock,
     refundBlock,
     sectionTitle(`Return ${ret.number} · order #${ret.orderNumber}`),
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${items}</table>`,
     button(url, kind === 'label_created' ? 'Print your return slip' : 'Follow your return'),
   ].join('');
   const text = [
-    t.heading, '', t.intro, ...(note ? ['', note] : []),
+    t.heading, '', intro, ...(note ? ['', note] : []),
     ...(labelBlock ? ['', `Return label: ${label.carrier || ''} ${label.number || ''} ${label.url || ''}`.trim()] : []),
     ...(refundBlock ? ['', `Refund: ${aud(ret.refund.amountAUD)} AUD`] : []),
+    ...(replacementBlock ? ['', `Replacement tracking: ${rep.carrier || ''} ${rep.number || ''} ${rep.url || ''}`.trim()] : []),
+    ...(['requested', 'opened', 'label_created'].includes(kind) ? ['', `You asked for: ${exchange ? `an exchange${ret.exchange && ret.exchange.wanted ? ` (${ret.exchange.wanted})` : ''}` : 'a refund'}`] : []),
     '', `Return ${ret.number} · order #${ret.orderNumber}`, ...(ret.items || []).map(i => `${i.productName}${i.serial ? ` (serial ${i.serial})` : ''}`),
     '', `Follow your return: ${url}`, `Help centre: ${brandUrl()}/support`,
   ].join('\n');
-  return { subject: t.subject(ret.orderNumber), html: layout({ siteUrl, preheader: t.intro.slice(0, 110), heading: t.heading, body }), text };
+  return { subject: t.subject(ret.orderNumber), html: layout({ siteUrl, preheader: intro.slice(0, 110), heading: t.heading, body }), text };
 }
 
 /** Tells the team a customer asked to return a piece from their account. Plain, like the inquiry alert. */
-export function returnAlertEmail({ id, name, email, number, orderNumber, items, reason, note }) {
+export function returnAlertEmail({ id, name, email, number, orderNumber, items, reason, note, outcome, wanted }) {
   const link = `${brandUrl()}/admin/returns/${encodeURIComponent(id)}`;
   const what = (items || []).map(i => `${i.productName}${i.serial ? ` (${i.serial})` : ''}`).join(', ');
   const row = (l, v) => v ? `<tr><td style="padding:4px 14px 4px 0;${font};font-size:13px;color:${C.soft};white-space:nowrap;vertical-align:top">${l}</td><td style="padding:4px 0;${font};font-size:14px;color:${C.ink}">${esc(v)}</td></tr>` : '';
@@ -554,11 +585,11 @@ export function returnAlertEmail({ id, name, email, number, orderNumber, items, 
   <tr><td style="background:${C.bone};border:1px solid ${C.line};border-radius:6px;padding:32px 30px">
     <p style="margin:0 0 6px;${font};font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:${C.soft}">AXIA admin · New return request</p>
     <h1 style="margin:0 0 16px;${font};font-size:22px;line-height:1.2;color:${C.ink}">${esc(name || email)} wants to return a piece</h1>
-    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px">${row('From', `${name} <${email}>`)}${row('Return', number)}${row('Order', `#${orderNumber}`)}${row('Piece', what)}${row('Reason', reason)}</table>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px">${row('From', `${name} <${email}>`)}${row('Return', number)}${row('Order', `#${orderNumber}`)}${row('Piece', what)}${row('Wants', outcome === 'exchange' ? `Exchange${wanted ? `: ${wanted}` : ''}` : 'Refund')}${row('Reason', reason)}</table>
     ${note ? `<div style="border-left:3px solid ${C.line};padding:4px 0 4px 14px;${font};font-size:14.5px;line-height:1.6;color:${C.ink}">${esc(note).replace(/\n/g, '<br>')}</div>` : ''}
     <div style="margin-top:20px">${button(link, 'Open the return')}</div>
   </td></tr>
 </table></td></tr></table></body></html>`;
-  const text = [`New return request ${number} from ${name} <${email}>`, `Order #${orderNumber}`, `Piece: ${what}`, `Reason: ${reason}`, note || '', `Open the return: ${link}`].filter(Boolean).join('\n\n');
+  const text = [`New return request ${number} from ${name} <${email}>`, `Order #${orderNumber}`, `Piece: ${what}`, `Wants: ${outcome === 'exchange' ? `exchange${wanted ? ` (${wanted})` : ''}` : 'refund'}`, `Reason: ${reason}`, note || '', `Open the return: ${link}`].filter(Boolean).join('\n\n');
   return { subject: `Return request from ${name || email} (order ${orderNumber})`, html, text };
 }
