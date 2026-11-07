@@ -206,6 +206,8 @@ export function customerThread(m) {
     lastAt: (last && last.at) || null,
     // Waiting on the team until the newest message is theirs.
     state: last && last.from === 'axia' ? 'replied' : 'open',
+    // Closed from the admin Inbox. Their next message reopens it.
+    closedAt: ms(m.closedAt),
     unread: !!(lastAxia && (lastAxia.at || 0) > readAt),
   };
 }
