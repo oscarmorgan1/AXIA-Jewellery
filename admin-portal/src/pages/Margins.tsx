@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock } from 'lucide-react';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAssumptions, useCollections, useCosts, useProducts } from '../lib/data';
@@ -56,7 +55,6 @@ export default function Margins() {
         <StatCard label="Lowest margin" value={lowest ? pct(lowest.e!.grossMarginPct) : '–'} foot={lowest ? <b>{lowest.p.name}</b> : null} />
       </div>
       <div className="card">
-        <div className="private-note"><Lock size={14} /> Private. Factory costs live in an admin-only collection and are never sent to the storefront.</div>
         <div className="card__head">
           <div><h2>Per-product economics</h2><div className="card__sub">Retail is taken at the size the factory quoted. Edit a factory cost and margins update instantly.</div></div>
           <span className="spacer" />

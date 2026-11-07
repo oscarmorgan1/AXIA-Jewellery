@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import express from 'express';
-import { isMaintenanceOn, isShopOpen } from './services.js';
+import { getSiteMode, isShopOpen } from './services.js';
 import { renderPage } from './seo.js';
 
 const NO_CACHE = 'no-cache';
@@ -28,24 +28,25 @@ async function shopOpen() {
   return shop.open;
 }
 
-// The Maintenance switch: on, every storefront page shows maintenance.html
-// ("AXIA is unavailable") with a 503 so search engines treat it as temporary.
-// The admin portal, /api and assets keep working. Cached the same way; if
-// Firestore can't be reached the site stays up (production).
-let maint = { on: false, at: 0 };
-export async function maintenanceOn() {
-  if (Date.now() - maint.at < SHOP_TTL) return maint.on;
-  try { maint = { on: await isMaintenanceOn(), at: Date.now() }; }
-  catch (e) { console.error('maintenance switch read failed', e); maint = { on: false, at: Date.now() }; }
-  return maint.on;
+// The Site mode switch: in maintenance every storefront page shows maintenance.html
+// ("AXIA is unavailable"), offline shows offline.html ("AXIA is offline"), both
+// with a 503. The admin portal, /api and assets keep working. Cached the same
+// way; if Firestore can't be reached the site stays up (production).
+const DOWN_PAGE = { maintenance: 'maintenance.html', offline: 'offline.html' };
+let mode = { value: 'production', at: 0 };
+export async function siteMode() {
+  if (Date.now() - mode.at < SHOP_TTL) return mode.value;
+  try { mode = { value: await getSiteMode(), at: Date.now() }; }
+  catch (e) { console.error('site mode read failed', e); mode = { value: 'production', at: Date.now() }; }
+  return mode.value;
 }
-// Still reachable in maintenance: unsubscribing from emails must always work.
-const DURING_MAINTENANCE = new Set(['unsubscribe']);
+// Still reachable while the site is down: unsubscribing from emails must always work.
+const WHILE_DOWN = new Set(['unsubscribe']);
 
 export function staticSite(root) {
   const router = express.Router();
-  // maintenance.html is only ever sent by the switch below, never as /maintenance.
-  const pages = new Set(fs.readdirSync(root).filter(f => f.endsWith('.html')).map(f => f.slice(0, -5)).filter(p => p !== 'maintenance'));
+  // maintenance.html and offline.html are only ever sent by the switch below, never as pages.
+  const pages = new Set(fs.readdirSync(root).filter(f => f.endsWith('.html')).map(f => f.slice(0, -5)).filter(p => p !== 'maintenance' && p !== 'offline'));
   const adminDir = path.join(root, 'admin');
   const sendPage = (res, file) => res.set('Cache-Control', NO_CACHE).sendFile(file);
   // Storefront pages go out with their canonical, preview and robots tags (seo.js).
@@ -96,9 +97,10 @@ export function staticSite(root) {
   router.get('/{*page}', async (req, res, next) => {
     const qs = req.originalUrl.slice(req.path.length);
     const m = req.path.match(/^\/([\w-]+)(\.html)?$/);
-    if ((await maintenanceOn()) && !(m && DURING_MAINTENANCE.has(m[1]))) {
+    const down = DOWN_PAGE[await siteMode()];
+    if (down && !(m && WHILE_DOWN.has(m[1]))) {
       return res.status(503).set({ 'Cache-Control': 'no-store', 'Retry-After': '600', 'X-Robots-Tag': 'noindex' })
-        .sendFile(path.join(root, 'maintenance.html'));
+        .sendFile(path.join(root, down));
     }
     if (req.path === '/') return sendSitePage(req, res, (await shopOpen()) ? 'store' : 'index');
     // Open, the store lives at the main address, so /store goes there. Closed, /store stays reachable.

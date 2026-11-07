@@ -66,12 +66,16 @@ export function useShop(): Live<ShopSettings> {
   return state;
 }
 
-/** The Maintenance / Production switch (`site/maintenance`). Missing means production. */
+/** The Site mode switch (`site/maintenance`): production, maintenance or offline. Matches getSiteMode() in server/services.js. */
 export function useMaintenance(): Live<MaintenanceSettings> {
-  const [state, setState] = useState<Live<MaintenanceSettings>>({ data: { on: false }, loading: true, error: null });
+  const [state, setState] = useState<Live<MaintenanceSettings>>({ data: { mode: 'production' }, loading: true, error: null });
   useEffect(() => onSnapshot(
     doc(db, 'site', 'maintenance'),
-    snap => setState({ data: { ...(snap.data() as Partial<MaintenanceSettings> | undefined), on: snap.get('on') === true }, loading: false, error: null }),
+    snap => {
+      const m = snap.get('mode');
+      const mode: MaintenanceSettings['mode'] = m === 'maintenance' || m === 'offline' || m === 'production' ? m : snap.get('on') === true ? 'maintenance' : 'production';
+      setState({ data: { updatedAt: snap.get('updatedAt') ?? undefined, mode }, loading: false, error: null });
+    },
     error => setState(s => ({ ...s, loading: false, error })),
   ), []);
   return state;
