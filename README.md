@@ -176,6 +176,8 @@ Every email has an Unsubscribe link at the bottom and the one-click `List-Unsubs
 
 Reply to an Inbox inquiry, or message a customer from their page or from an order, without leaving the portal. You see exactly what will be sent before it goes. Emails go through Resend (`POST /api/admin/messages/send`) in the AXIA layout, and replies to them land at `ORDER_EMAIL_REPLY_TO`. Each one is logged with its Resend ID on the inquiry (`replies`), on the order if it's about one, and on the customer record. Inquiries link the order they mention, whatever the format (`#XYZQWE`, `axia-xyzqwe`, `xyz qwe`), plus any other orders from the same email.
 
+Each new support-page inquiry also emails `INQUIRY_ALERT_TO` (set in `apphosting.yaml`, comma-separated for more than one; leave it out to turn alerts off). The alert's Reply-To is the customer, so replying from your mail app answers them directly; replying from the Inbox logs it on their record. The address stays in server config and is never sent to the browser, and a failed alert never stops the message being saved.
+
 ### Site film and product videos
 
 One site film plays on both the home (waitlist) page and the store page; swap it under Website > Site film. Product videos are uploaded on each product's page (Video card). Either way the portal uploads the original straight to Cloud Storage (`media/uploads/`, through a one-off upload session from `POST /api/admin/media/upload-url`), then `POST /api/admin/media/video` converts it with ffmpeg (the `ffmpeg-static` package). ffmpeg reads the original through a short-lived local server that streams it from Storage, so a big phone video never fills the server's memory. The original is deleted afterwards.
