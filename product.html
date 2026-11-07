@@ -121,7 +121,7 @@
   .acc__pi{padding-bottom:var(--s-4);font-size:var(--t-body-s);color:var(--ink-secondary);line-height:1.75}
 
   /* story */
-  .story{position:relative;overflow:hidden;background:var(--obsidian);color:var(--on-dark);text-align:center;--focus:var(--ice)}
+  .story{padding-bottom:clamp(var(--s-8),7vw,var(--s-9));position:relative;overflow:hidden;background:var(--obsidian);color:var(--on-dark);text-align:center;--focus:var(--ice)}
   .story__glow{position:absolute;inset:0;background:radial-gradient(50% 56% at 50% 26%,var(--ice-glow),transparent 62%);opacity:.4;mix-blend-mode:screen;pointer-events:none;z-index:0}
   .story .in{position:relative;z-index:1;max-width:900px;margin-inline:auto}
   .story__eye{font-size:var(--t-label);color:var(--ice)}
@@ -160,19 +160,38 @@
   .rev .by{margin-top:var(--s-3);font-size:var(--t-label);color:var(--ink-tertiary)}
   @media(max-width:860px){.revs{grid-template-columns:1fr;gap:var(--s-6)}}
   /* review videos: portrait carousel under the written reviews; the centre clip is full size, its neighbours shrink and fade */
-  .rvc{--rvc-w:clamp(210px,24vw,300px);margin-top:var(--s-7)}
+  /* tighter bands around the reviews: less air above (after "One of one") and below (before "Complete the set") */
+  .section.rev-band{padding-block:clamp(var(--s-7),5vw,var(--s-8))}
+  .section--tight.set-band{padding-top:clamp(var(--s-6),3vw,var(--s-7))}
+  .rvc{--rvc-w:clamp(210px,24vw,300px);margin-top:var(--s-6)}
   .rvc__track{display:flex;align-items:center;gap:clamp(4px,1vw,12px);overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;
     padding-inline:calc(50% - var(--rvc-w) / 2);padding-block:var(--s-2);overscroll-behavior-x:contain;
     -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
   .rvc__track::-webkit-scrollbar{display:none}
-  .rvc__card{position:relative;flex:0 0 var(--rvc-w);aspect-ratio:9 / 16;scroll-snap-align:center;overflow:hidden;background:var(--obsidian-2);border-radius:0;
+  /* a single clip sits on the left, in line with the heading, with no carousel controls */
+  .rvc--one .rvc__track{padding-inline:0;-webkit-mask-image:none;mask-image:none}
+  .rvc--one .rvc__nav{display:none}
+  .rvc__slide{flex:0 0 var(--rvc-w);display:flex;flex-direction:column;gap:var(--s-3);scroll-snap-align:center;
     transform:scale(.84);opacity:.4;cursor:pointer;transition:transform var(--dur-3) var(--ease-out),opacity var(--dur-3) var(--ease-out)}
-  .rvc__card.is-active{transform:none;opacity:1;cursor:default}
-  .rvc__card:not(.is-active):hover{opacity:.6}
+  .rvc__slide.is-active{transform:none;opacity:1;cursor:default}
+  .rvc__slide:not(.is-active):hover{opacity:.6}
+  .rvc__card{position:relative;aspect-ratio:9 / 16;overflow:hidden;background:var(--obsidian-2);border-radius:0}
+  .rvc__slide.is-active .rvc__card{cursor:pointer}
+  /* the piece in the clip (Admin > Reviews > linked product) */
+  .rvc__prod{display:flex;align-items:center;gap:var(--s-3);min-height:60px;padding:8px 12px 8px 8px;border:1px solid var(--line-dark);color:var(--on-dark);text-decoration:none;--focus:var(--ice);
+    transition:border-color var(--dur-2) var(--ease-out),background var(--dur-2) var(--ease-out)}
+  .rvc__prod:hover{border-color:var(--on-dark-3);background:color-mix(in srgb, var(--bone) 4%, transparent)}
+  .rvc__prod img{width:44px;height:44px;object-fit:cover;flex:none;background:var(--obsidian-2)}
+  .rvc__prod-t{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.3}
+  .rvc__prod-n{font-size:var(--t-body-s);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rvc__prod-p{font-size:var(--t-label);color:var(--on-dark-3);font-variant-numeric:tabular-nums}
+  .rvc__prod-a{flex:none;color:var(--on-dark-3)}
+  .rvc__prod--blank{visibility:hidden}
+  .rvc__slide:not(.is-active) .rvc__prod{pointer-events:none}
   .rvc__card video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
   .rvc__mute{position:absolute;right:12px;bottom:12px;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
     background:color-mix(in srgb, var(--obsidian) 55%, transparent);backdrop-filter:blur(6px);color:var(--bone);--focus:var(--ice)}
-  .rvc__card:not(.is-active) .rvc__mute{pointer-events:none}
+  .rvc__slide:not(.is-active) .rvc__mute{pointer-events:none}
   .rvc__mute svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
   .rvc__mute .on{display:none}.rvc__mute[aria-pressed="true"] .on{display:block}.rvc__mute[aria-pressed="true"] .off{display:none}
   .rvc__nav{display:flex;justify-content:center;align-items:center;gap:var(--s-4);margin-top:var(--s-4);color:var(--on-dark-3);font-size:var(--t-label);font-variant-numeric:tabular-nums}
@@ -351,7 +370,7 @@
 </section>
 
 <!-- reviews -->
-<section class="section on-obsidian" data-band-dark>
+<section class="section rev-band on-obsidian" data-band-dark>
   <div class="container">
     <div class="rev-head"><h2 class="h3">Reviews</h2><span class="rev-note">Verified buyers only</span></div>
     <div id="revEmpty" style="border-top:1px solid var(--line-dark);padding:var(--s-7) 0;text-align:center">
@@ -370,7 +389,7 @@
 </section>
 
 <!-- complete the look -->
-<section class="section--tight on-obsidian" data-band-dark>
+<section class="section--tight set-band on-obsidian" data-band-dark>
   <div class="container">
     <div class="shead" style="display:flex;justify-content:space-between;align-items:flex-end;gap:2rem;flex-wrap:wrap;margin-bottom:var(--s-6)"><div><h2 class="h3">Complete the set</h2></div><a class="link-u" href="collection">Shop all</a></div>
     <div class="grid grid-4" id="pairWrap"></div>
@@ -687,12 +706,26 @@
     const ICON_OFF='<svg class="off" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
     const ICON_ON='<svg class="on" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
     let sound=false, active=-1, inView=false;
+    // the piece each clip is linked to (Admin > Reviews), shown as a small card under it
+    const linked=v=>{ const x=v.productId&&P.find(y=>y.id===v.productId); return x&&!x.hidden?x:null; };
+    const anyLinked=list.some(linked);
+    if(list.length===1) wrap.classList.add('rvc--one');
     const cards=list.map((v,i)=>{
-      const c=document.createElement('div'); c.className='rvc__card'; c.setAttribute('role','group'); c.setAttribute('aria-roledescription','slide'); c.setAttribute('aria-label','Review video '+(i+1)+' of '+list.length);
+      const c=document.createElement('div'); c.className='rvc__slide'; c.setAttribute('role','group'); c.setAttribute('aria-roledescription','slide'); c.setAttribute('aria-label','Review video '+(i+1)+' of '+list.length);
+      const box=document.createElement('div'); box.className='rvc__card'; c.appendChild(box);
       const vid=document.createElement('video'); vid.muted=true; vid.loop=true; vid.playsInline=true; vid.setAttribute('playsinline',''); vid.preload='none';
       if(v.poster) vid.poster=v.poster;
-      c.appendChild(vid);
-      if(v.audio!==false){ const b=document.createElement('button'); b.type='button'; b.className='rvc__mute'; b.setAttribute('aria-label','Sound'); b.setAttribute('aria-pressed','false'); b.innerHTML=ICON_OFF+ICON_ON; c.appendChild(b); }
+      box.appendChild(vid);
+      if(v.audio!==false){ const b=document.createElement('button'); b.type='button'; b.className='rvc__mute'; b.setAttribute('aria-label','Sound'); b.setAttribute('aria-pressed','false'); b.innerHTML=ICON_OFF+ICON_ON; box.appendChild(b); }
+      const x=linked(v);
+      if(x){
+        const a=document.createElement('a'); a.className='rvc__prod'; a.href=x.linkTo||'product?id='+x.id;
+        const ph=firstPhoto(x);
+        a.innerHTML=(ph?'<img alt="" loading="lazy" '+AXIA_IMG(ph,'44px')+'>':'')
+          +'<span class="rvc__prod-t"><span class="rvc__prod-n"></span><span class="rvc__prod-p">'+(x.singlePrice?'':'From ')+fmtA(x.fromPriceAUD)+'</span></span><span class="rvc__prod-a" aria-hidden="true">&rarr;</span>';
+        a.querySelector('.rvc__prod-n').textContent=x.name+(x.width?', '+x.width:'');
+        c.appendChild(a);
+      } else if(anyLinked){ const gap=document.createElement('span'); gap.className='rvc__prod rvc__prod--blank'; gap.setAttribute('aria-hidden','true'); c.appendChild(gap); }
       track.appendChild(c); return {c,vid,src:v.src};
     });
     const syncMute=()=>$$('.rvc__mute',track).forEach(b=>b.setAttribute('aria-pressed',String(sound)));
@@ -705,15 +738,16 @@
       $('#rvcPrev').disabled=k===0; $('#rvcNext').disabled=k===cards.length-1;
       if(inView&&!still) play(k);
     }
-    const centre=k=>{ const x=cards[k]; if(!x) return; track.scrollTo({left:x.c.offsetLeft-(track.clientWidth-x.c.offsetWidth)/2,behavior:still?'auto':'smooth'}); };
+    const centre=(k,now)=>{ const x=cards[k]; if(!x) return; track.scrollTo({left:x.c.offsetLeft-(track.clientWidth-x.c.offsetWidth)/2,behavior:(still||now)?'auto':'smooth'}); };
     let raf=0;
     track.addEventListener('scroll',()=>{ if(raf) return; raf=requestAnimationFrame(()=>{ raf=0;
       const mid=track.scrollLeft+track.clientWidth/2; let best=0, d=Infinity;
       cards.forEach((x,i)=>{ const dd=Math.abs(x.c.offsetLeft+x.c.offsetWidth/2-mid); if(dd<d){ d=dd; best=i; } });
       activate(best); }); },{passive:true});
     track.addEventListener('click',e=>{
-      const card=e.target.closest('.rvc__card'); if(!card) return; const k=cards.findIndex(x=>x.c===card);
-      if(k!==active){ centre(k); return; }
+      const card=e.target.closest('.rvc__slide'); if(!card) return; const k=cards.findIndex(x=>x.c===card);
+      if(k!==active){ e.preventDefault(); centre(k); return; }
+      if(e.target.closest('.rvc__prod')) return; // the product link just navigates
       const x=cards[k];
       if(e.target.closest('.rvc__mute')){ sound=!sound; syncMute(); x.vid.muted=!sound; if(x.vid.paused) play(k); return; }
       if(x.vid.paused) play(k); else x.vid.pause();
@@ -723,7 +757,10 @@
     if('IntersectionObserver' in window){
       new IntersectionObserver(es=>{ inView=es[0].isIntersecting; const x=cards[active]; if(!x) return; if(inView&&!still) play(active); else if(!inView) x.vid.pause(); },{threshold:.35}).observe(track);
     } else inView=true;
-    activate(0);
+    // start on the middle clip, so there are clips either side of it
+    const start=Math.floor((cards.length-1)/2);
+    activate(start);
+    if(start) requestAnimationFrame(()=>centre(start,true));
   }
   function renderPairings(){
     const wrap=$('#pairWrap'); if(!wrap) return;

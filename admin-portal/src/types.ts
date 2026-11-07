@@ -19,6 +19,8 @@ export interface ReviewVideo {
   height?: number | null;
   seconds?: number | null;
   audio?: boolean;
+  /** The piece in the clip: the product page shows a small card linking to it under the video. */
+  productId?: string;
 }
 
 /** Public product document (Firestore `products/{id}`), same shape the storefront reads. */

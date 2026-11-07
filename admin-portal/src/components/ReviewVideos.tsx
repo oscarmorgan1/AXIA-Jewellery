@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Trash2, Upload, VolumeX } from 'lucide-react
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db, siteUrl } from '../firebase';
 import { uploadVideo, type VideoStage } from '../lib/video';
-import type { ReviewVideo } from '../types';
+import type { Product, ReviewVideo } from '../types';
 import VideoProgress from './VideoProgress';
 
 type Made = ReviewVideo & { sizeBytes: number; trimmed: boolean };
@@ -20,7 +20,7 @@ export function saveReviewVideos(videos: ReviewVideo[]) {
  * minute) plus a poster, and added to `site/reviews` as soon as it's converted.
  * Removing and reordering save straight away too.
  */
-export default function ReviewVideos({ videos, onError }: { videos: ReviewVideo[]; onError: (msg: string) => void }) {
+export default function ReviewVideos({ videos, products, onError }: { videos: ReviewVideo[]; products: Product[]; onError: (msg: string) => void }) {
   const input = useRef<HTMLInputElement>(null);
   const [stage, setStage] = useState<VideoStage>('');
   const [progress, setProgress] = useState(0);
@@ -53,6 +53,16 @@ export default function ReviewVideos({ videos, onError }: { videos: ReviewVideo[
     commit(videos.filter((_, k) => k !== i), 'Review video removed.');
   }
 
+  function link(i: number, productId: string) {
+    const next = videos.map((v, k) => {
+      if (k !== i) return v;
+      const { productId: _, ...rest } = v;
+      return productId ? { ...rest, productId } : rest;
+    });
+    const name = products.find(p => p.id === productId)?.name;
+    commit(next, name ? `Linked to ${name}.` : 'Product link removed.');
+  }
+
   function move(i: number, by: number) {
     const j = i + by;
     if (j < 0 || j >= videos.length) return;
@@ -63,7 +73,7 @@ export default function ReviewVideos({ videos, onError }: { videos: ReviewVideo[
 
   return (
     <div className="review-videos">
-      <small className="review-videos__help">Shown in this order in a carousel under the written reviews, on every product page. Film them portrait. Any video works: it’s converted to a small 720p file with its sound kept, at most a minute long.</small>
+      <small className="review-videos__help">Shown in this order in a carousel under the written reviews, on every product page. Pick the product in each video and a small card under it links to that product. Film them portrait. Any video works: it’s converted to a small 720p file with its sound kept, at most a minute long.</small>
       {videos.length > 0 && (
         <ul className="review-videos__list">
           {videos.map((v, i) => (
@@ -73,6 +83,12 @@ export default function ReviewVideos({ videos, onError }: { videos: ReviewVideo[
                 <span>{i + 1}{v.seconds ? ` · ${Math.round(v.seconds)}s` : ''}</span>
                 {v.audio === false && <span title="No sound"><VolumeX size={12} /></span>}
               </div>
+              <select className="input review-videos__product" aria-label={`Product in video ${i + 1}`} value={v.productId ?? ''}
+                disabled={!!stage} onChange={e => link(i, e.target.value)}>
+                <option value="">No product</option>
+                {v.productId && !products.some(p => p.id === v.productId) && <option value={v.productId}>Deleted product</option>}
+                {products.map(p => <option key={p.id} value={p.id}>{p.name}{p.hidden ? ' (hidden)' : ''}</option>)}
+              </select>
               <div className="review-videos__actions">
                 <button type="button" className="btn btn--sm" aria-label="Move earlier" disabled={!!stage || i === 0} onClick={() => move(i, -1)}><ChevronLeft size={14} /></button>
                 <button type="button" className="btn btn--sm" aria-label="Move later" disabled={!!stage || i === videos.length - 1} onClick={() => move(i, 1)}><ChevronRight size={14} /></button>
