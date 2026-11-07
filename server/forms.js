@@ -18,13 +18,16 @@ const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 // (apphosting.yaml), never sent to the browser.
 const alertTo = () => (process.env.INQUIRY_ALERT_TO || '').split(',').map(s => s.trim()).filter(Boolean);
 
-/** Emails the team about a saved inquiry. Never fails the form: the Inbox has it either way. */
-async function alertTeam(doc, id) {
+/**
+ * Emails the team about a saved inquiry (or a new reply in a portal conversation,
+ * with its own `key`). Never fails the form: the Inbox has it either way.
+ */
+export async function alertTeam(doc, id, key = `inquiry-alert/${id}`) {
   const to = alertTo();
   const from = process.env.ORDER_EMAIL_FROM;
   if (!to.length) return;
   if (!resend || !from) return console.warn('message: RESEND_API_KEY or ORDER_EMAIL_FROM not set, no inquiry alert sent');
-  const { error } = await resend.emails.send({ from, to, replyTo: doc.email, ...inquiryAlertEmail(doc) }, { idempotencyKey: `inquiry-alert/${id}` });
+  const { error } = await resend.emails.send({ from, to, replyTo: doc.email, ...inquiryAlertEmail(doc) }, { idempotencyKey: key });
   if (error) throw new Error(`Resend: ${error.message || JSON.stringify(error)}`);
 }
 

@@ -9,6 +9,8 @@ import Bag from './pages/Bag';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
 import Pieces from './pages/Pieces';
+import Support from './pages/Support';
+import Thread from './pages/Thread';
 import Layout from './Layout';
 
 function Loading() {
@@ -42,6 +44,8 @@ export default function App() {
         <Route path="/orders" element={<Orders />} />
         <Route path="/orders/:id" element={<OrderDetail />} />
         <Route path="/pieces" element={<Pieces />} />
+        <Route path="/support" element={<Support />} />
+        <Route path="/support/:id" element={<Thread />} />
         <Route path="/bag" element={<Bag />} />
         <Route path="/details" element={<DetailsPage />} />
         <Route path="/address" element={<AddressPage />} />

@@ -11,12 +11,12 @@ import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { db, stripe } from './services.js';
 import { createHash } from 'node:crypto';
 import { videoUploadUrl, processVideo, resetVideo } from './media.js';
-import { STATUS_EMAILS, statusEmail, messageEmail, sendEmail } from './email.js';
+import { STATUS_EMAILS, statusEmail, messageEmail, newMessageEmail, sendEmail, brandUrl } from './email.js';
 import { isVerifiedAdmin } from './twofactor.js';
 import { sydneyDay } from './forms.js';
 import { emailEntry, historyEntry, push, upsertCustomer, customerId } from './orders.js';
 import { sendAccountInvite } from './account.js';
-import { syncOrder, syncPiece, stripeReceipt } from './sync.js';
+import { syncOrder, syncPiece, stripeReceipt, syncThread } from './sync.js';
 
 /** Statuses an admin can set. `refunded` only comes from Stripe, with the money. */
 export const ADMIN_STATUSES = ['paid', 'in_progress', 'shipped', 'fulfilled', 'cancelled'];
@@ -255,7 +255,13 @@ async function sendMessage(req) {
 
   const q = inquiry && inquiry.data();
   const o = order && order.data();
-  const mail = messageEmail({
+  // A conversation started from their account: the reply lives in the portal,
+  // and the email only says there's a new message (with a preview and a link).
+  const portal = !!(q && q.uid);
+  const mail = portal ? newMessageEmail({
+    name: q.name, subject: q.subject || q.topic || 'your message', body, siteUrl: siteOrigin(req, o),
+    url: `${brandUrl()}/portal/support/${encodeURIComponent(inquiryRef.id)}`,
+  }) : messageEmail({
     name: str(req.body.name, 100) || (o && o.customer && o.customer.name) || (q && q.name) || '',
     subject, body, siteUrl: siteOrigin(req, o),
     orderNumber: o ? o.orderNumber || orderRef.id.slice(-6).toUpperCase() : '',
@@ -264,15 +270,17 @@ async function sendMessage(req) {
   // Same message to the same person within 10 seconds is a double click, not a second email.
   const key = `message/${createHash('sha256').update([to, subject, body].join('\n')).digest('hex').slice(0, 32)}/${Math.floor(Date.now() / 10000)}`;
   const sent = await sendEmail({ to, ...mail, idempotencyKey: key });
-  if (!sent) throw new HttpError(503, 'Email isn’t set up (RESEND_API_KEY or ORDER_EMAIL_FROM is missing), so nothing was sent');
-  const entry = { ...emailEntry(q ? 'reply' : 'message', to, subject, sent), body, by: req.admin.email || req.admin.uid,
+  // A portal reply is saved even without email set up: they'll see it when they sign in.
+  if (!sent && !portal) throw new HttpError(503, 'Email isn’t set up (RESEND_API_KEY or ORDER_EMAIL_FROM is missing), so nothing was sent');
+  const entry = { ...emailEntry(q ? 'reply' : 'message', to, portal ? mail.subject : subject, sent), body, by: req.admin.email || req.admin.uid,
     ...(inquiryRef ? { inquiryId: inquiryRef.id } : {}), ...(orderRef ? { orderId: orderRef.id } : {}) };
 
   const writes = [db.collection('customers').doc(to).set({ email: to, emails: push(entry), updatedAt: FieldValue.serverTimestamp() }, { merge: true })];
-  if (inquiryRef) writes.push(inquiryRef.update({ replies: push(entry), ...(req.body.markDone !== false ? { status: 'done' } : {}) }));
+  if (inquiryRef) writes.push(inquiryRef.update({ replies: push(entry), lastAt: entry.sentAt, ...(req.body.markDone !== false ? { status: 'done' } : {}) }));
   if (orderRef) writes.push(orderRef.update({ emails: push(entry), updatedAt: FieldValue.serverTimestamp() }));
   await Promise.all(writes);
-  return { resendId: entry.resendId, status: entry.status };
+  if (portal) await syncThread(inquiryRef.id);
+  return { resendId: entry.resendId, status: entry.status, portal };
 }
 
 const handle = fn => async (req, res) => {
@@ -297,6 +305,16 @@ export function adminRoutes() {
   // The portal writes pieces itself (firestore.rules); this refreshes the owner's portal copy after.
   router.post('/api/admin/pieces/:key/sync', handle(async req => ({ owner: await syncPiece(str(req.params.key, 40).toUpperCase().replace(/[^A-Z0-9]/g, '')) })));
   router.post('/api/admin/messages/send', handle(sendMessage));
+  // Deletes an Inbox message, and the customer's portal copy if they sent it from their account.
+  router.post('/api/admin/messages/:id/delete', handle(async req => {
+    const ref = db.collection('messages').doc(str(req.params.id, 100));
+    const snap = await ref.get();
+    if (!snap.exists) throw new HttpError(404, 'Message not found');
+    const uid = snap.get('uid');
+    if (typeof uid === 'string' && uid) await db.collection('accounts').doc(uid).collection('threads').doc(ref.id).delete();
+    await ref.delete();
+    return { ok: true };
+  }));
   router.post('/api/admin/media/upload-url', handle(req => videoUploadUrl({
     slot: str(req.body.slot, 20), contentType: str(req.body.contentType, 100), size: Number(req.body.size), origin: req.get('origin'),
   })));

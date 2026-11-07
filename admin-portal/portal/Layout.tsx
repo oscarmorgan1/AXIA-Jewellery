@@ -1,13 +1,15 @@
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Gem, LogOut, Mail, MapPin, Package, ShieldCheck, ShoppingBag, UserRound } from 'lucide-react';
+import { Gem, LogOut, Mail, MapPin, MessageSquare, Package, ShieldCheck, ShoppingBag, UserRound } from 'lucide-react';
 import Logo from '../src/components/Logo';
 import { useAccount } from './account';
+import { useMyThreads } from './support';
 
-/** Portal sections, in sidebar order. Support joins this list when it ships. */
+/** Portal sections, in sidebar order. */
 export const TABS = [
   { to: '/orders', label: 'Orders', icon: Package },
   { to: '/pieces', label: 'Pieces', icon: Gem },
+  { to: '/support', label: 'Support', icon: MessageSquare },
   { to: '/bag', label: 'Saved bag', icon: ShoppingBag },
   { to: '/details', label: 'Details', icon: UserRound },
   { to: '/address', label: 'Address', icon: MapPin },
@@ -19,6 +21,7 @@ export const TABS = [
 export default function Layout({ children }: { children: ReactNode }) {
   const { account, user, logout } = useAccount();
   const name = account?.name || user?.displayName || '';
+  const unread = (useMyThreads().threads || []).filter(t => t.unread).length;
   return (
     <div className="pt">
       <header className="pt__head">
@@ -35,7 +38,8 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
           <nav className="pt__nav" aria-label="Your account">
             {TABS.map(t => (
-              <NavLink key={t.to} to={t.to} className="nav-link pt__link"><t.icon size={17} /> {t.label}</NavLink>
+              <NavLink key={t.to} to={t.to} className="nav-link pt__link"><t.icon size={17} /> {t.label}
+                {t.to === '/support' && unread > 0 && <span className="pt__badge" aria-label={`${unread} unread`}>{unread}</span>}</NavLink>
             ))}
           </nav>
         </aside>

@@ -231,6 +231,30 @@ export function messageEmail({ name, subject, body, siteUrl, quote, orderNumber 
 }
 
 /**
+ * "You have a new message", sent when the team answers a conversation the
+ * customer started in the portal. A short preview and a link: the conversation
+ * itself (and the reply box) lives at /portal/support/{id}.
+ */
+export function newMessageEmail({ name, subject, body, url, siteUrl }) {
+  const first = String(name || '').trim().split(/\s+/)[0];
+  const flat = String(body).trim().replace(/\s+/g, ' ');
+  const preview = flat.length > 220 ? `${flat.slice(0, 217).trimEnd()}…` : flat;
+  const html = layout({
+    siteUrl, preheader: preview.slice(0, 110), heading: 'You have a new message',
+    reason: 'You’re receiving this email because you messaged AXIA from your account.',
+    body: [
+      p(`${first ? `Hi ${esc(first)},` : 'Hi,'}`),
+      p(`The AXIA team replied to <b>${esc(subject)}</b>.`),
+      `<div style="border-left:3px solid ${C.line};padding:4px 0 4px 14px;margin:0 0 18px;${font};font-size:14px;line-height:1.6;color:${C.soft}">${esc(preview)}</div>`,
+      button(url, 'Read and reply'),
+      p('<span style="font-size:13px">Sign in to your AXIA account to see the whole conversation.</span>', C.soft),
+    ].join(''),
+  });
+  const text = [first ? `Hi ${first},` : 'Hi,', `The AXIA team replied to “${subject}”:`, preview, `Read and reply: ${url}`].join('\n\n');
+  return { subject: 'You have a new message from AXIA', html, text };
+}
+
+/**
  * "Claim your AXIA account", sent once an order is paid when that email has no
  * account yet (server/account.js). The link sets a password and opens the portal.
  */
@@ -358,9 +382,10 @@ export function signInCodeEmail({ code, minutes, ip, agent }) {
  * unsubscribe link, like the sign-in code. Reply-To is the customer, so
  * replying from the inbox answers them directly.
  */
-export function inquiryAlertEmail({ name, email, topic, order, message }) {
+export function inquiryAlertEmail({ name, email, topic, order, message, reply }) {
   const inbox = `${brandUrl()}/admin/inbox`;
-  const kind = topic === 'Support' ? 'support request' : 'inquiry';
+  // `reply`: a follow-up in a conversation they started from their account.
+  const kind = reply ? 'reply' : topic === 'Support' ? 'support request' : 'inquiry';
   const row = (l, v) => v ? `<tr><td style="padding:4px 14px 4px 0;${font};font-size:13px;color:${C.soft};white-space:nowrap;vertical-align:top">${l}</td><td style="padding:4px 0;${font};font-size:14px;color:${C.ink}">${esc(v)}</td></tr>` : '';
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>New AXIA inquiry</title></head>
 <body style="margin:0;padding:0;background:${C.page}">
@@ -369,7 +394,7 @@ export function inquiryAlertEmail({ name, email, topic, order, message }) {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px">
   <tr><td style="background:${C.bone};border:1px solid ${C.line};border-radius:6px;padding:32px 30px">
     <p style="margin:0 0 6px;${font};font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:${C.soft}">AXIA admin · New ${kind}</p>
-    <h1 style="margin:0 0 16px;${font};font-size:22px;line-height:1.2;color:${C.ink}">${esc(name)} sent a message</h1>
+    <h1 style="margin:0 0 16px;${font};font-size:22px;line-height:1.2;color:${C.ink}">${esc(name)} ${reply ? 'replied' : 'sent a message'}</h1>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px">${row('From', `${name} <${email}>`)}${row('Topic', topic)}${row('Order', order)}</table>
     <div style="border-left:3px solid ${C.line};padding:4px 0 4px 14px;${font};font-size:14.5px;line-height:1.6;color:${C.ink}">${esc(message).replace(/\n/g, '<br>')}</div>
     <div style="margin-top:20px">${button(inbox, 'Open the Inbox')}</div>
@@ -378,5 +403,5 @@ export function inquiryAlertEmail({ name, email, topic, order, message }) {
 </table></td></tr></table></body></html>`;
   const text = [`New ${kind} from ${name} <${email}>`, order ? `Order: ${order}` : '', message,
     `Open the Inbox: ${inbox}`].filter(Boolean).join('\n\n');
-  return { subject: `New ${kind} from ${name}${order ? ` (order ${order})` : ''}`, html, text };
+  return { subject: `${reply ? 'New reply' : `New ${kind}`} from ${name}${order ? ` (order ${order})` : ''}`, html, text };
 }

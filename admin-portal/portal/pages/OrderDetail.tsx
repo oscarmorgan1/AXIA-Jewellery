@@ -161,7 +161,7 @@ export default function OrderDetail() {
         <div className="card">
           <div className="card__head"><h2>Need a hand?</h2></div>
           <p className="card__sub" style={{ marginTop: 0 }}>Sizing, engraving or delivery questions: we’re happy to help.</p>
-          <a className="btn btn--sm" style={{ marginTop: 12 }} href={`/support?order=${encodeURIComponent(order.orderNumber)}#contact`}><MessageSquare size={15} /> Contact us</a>
+          <Link className="btn btn--sm" style={{ marginTop: 12 }} to={`/support?order=${encodeURIComponent(order.id)}`}><MessageSquare size={15} /> Message us</Link>
         </div>
       </div>
     </div>

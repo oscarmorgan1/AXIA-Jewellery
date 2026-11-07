@@ -12,6 +12,11 @@
 // is the account of the paid order the piece went out in. The private record
 // remembers where its copy lives (`portalUid`), so a piece that is unassigned,
 // moved to another order or whose order is cancelled is taken back out.
+//
+// Support conversations too: messages/{id} is admin-only (the Inbox), and a
+// message sent from the portal carries the sender's `uid`. syncThread() writes
+// their side of it to accounts/{uid}/threads/{id}: what they wrote and what the
+// team replied, never who on the team replied or the Resend ids.
 import { FieldValue } from 'firebase-admin/firestore';
 import { db, stripe } from './services.js';
 import { customerId } from './orders.js';
@@ -166,4 +171,43 @@ export async function stripeReceipt(ref) {
   await ref.update({ 'stripe.receiptUrl': charge.receipt_url, 'stripe.card': card });
   await syncOrder(ref.id);
   return { url: charge.receipt_url, card };
+}
+
+/** Their side of a support conversation, oldest message first. */
+export function customerThread(m) {
+  const msgs = [
+    { from: 'you', body: m.message || '', at: ms(m.createdAt) },
+    ...(m.customerReplies || []).map(r => ({ from: 'you', body: r.body || '', at: ms(r.at) })),
+    ...(m.replies || []).filter(r => r.body).map(r => ({ from: 'axia', body: r.body, at: ms(r.sentAt) })),
+  ].sort((a, b) => (a.at || 0) - (b.at || 0));
+  const last = msgs[msgs.length - 1];
+  const lastAxia = [...msgs].reverse().find(x => x.from === 'axia');
+  const readAt = ms(m.customerReadAt) || 0;
+  return {
+    subject: m.subject || m.topic || 'Message',
+    topic: m.topic || 'Support',
+    orderNumber: m.order || '',
+    orderId: m.orderId || null,
+    messages: msgs,
+    lastAt: (last && last.at) || null,
+    // Waiting on the team until the newest message is theirs.
+    state: last && last.from === 'axia' ? 'replied' : 'open',
+    unread: !!(lastAxia && (lastAxia.at || 0) > readAt),
+  };
+}
+
+/** Writes the customer's copy of one portal conversation. Never throws. */
+export async function syncThread(messageId) {
+  try {
+    const snap = await db.collection('messages').doc(messageId).get();
+    if (!snap.exists) return false;
+    const m = snap.data();
+    if (typeof m.uid !== 'string' || !m.uid) return false;
+    await db.collection('accounts').doc(m.uid).collection('threads').doc(messageId)
+      .set({ ...customerThread(m), syncedAt: FieldValue.serverTimestamp() });
+    return true;
+  } catch (err) {
+    console.error('sync: thread copy failed', messageId, err);
+    return false;
+  }
 }

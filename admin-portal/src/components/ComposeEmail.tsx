@@ -13,6 +13,8 @@ export interface ComposeTarget {
   orderId?: string;
   orderNumber?: string;
   quote?: string;
+  /** The inquiry came from their portal account: the email says there's a new message and links to it. */
+  portal?: boolean;
 }
 
 /** Write an email to a customer, check exactly what will be sent, then send it through Resend. */
@@ -29,14 +31,14 @@ export default function ComposeEmail({ target, onClose, onSent }: { target: Comp
     setBusy(true); setError('');
     try {
       await adminApi('/messages/send', { to: target.to, name: target.name, subject, body, inquiryId: target.inquiryId, orderId: target.orderId, markDone });
-      onSent(`Sent to ${target.to}`);
+      onSent(target.portal ? `Reply posted to ${target.name || target.to}’s account` : `Sent to ${target.to}`);
     } catch (e) { setError((e as Error).message); setConfirming(false); } finally { setBusy(false); }
   }
 
   return (
     <Drawer title={target.inquiryId ? 'Reply' : `Message ${target.name || target.to}`} onClose={onClose} footer={confirming ? <>
       <button className="btn" onClick={() => setConfirming(false)} disabled={busy}>Back</button><span style={{ flex: 1 }} />
-      <button className="btn btn--primary" onClick={send} disabled={busy}><Send size={15} /> {busy ? 'Sending…' : 'Send email'}</button>
+      <button className="btn btn--primary" onClick={send} disabled={busy}><Send size={15} /> {busy ? 'Sending…' : target.portal ? 'Send reply' : 'Send email'}</button>
     </> : <>
       <button className="btn" onClick={onClose}>Cancel</button><span style={{ flex: 1 }} />
       <button className="btn btn--primary" onClick={() => setConfirming(true)} disabled={!subject.trim() || body.trim().length < 2}>Review</button>
@@ -49,20 +51,34 @@ export default function ComposeEmail({ target, onClose, onSent }: { target: Comp
         </dl>
         <label className="field">Subject<input className="input" value={subject} onChange={e => setSubject(e.target.value)} maxLength={200} /></label>
         <label className="field">Message
-          <textarea className="textarea" style={{ minHeight: 220 }} value={body} autoFocus placeholder={'Write your message. A greeting, sign-off and help centre link are added for you.'} onChange={e => setBody(e.target.value)} />
+          <textarea className="textarea" style={{ minHeight: 220 }} value={body} autoFocus placeholder={target.portal ? 'Write your reply. They’ll see it in their account exactly as written.' : 'Write your message. A greeting, sign-off and help centre link are added for you.'} onChange={e => setBody(e.target.value)} />
         </label>
         {target.inquiryId && <label className="check"><input type="checkbox" checked={markDone} onChange={e => setMarkDone(e.target.checked)} /> Mark the inquiry done after sending</label>}
-        {target.quote && <div className="card__sub">Their message is quoted under your reply.</div>}
+        {target.portal
+          ? <div className="card__sub">They sent this from their account. Your reply appears there, and they get a “You have a new message” email with a preview and a link.</div>
+          : target.quote && <div className="card__sub">Their message is quoted under your reply.</div>}
       </> : (
         <div className="confirm">
-          <div className="notice notice--warn"><Mail size={15} /> This sends straight away to <b>{target.to}</b> from the AXIA orders address. Replies come back to your support inbox.</div>
+          {target.portal ? <>
+            <div className="notice notice--warn"><Mail size={15} /> This posts your reply in <b>{target.name || target.to}</b>’s account straight away, and emails {target.to} to say there’s a new message.</div>
+            <div className="email-preview">
+              <div className="email-preview__subject">You have a new message from AXIA</div>
+              <p>Hi {first || 'there'},</p>
+              <p>The AXIA team replied to <b>{subject.replace(/^Re:\s*/i, '')}</b>.</p>
+              <blockquote>{body.trim().replace(/\s+/g, ' ').slice(0, 220)}{body.trim().length > 220 ? '…' : ''}</blockquote>
+              <p className="muted">Read and reply →</p>
+            </div>
+            <div className="card__sub">In their account they see the whole message:</div>
+          </> : <div className="notice notice--warn"><Mail size={15} /> This sends straight away to <b>{target.to}</b> from the AXIA orders address. Replies come back to your support inbox.</div>}
           <div className="email-preview">
-            <div className="email-preview__subject">{subject}</div>
-            {first && <p>Hi {first},</p>}
+            {!target.portal && <div className="email-preview__subject">{subject}</div>}
+            {first && !target.portal && <p>Hi {first},</p>}
             {body.trim().split(/\n{2,}/).map((t, i) => <p key={i} style={{ whiteSpace: 'pre-wrap' }}>{t}</p>)}
-            <p>Warm regards,<br /><b>The AXIA team</b></p>
-            {target.orderNumber && <p className="muted">Order #{target.orderNumber}</p>}
-            {target.quote && <blockquote>{target.quote}</blockquote>}
+            {!target.portal && <>
+              <p>Warm regards,<br /><b>The AXIA team</b></p>
+              {target.orderNumber && <p className="muted">Order #{target.orderNumber}</p>}
+              {target.quote && <blockquote>{target.quote}</blockquote>}
+            </>}
           </div>
         </div>
       )}
