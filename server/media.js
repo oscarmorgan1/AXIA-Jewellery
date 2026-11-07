@@ -21,8 +21,8 @@ export const MEDIA_SLOTS = ['landing', 'store'];
 const MAX_SECONDS = 20; // a looping hero film; anything longer is cut (and conversion stays quick)
 const PRODUCT_SECONDS = 30; // product page videos, played on demand
 const REVIEW_SECONDS = 60; // customer review clips (portrait, with sound) shown under the text reviews
-const REVIEW_MAX = 24; // review videos kept per product
-const PER_PRODUCT = ['product', 'review'];
+const REVIEW_MAX = 40; // review videos kept in the shared set (site/reviews)
+const PER_PRODUCT = ['product'];
 const PRODUCT_ID = /^[a-z0-9][a-z0-9-]{0,80}$/;
 const MAX_UPLOAD = 500 * 1024 * 1024;
 
@@ -30,7 +30,7 @@ const bucket = () => getStorage().bucket(process.env.STORAGE_BUCKET || 'axia-jew
 
 /** A resumable upload session the browser can PUT the original video to. */
 export async function videoUploadUrl({ slot, contentType, size, origin }) {
-  if (!MEDIA_SLOTS.includes(slot) && !PER_PRODUCT.includes(slot)) throw Object.assign(new Error('Unknown video slot'), { status: 400 });
+  if (!MEDIA_SLOTS.includes(slot) && !PER_PRODUCT.includes(slot) && slot !== 'review') throw Object.assign(new Error('Unknown video slot'), { status: 400 });
   if (!/^video\//.test(contentType || '')) throw Object.assign(new Error('Choose a video file'), { status: 400 });
   if (!(size > 0 && size <= MAX_UPLOAD)) throw Object.assign(new Error('Videos must be under 500 MB'), { status: 400 });
   const file = `media/uploads/${slot}-${Date.now()}-${randomUUID().slice(0, 8)}`;
@@ -116,11 +116,12 @@ async function publish(local, dest, contentType) {
  * site/media; a product video (slot 'product') gets one 720p MP4 and a poster
  * under products/{productId}/, returned for the portal to save on the product.
  * A review video (slot 'review') is the same 720p MP4 but keeps its sound and
- * runs up to a minute; it's added to the product's `reviewVideos` list.
+ * runs up to a minute; it's added to the shared list in the public
+ * `site/reviews` document, which every product page shows.
  */
 export async function processVideo({ slot, path: uploaded, by, productId }) {
   const product = PER_PRODUCT.includes(slot);
-  if (!MEDIA_SLOTS.includes(slot) && !product) throw Object.assign(new Error('Unknown video slot'), { status: 400 });
+  if (!MEDIA_SLOTS.includes(slot) && !product && slot !== 'review') throw Object.assign(new Error('Unknown video slot'), { status: 400 });
   if (product && !PRODUCT_ID.test(productId || '')) throw Object.assign(new Error('Save the product with a name first'), { status: 400 });
   if (typeof uploaded !== 'string' || !uploaded.startsWith(`media/uploads/${slot}-`) || uploaded.includes('..')) {
     throw Object.assign(new Error('Upload not found'), { status: 400 });
@@ -135,7 +136,7 @@ export async function processVideo({ slot, path: uploaded, by, productId }) {
     if (slot === 'review') {
       const out = await transcode(['-i', source.url], dir, { hd: false, seconds: REVIEW_SECONDS, audio: true });
       const stamp = Date.now();
-      const base = `products/${productId}/reviews/${stamp}`;
+      const base = `media/reviews/${stamp}`;
       const [sd, poster] = await Promise.all([
         publish(out.sd, `${base}-720.mp4`, 'video/mp4'),
         publish(out.poster, `${base}-poster.jpg`, 'image/jpeg'),
@@ -143,17 +144,15 @@ export async function processVideo({ slot, path: uploaded, by, productId }) {
       const after = await probe(['-i', out.sd]);
       const entry = { id: `${stamp}-${randomUUID().slice(0, 6)}`, src: sd.url, poster: poster.url,
         width: after.width, height: after.height, seconds: after.seconds, audio: after.audio };
-      // Appended on the product straight away (if it exists yet), like the product video.
-      const ref = db.collection('products').doc(productId);
-      const saved = await db.runTransaction(async tx => {
+      // Appended to the shared set straight away, so it shows on every product page.
+      const ref = db.doc('site/reviews');
+      await db.runTransaction(async tx => {
         const snap = await tx.get(ref);
-        if (!snap.exists) return false;
-        const list = Array.isArray(snap.get('reviewVideos')) ? snap.get('reviewVideos') : [];
-        if (list.length >= REVIEW_MAX) throw Object.assign(new Error(`A product can have up to ${REVIEW_MAX} review videos. Remove one first.`), { status: 400 });
-        tx.update(ref, { reviewVideos: [...list, entry], updatedAt: FieldValue.serverTimestamp() });
-        return true;
+        const list = snap.exists && Array.isArray(snap.get('videos')) ? snap.get('videos') : [];
+        if (list.length >= REVIEW_MAX) throw Object.assign(new Error(`You can have up to ${REVIEW_MAX} review videos. Remove one first.`), { status: 400 });
+        tx.set(ref, { videos: [...list, entry], updatedAt: FieldValue.serverTimestamp() }, { merge: true });
       });
-      return { ...entry, sizeBytes: sd.size, saved, trimmed: !!(info.seconds && info.seconds > REVIEW_SECONDS + 0.5) };
+      return { ...entry, sizeBytes: sd.size, trimmed: !!(info.seconds && info.seconds > REVIEW_SECONDS + 0.5) };
     }
     if (product) {
       const out = await transcode(['-i', source.url], dir, { hd: false, seconds: PRODUCT_SECONDS });

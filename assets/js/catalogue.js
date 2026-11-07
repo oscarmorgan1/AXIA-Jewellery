@@ -262,6 +262,23 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
   })();
 
+  /* ---- Review videos (Admin > Reviews) ----
+     AXIA_REVIEWS() resolves to the shared list from site/reviews, the same on
+     every product page, or null when that list has never been set up (or
+     can't be reached), so the page can fall back to the product's own clips. */
+  window.AXIA_REVIEWS = function () {
+    var KEY = 'axia_reviews_v1';
+    try { var c = JSON.parse(sessionStorage.getItem(KEY)); if (c && Date.now() - c.t < CACHE_TTL) return Promise.resolve(c.v); } catch (e) {}
+    var ctrl = 'AbortController' in window ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 4000);
+    return getDoc('site/reviews', ctrl && ctrl.signal).then(function (d) {
+      clearTimeout(timer);
+      var v = d ? (Array.isArray(d.videos) ? d.videos : []) : null;
+      try { sessionStorage.setItem(KEY, JSON.stringify({ t: Date.now(), v: v })); } catch (e) {}
+      return v;
+    }, function () { clearTimeout(timer); return null; });
+  };
+
   /* ---- Launch countdown (Admin > Settings > Countdown) ----
      AXIA_CD.run(cb) calls cb(state) straight away and, for a running timer,
      every second after. state.mode is 'timer' (with d, h, m, s as two-digit

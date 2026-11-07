@@ -10,7 +10,7 @@ export interface WidthOption {
   variants: Variant[];
 }
 
-/** One review video on a product, converted by the server (server/media.js, slot 'review'). */
+/** One customer review video, converted by the server (server/media.js, slot 'review') and kept in `site/reviews`. */
 export interface ReviewVideo {
   id: string;
   src: string;
@@ -41,7 +41,8 @@ export interface Product {
   sizingImage?: string;
   video?: string;
   videoPoster?: string;
-  /** Customer review clips (portrait, with sound), shown in a carousel under the text reviews. */
+  /** Old per-product review clips. Review videos are now shared (`site/reviews`, Admin > Reviews);
+   *  the product page only falls back to these until that list has been set up. */
   reviewVideos?: ReviewVideo[];
   variants?: Variant[];
   widths?: WidthOption[];

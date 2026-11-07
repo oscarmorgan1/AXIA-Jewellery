@@ -23,6 +23,7 @@ const InboxPage = lazy(() => import('./pages/Inbox'));
 const Website = lazy(() => import('./pages/Website'));
 const Pieces = lazy(() => import('./pages/Pieces'));
 const Suppliers = lazy(() => import('./pages/Suppliers'));
+const Reviews = lazy(() => import('./pages/Reviews'));
 
 export default function App() {
   const { user, isAdmin, verified, loading } = useAuth();
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="products" element={<Products />} />
         <Route path="products/new" element={<ProductEdit />} />
         <Route path="products/:id" element={<ProductEdit />} />
+        <Route path="reviews" element={<Reviews />} />
         <Route path="collections" element={<Collections />} />
         <Route path="pieces" element={<Pieces />} />
         <Route path="suppliers" element={<Suppliers />} />

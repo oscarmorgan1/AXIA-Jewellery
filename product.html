@@ -423,7 +423,7 @@
   <symbol id="boxArt" viewBox="0 0 400 320"><path d="M70 140 L130 84 L360 84 L300 140 Z" fill="#242220" stroke="#3a3733" stroke-width="1.5"/><path d="M300 140 L360 84 L360 232 L300 288 Z" fill="#181614" stroke="#3a3733" stroke-width="1.5"/><rect x="70" y="140" width="230" height="148" rx="4" fill="#1f1d1b" stroke="#3a3733" stroke-width="1.5"/><text x="185" y="220" text-anchor="middle" font-family="Bodoni Moda,serif" font-size="24" letter-spacing="7" fill="#F4F1EA">AXIA</text><path d="M300 200 L300 288" stroke="#F3436E" stroke-width="8"/></symbol>
 </svg>
 
-<script src="assets/js/catalogue.js?v=20261021b"></script>
+<script src="assets/js/catalogue.js?v=20261107a"></script>
 <script type="text/axia-deferred" src="assets/js/axia.js?v=20261106a"></script>
 <script type="text/axia-deferred">
 (function(){
@@ -674,11 +674,12 @@
       +'<span class="bnudge__arw">&rarr;</span>';
     el.hidden=false;
   }
-  /* Review videos (Admin > Products > Review videos): a portrait carousel under the written reviews.
+  /* Review videos (Admin > Reviews): a portrait carousel under the written reviews.
      Only the centre clip loads and plays (muted until the shopper turns the sound on), and only
      while the carousel is on screen; the rest show their poster until they're scrolled to. */
-  function renderReviewVideos(){
-    const list=(Array.isArray(p.reviewVideos)?p.reviewVideos:[]).filter(v=>v&&v.src);
+  function renderReviewVideos(shared){
+    // the shared set (site/reviews) is the same on every product; a product's own old clips only show until it's set up
+    const list=(Array.isArray(shared)?shared:Array.isArray(p.reviewVideos)?p.reviewVideos:[]).filter(v=>v&&v.src);
     const wrap=$('#revVideos'), track=$('#rvcTrack'); if(!wrap||!track||!list.length) return;
     const empty=$('#revEmpty'); if(empty) empty.hidden=true;
     wrap.hidden=false;
@@ -757,7 +758,8 @@
   (function(){ const n=FIRST_DROP_MADE[p.id]; if(!n) return;
     const s=$('#storyDrop'); if(s){ $('#storyDropN').textContent=n; s.hidden=false; }
     const t=$('#pdpDrop'); if(t){ $('#pdpDropN').textContent=n; t.hidden=false; } })();
-  renderArt(); sync(); renderPairings(); renderBundleNudge(); renderReviewVideos();
+  renderArt(); sync(); renderPairings(); renderBundleNudge();
+  (window.AXIA_REVIEWS?window.AXIA_REVIEWS():Promise.resolve(null)).then(renderReviewVideos);
   // Hidden pieces are teasers (locked for a future drop) - replace the buy area with a Drop 02 lock.
   if(p.hidden){
     const buy=$('.buy'); if(buy) buy.innerHTML='<button class="btn btn--cart" disabled style="opacity:.55;cursor:not-allowed;flex:1">Coming soon</button>';

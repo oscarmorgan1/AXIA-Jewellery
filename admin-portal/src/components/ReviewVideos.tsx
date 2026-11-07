@@ -1,41 +1,38 @@
 import { useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Trash2, Upload, VolumeX } from 'lucide-react';
-import { doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db, siteUrl } from '../firebase';
 import { uploadVideo, type VideoStage } from '../lib/video';
 import type { ReviewVideo } from '../types';
 import VideoProgress from './VideoProgress';
 
-type Made = ReviewVideo & { sizeBytes: number; trimmed: boolean; saved: boolean };
+type Made = ReviewVideo & { sizeBytes: number; trimmed: boolean };
+
+/** Saves the whole shared list (`site/reviews`) in its new order. */
+export function saveReviewVideos(videos: ReviewVideo[]) {
+  return setDoc(doc(db, 'site', 'reviews'), { videos, updatedAt: serverTimestamp() }, { merge: true });
+}
 
 /**
- * Customer review videos for a product, shown on the product page in a portrait
- * carousel under the text reviews. Each upload is converted by the server to a
- * light 720p MP4 that keeps its sound (at most a minute) plus a poster, and is
- * added to the product as soon as it's converted. Removing and reordering save
- * straight away too, so none of it depends on pressing Save.
+ * The customer review videos, shown in a portrait carousel under the written
+ * reviews on every product page (the same set on each). Each upload is
+ * converted by the server to a light 720p MP4 that keeps its sound (at most a
+ * minute) plus a poster, and added to `site/reviews` as soon as it's converted.
+ * Removing and reordering save straight away too.
  */
-export default function ReviewVideos({ productId, videos, onChange, onError }: {
-  productId: string; videos: ReviewVideo[];
-  onChange: (next: ReviewVideo[]) => void; onError: (msg: string) => void;
-}) {
+export default function ReviewVideos({ videos, onError }: { videos: ReviewVideo[]; onError: (msg: string) => void }) {
   const input = useRef<HTMLInputElement>(null);
   const [stage, setStage] = useState<VideoStage>('');
   const [progress, setProgress] = useState(0);
   const [note, setNote] = useState('');
 
   async function upload(files: File[]) {
-    if (!productId) return onError('Give the product a name first, so the videos are filed under its id.');
     setNote('');
-    let list = videos;
     const done: string[] = [];
     try {
       for (const file of files) {
-        const r = await uploadVideo<Made>('review', file, { stage: setStage, progress: setProgress }, { productId });
-        const { sizeBytes, trimmed, saved, ...entry } = r;
-        list = [...list, entry];
-        onChange(list);
-        done.push(`${(sizeBytes / 1048576).toFixed(1)} MB${entry.seconds ? `, ${Math.round(entry.seconds)}s` : ''}${trimmed ? ', cut to the first minute' : ''}${saved ? '' : ' (save the product to publish it)'}`);
+        const { sizeBytes, trimmed, ...entry } = await uploadVideo<Made>('review', file, { stage: setStage, progress: setProgress });
+        done.push(`${(sizeBytes / 1048576).toFixed(1)} MB${entry.seconds ? `, ${Math.round(entry.seconds)}s` : ''}${trimmed ? ', cut to the first minute' : ''}`);
       }
     } catch (e) { onError((e as Error).message); } finally {
       setStage('');
@@ -44,18 +41,15 @@ export default function ReviewVideos({ productId, videos, onChange, onError }: {
     }
   }
 
-  /** Writes the list to the product now (if it's been saved before) and to the draft. */
   async function commit(next: ReviewVideo[], msg: string) {
     try {
-      const ref = doc(db, 'products', productId);
-      if (productId && (await getDoc(ref)).exists()) await updateDoc(ref, { reviewVideos: next, updatedAt: serverTimestamp() });
-      onChange(next);
+      await saveReviewVideos(next);
       setNote(msg);
     } catch (e) { onError(`Couldn’t update the review videos: ${(e as Error).message}`); }
   }
 
   function remove(i: number) {
-    if (!confirm('Remove this review video from the product?')) return;
+    if (!confirm('Remove this review video? It comes off every product page.')) return;
     commit(videos.filter((_, k) => k !== i), 'Review video removed.');
   }
 
@@ -69,7 +63,7 @@ export default function ReviewVideos({ productId, videos, onChange, onError }: {
 
   return (
     <div className="review-videos">
-      <small className="review-videos__help">Shown in a carousel under the written reviews on the product page, in this order. Film them portrait. Any video works: it’s converted to a small 720p file with its sound kept, at most a minute long.</small>
+      <small className="review-videos__help">Shown in this order in a carousel under the written reviews, on every product page. Film them portrait. Any video works: it’s converted to a small 720p file with its sound kept, at most a minute long.</small>
       {videos.length > 0 && (
         <ul className="review-videos__list">
           {videos.map((v, i) => (
