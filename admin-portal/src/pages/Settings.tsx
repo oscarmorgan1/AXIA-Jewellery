@@ -1,12 +1,12 @@
 import { Fragment, useEffect, useState, type FormEvent } from 'react';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { Construction, Rocket } from 'lucide-react';
+import { Construction, PowerOff, Rocket } from 'lucide-react';
 import { db, usingEmulators } from '../firebase';
 import { useAuth } from '../auth';
 import { useAssumptions, useMaintenance } from '../lib/data';
 import { useToast } from '../components/Toast';
 import { LARP_LEVELS, useLarpMode } from '../lib/larp';
-import type { CostAssumptions } from '../types';
+import type { CostAssumptions, MaintenanceSettings } from '../types';
 
 const FIELDS: { key: keyof CostAssumptions; label: string; pct?: boolean; step: string }[] = [
   { key: 'paymentFeePct', label: 'Payment fee (%)', pct: true, step: '0.01' },
@@ -16,23 +16,41 @@ const FIELDS: { key: keyof CostAssumptions; label: string; pct?: boolean; step: 
   { key: 'returnsReservePct', label: 'Returns reserve (%)', pct: true, step: '0.1' },
 ];
 
+type SiteMode = MaintenanceSettings['mode'];
+const SITE_MODES: { key: SiteMode; label: string; icon: React.ReactNode; chip: string; sub: string; confirm?: string; toast: string }[] = [
+  { key: 'production', label: 'Production', icon: <Rocket size={15} />, chip: 'chip--good',
+    sub: 'Production: the site is live as normal.',
+    toast: 'Back in production. The site is live again within a few seconds.' },
+  { key: 'maintenance', label: 'Maintenance', icon: <Construction size={15} />, chip: 'chip--warn',
+    sub: 'Maintenance: every page of the site shows “AXIA is unavailable, back shortly” and checkout is off. This portal still works.',
+    confirm: 'Put the site into maintenance? Visitors will see "AXIA is unavailable" and nobody can check out until you switch back to production.',
+    toast: 'Maintenance on. Visitors see “AXIA is unavailable” within a few seconds.' },
+  { key: 'offline', label: 'Offline', icon: <PowerOff size={15} />, chip: 'chip--bad',
+    sub: 'Offline: every page of the site just says “AXIA is offline”, with no promise of coming back soon. Checkout is off. This portal still works.',
+    confirm: 'Take the site offline? Visitors will only see "AXIA is offline" and nobody can check out until you switch back to production.',
+    toast: 'Site offline. Visitors see “AXIA is offline” within a few seconds.' },
+];
+
 /**
- * Maintenance / Production switch. Maintenance puts every storefront page behind
- * the "AXIA is unavailable" page and stops checkout (server/static.js, server/checkout.js).
- * The portal keeps working either way.
+ * Production / Maintenance / Offline switch (site/maintenance). Maintenance and Offline put every
+ * storefront page behind maintenance.html or offline.html and stop checkout
+ * (server/static.js, server/checkout.js). The portal keeps working in every mode.
  */
 function SiteModeCard() {
   const { data, loading, error } = useMaintenance();
   const [busy, setBusy] = useState(false);
   const toast = useToast();
+  const current = SITE_MODES.find(m => m.key === data.mode) ?? SITE_MODES[0];
 
-  async function setOn(on: boolean) {
-    if (on === data.on) return;
-    if (on && !window.confirm('Put the site into maintenance? Visitors will see "AXIA is unavailable" and nobody can check out until you switch back to production.')) return;
+  async function setMode(mode: SiteMode) {
+    if (mode === data.mode) return;
+    const next = SITE_MODES.find(m => m.key === mode)!;
+    if (next.confirm && !window.confirm(next.confirm)) return;
     setBusy(true);
     try {
-      await setDoc(doc(db, 'site', 'maintenance'), { on, updatedAt: serverTimestamp() });
-      toast.show(on ? 'Maintenance on. Visitors see “AXIA is unavailable” within a few seconds.' : 'Back in production. The site is live again within a few seconds.');
+      // `on` kept for anything still reading the first version of this switch
+      await setDoc(doc(db, 'site', 'maintenance'), { mode, on: mode === 'maintenance', updatedAt: serverTimestamp() });
+      toast.show(next.toast);
     } catch (e) {
       toast.show(`Couldn’t save: ${(e as Error).message}`);
     } finally { setBusy(false); }
@@ -44,19 +62,19 @@ function SiteModeCard() {
         <div>
           <h2>Site mode</h2>
           <div className="card__sub">
-            {data.on
-              ? 'Maintenance: every page of the site shows “AXIA is unavailable” and checkout is off. This portal still works.'
-              : 'Production: the site is live as normal.'}
+            {current.sub}
             {data.updatedAt ? ` Changed ${data.updatedAt.toDate().toLocaleString('en-AU')}.` : ''}
           </div>
         </div>
         <span className="spacer" />
-        {!loading && <span className={`chip ${data.on ? 'chip--warn' : 'chip--good'}`}>{data.on ? 'Maintenance' : 'Production'}</span>}
+        {!loading && <span className={`chip ${current.chip}`}>{current.label}</span>}
       </div>
       {error && <div className="notice notice--error">{error.message}</div>}
       <div className="segmented" role="radiogroup" aria-label="Site mode">
-        <button type="button" role="radio" aria-checked={!data.on} className={!data.on ? 'on' : ''} disabled={busy || loading} onClick={() => setOn(false)}><Rocket size={15} /> Production</button>
-        <button type="button" role="radio" aria-checked={data.on} className={data.on ? 'on' : ''} disabled={busy || loading} onClick={() => setOn(true)}><Construction size={15} /> Maintenance</button>
+        {SITE_MODES.map(m => (
+          <button key={m.key} type="button" role="radio" aria-checked={data.mode === m.key} className={data.mode === m.key ? 'on' : ''}
+            disabled={busy || loading} onClick={() => setMode(m.key)}>{m.icon} {m.label}</button>
+        ))}
       </div>
       {toast.node}
     </div>
@@ -106,6 +124,16 @@ export default function Settings() {
         </form>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div className="card">
+            <div className="card__head"><h2>Environment</h2></div>
+            <dl className="kv">
+              <dt>Signed in as</dt><dd>{user?.email}</dd>
+              <dt>Firebase project</dt><dd>axia-jewellery</dd>
+              <dt>Data</dt><dd>{usingEmulators ? 'Local emulators' : 'Live'}</dd>
+              <dt>Payments</dt><dd>Stripe Checkout</dd>
+              <dt>Order emails</dt><dd>Resend</dd>
+            </dl>
+          </div>
           <SiteModeCard />
           <div className="card">
             <div className="card__head">
@@ -126,16 +154,6 @@ export default function Settings() {
                 </button>
               ))}
             </div>
-          </div>
-          <div className="card">
-            <div className="card__head"><h2>Environment</h2></div>
-            <dl className="kv">
-              <dt>Signed in as</dt><dd>{user?.email}</dd>
-              <dt>Firebase project</dt><dd>axia-jewellery</dd>
-              <dt>Data</dt><dd>{usingEmulators ? 'Local emulators' : 'Live'}</dd>
-              <dt>Payments</dt><dd>Stripe Checkout</dd>
-              <dt>Order emails</dt><dd>Resend</dd>
-            </dl>
           </div>
           {plan?.units && (
             <div className="card">

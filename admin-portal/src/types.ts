@@ -179,9 +179,9 @@ export interface Message {
 
 /** site/countdown: the launch countdown shown across the storefront. Public. */
 /** Public `site/shop`: the Open shop switch. While closed the bag works but checkout is refused. */
-/** The Maintenance switch (`site/maintenance`). Missing means production. */
+/** The Site mode switch (`site/maintenance`). Missing means production; the first version stored `on: true` for maintenance. */
 export interface MaintenanceSettings {
-  on: boolean;
+  mode: 'production' | 'maintenance' | 'offline';
   updatedAt?: { toDate(): Date };
 }
 
