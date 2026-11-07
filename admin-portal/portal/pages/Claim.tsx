@@ -1,12 +1,15 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 import AuthShell from '../../src/components/AuthShell';
+import GoogleG from '../../src/components/GoogleG';
+import { CLAIMING } from '../account';
+import { friendly } from './Login';
 import { auth } from '../../src/firebase';
 import { accountApi } from '../api';
 import PasswordField from './PasswordField';
 
-interface Invite { state: 'ready' | 'used' | 'expired' | 'has_account'; email: string; name: string; orderNumber: string; transfer?: { productName: string; fromName: string } }
+interface Invite { state: 'ready' | 'used' | 'expired' | 'has_account'; email: string; name: string; orderNumber: string; transfer?: { productName: string; fromName: string }; signup?: boolean }
 
 /** /portal/claim?t=…  From the "Claim your AXIA account" email: set a password and go straight in. */
 export default function Claim() {
@@ -41,6 +44,32 @@ export default function Claim() {
       setError((err as Error).message);
       if ((err as { status?: number }).status === 409) setInvite({ ...invite, state: 'has_account' });
     } finally { setBusy(false); }
+  }
+
+  // Claim with the Google account for the invited address instead of a password.
+  async function google() {
+    if (!invite) return;
+    setBusy(true); setError(null);
+    const flag = (on: boolean) => { try { if (on) sessionStorage.setItem(CLAIMING, '1'); else sessionStorage.removeItem(CLAIMING); } catch { /* storage blocked */ } };
+    flag(true);
+    try {
+      if (auth.currentUser) await signOut(auth);
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ login_hint: invite.email });
+      const { user } = await signInWithPopup(auth, provider);
+      if ((user.email || '').toLowerCase() !== invite.email) {
+        await signOut(auth);
+        throw new Error(`That Google account is ${user.email}. This invite is for ${invite.email}: choose that account, or set a password below.`);
+      }
+      const res = await accountApi<{ next?: string }>('/claim/google', { token, name: name.trim(), marketing });
+      flag(false);
+      location.replace(`/portal${res.next === '/pieces' ? '/pieces' : '/orders'}`);
+    } catch (err) {
+      flag(false);
+      const e = err as Error & { code?: string };
+      setError(e.code ? friendly(e.code) : e.message);
+      setBusy(false);
+    }
   }
 
   async function renew() {
@@ -84,8 +113,16 @@ export default function Claim() {
 
   return (
     <AuthShell>
-      <h1>{first ? `Welcome, ${first}` : invite.transfer ? 'Create your account' : 'Claim your account'}</h1>
-      <p className="auth__lede">{invite.transfer ? `${invite.transfer.fromName || 'An AXIA customer'} is sending you their ${invite.transfer.productName}. Set a password to accept it and keep it in your account.` : invite.orderNumber ? `Set a password to follow order #${invite.orderNumber} and keep your pieces in one place.` : 'Set a password to follow your orders and keep your pieces in one place.'}</p>
+      <h1>{first ? `Welcome, ${first}` : invite.transfer || invite.signup ? 'Create your account' : 'Claim your account'}</h1>
+      <p className="auth__lede">{invite.signup ? 'Your email is confirmed. Choose how you’ll sign in to follow orders, keep your pieces and message us.' : invite.transfer ? `${invite.transfer.fromName || 'An AXIA customer'} is sending you their ${invite.transfer.productName}. Accept it with Google or a password, and keep it in your account.` : invite.orderNumber ? `Follow order #${invite.orderNumber} and keep your pieces in one place. Use Google or set a password.` : 'Follow your orders and keep your pieces in one place. Use Google or set a password.'}</p>
+      <label className="check pt-check">
+        <input type="checkbox" checked={marketing} onChange={e => setMarketing(e.target.checked)} />
+        Email me about new drops and offers
+      </label>
+      <button type="button" className="btn auth__btn" disabled={busy} onClick={google}>
+        <GoogleG /> Continue with Google
+      </button>
+      <div className="auth__or" role="separator"><span>or set a password</span></div>
       <form className="auth__fields" onSubmit={submit}>
         <label className="field">Email address
           <input className="input" type="email" value={invite.email} readOnly aria-readonly="true" />
@@ -97,12 +134,8 @@ export default function Claim() {
           <label htmlFor="new-password">Choose a password</label>
           <PasswordField id="new-password" value={password} onChange={setPassword} autoComplete="new-password" placeholder="At least 8 characters" minLength={8} />
         </div>
-        <label className="check pt-check">
-          <input type="checkbox" checked={marketing} onChange={e => setMarketing(e.target.checked)} />
-          Email me about new drops and offers
-        </label>
         {error && <div className="notice notice--error" role="alert">{error}</div>}
-        <button className="btn btn--primary auth__btn auth__btn--go" disabled={busy}>{busy ? 'Setting up…' : invite.transfer ? 'Create my account' : 'Claim my account'}</button>
+        <button className="btn btn--primary auth__btn auth__btn--go" disabled={busy}>{busy ? 'Setting up…' : invite.transfer || invite.signup ? 'Create my account' : 'Claim my account'}</button>
       </form>
     </AuthShell>
   );

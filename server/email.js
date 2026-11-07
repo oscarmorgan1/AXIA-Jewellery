@@ -297,7 +297,8 @@ export function transferResultEmail({ name, productName, toEmail, outcome, url, 
  * "Claim your AXIA account", sent once an order is paid when that email has no
  * account yet (server/account.js). The link sets a password and opens the portal.
  */
-export function accountInviteEmail({ name, orderNumber, url, days, siteUrl }) {
+export function accountInviteEmail({ name, orderNumber, url, days, siteUrl, signup = false }) {
+  // `signup`: they asked for an account on /portal/signup, so this confirms their email.
   const first = String(name || '').trim().split(/\s+/)[0];
   const perks = [
     ['Follow your order', 'from the setter’s bench to your door, with tracking the day it ships.'],
@@ -306,20 +307,23 @@ export function accountInviteEmail({ name, orderNumber, url, days, siteUrl }) {
   ];
   const body = [
     p(`${first ? `Hi ${esc(first)},` : 'Hi,'}`),
-    p(`${orderNumber ? `Thanks again for order <b>#${esc(orderNumber)}</b>. ` : ''}Your AXIA account is ready. Set a password to claim it.`),
+    p(signup ? 'Thanks for signing up. Confirm this is your email and finish setting up your AXIA account.'
+      : `${orderNumber ? `Thanks again for order <b>#${esc(orderNumber)}</b>. ` : ''}Your AXIA account is ready. Set a password (or use Google) to claim it.`),
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 4px;${font};font-size:14px;line-height:1.55;color:${C.ink}">
       ${perks.map(([b, t]) => `<tr><td width="22" style="vertical-align:top;color:${C.ice};font-weight:700">&#10003;</td><td style="padding-bottom:8px"><b>${b}</b> <span style="color:${C.soft}">${t}</span></td></tr>`).join('')}
     </table>`,
-    button(url, 'Claim your account'),
-    p(`<span style="font-size:13px">This link is just for you and works for ${esc(days)} days. If it expires, open it anyway and we’ll send a new one.</span>`, C.soft),
+    button(url, signup ? 'Finish setting up' : 'Claim your account'),
+    p(`<span style="font-size:13px">This link is just for you and works for ${esc(days)} days. If it expires, open it anyway and we’ll send a new one.${signup ? ' Didn’t sign up? You can ignore this email.' : ''}</span>`, C.soft),
   ].join('');
   const text = [first ? `Hi ${first},` : 'Hi,',
-    `${orderNumber ? `Thanks again for order #${orderNumber}. ` : ''}Your AXIA account is ready. Set a password to claim it:`, url,
+    signup ? 'Thanks for signing up. Finish setting up your AXIA account:' : `${orderNumber ? `Thanks again for order #${orderNumber}. ` : ''}Your AXIA account is ready. Set a password (or use Google) to claim it:`, url,
     'Follow your order, keep your pieces with their serial numbers, and message us, all in one place.',
     `This link is just for you and works for ${days} days.`].join('\n\n');
   return {
-    subject: 'Claim your AXIA account',
-    html: layout({ siteUrl, preheader: 'Set a password to follow your order and keep your pieces in one place.', heading: 'Your account is ready', body }),
+    subject: signup ? 'Finish setting up your AXIA account' : 'Claim your AXIA account',
+    html: layout({ siteUrl, preheader: signup ? 'Confirm your email to finish setting up your account.' : 'Set a password to follow your order and keep your pieces in one place.',
+      heading: signup ? 'Confirm your email' : 'Your account is ready', body,
+      ...(signup ? { reason: 'You’re receiving this email because someone signed up for an AXIA account with this address.' } : {}) }),
     text,
   };
 }

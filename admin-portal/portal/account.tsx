@@ -23,6 +23,9 @@ interface State {
 
 const Ctx = createContext<State | null>(null);
 
+/** Set by the claim page while a Google claim is in progress (see Claim.tsx). */
+export const CLAIMING = 'axia_claiming';
+
 /** The signed-in customer and their account, kept live from Firestore. */
 export function AccountProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -40,6 +43,8 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user) return;
+    // Claiming an invite with Google: the claim page finishes the account itself and reloads.
+    try { if (sessionStorage.getItem(CLAIMING)) return; } catch { /* storage blocked */ }
     let stop = () => {};
     let live = true;
     // The server makes accounts/{uid} on first sign-in (e.g. Google), then we listen to it.

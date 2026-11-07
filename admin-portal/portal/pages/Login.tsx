@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import AuthShell from '../../src/components/AuthShell';
 import GoogleG from '../../src/components/GoogleG';
@@ -63,7 +64,7 @@ export default function Login() {
         {info && <div className="notice notice--ok">{info}</div>}
         <button className="btn btn--primary auth__btn auth__btn--go" disabled={busy}>{busy ? 'Signing in…' : 'Log in'}</button>
       </form>
-      <p className="auth__hint">New here? Your account invite arrives by email after your first order.</p>
+      <p className="auth__hint">New here? <Link to="/signup">Create an account</Link></p>
     </AuthShell>
   );
 }
