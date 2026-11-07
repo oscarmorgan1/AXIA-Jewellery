@@ -28,3 +28,9 @@ export async function isShopOpen() {
   const snap = await db.collection('site').doc('shop').get();
   return snap.exists && snap.get('open') === true;
 }
+
+/** The Maintenance switch in the admin portal (Settings > Site mode). Production unless switched on. */
+export async function isMaintenanceOn() {
+  const snap = await db.collection('site').doc('maintenance').get();
+  return snap.exists && snap.get('on') === true;
+}

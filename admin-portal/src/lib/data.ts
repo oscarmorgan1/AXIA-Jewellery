@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { collection, doc, onSnapshot, query, where, type DocumentData } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Collection, CostAssumptions, Message, Order, Piece, Product, Supplier, ProductCost, Signup, Countdown, ShopSettings, SiteMedia, Visit, ReviewVideo } from '../types';
+import type { Collection, CostAssumptions, Message, Order, Piece, Product, Supplier, ProductCost, Signup, Countdown, ShopSettings, MaintenanceSettings, SiteMedia, Visit, ReviewVideo } from '../types';
 import { DEFAULT_ASSUMPTIONS } from './economics';
 
 interface Live<T> { data: T; loading: boolean; error: Error | null }
@@ -61,6 +61,17 @@ export function useShop(): Live<ShopSettings> {
   useEffect(() => onSnapshot(
     doc(db, 'site', 'shop'),
     snap => setState({ data: { ...(snap.data() as Partial<ShopSettings> | undefined), open: snap.get('open') === true }, loading: false, error: null }),
+    error => setState(s => ({ ...s, loading: false, error })),
+  ), []);
+  return state;
+}
+
+/** The Maintenance / Production switch (`site/maintenance`). Missing means production. */
+export function useMaintenance(): Live<MaintenanceSettings> {
+  const [state, setState] = useState<Live<MaintenanceSettings>>({ data: { on: false }, loading: true, error: null });
+  useEffect(() => onSnapshot(
+    doc(db, 'site', 'maintenance'),
+    snap => setState({ data: { ...(snap.data() as Partial<MaintenanceSettings> | undefined), on: snap.get('on') === true }, loading: false, error: null }),
     error => setState(s => ({ ...s, loading: false, error })),
   ), []);
   return state;

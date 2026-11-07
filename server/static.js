@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import express from 'express';
-import { isShopOpen } from './services.js';
+import { isMaintenanceOn, isShopOpen } from './services.js';
 import { renderPage } from './seo.js';
 
 const NO_CACHE = 'no-cache';
@@ -28,9 +28,24 @@ async function shopOpen() {
   return shop.open;
 }
 
+// The Maintenance switch: on, every storefront page shows maintenance.html
+// ("AXIA is unavailable") with a 503 so search engines treat it as temporary.
+// The admin portal, /api and assets keep working. Cached the same way; if
+// Firestore can't be reached the site stays up (production).
+let maint = { on: false, at: 0 };
+export async function maintenanceOn() {
+  if (Date.now() - maint.at < SHOP_TTL) return maint.on;
+  try { maint = { on: await isMaintenanceOn(), at: Date.now() }; }
+  catch (e) { console.error('maintenance switch read failed', e); maint = { on: false, at: Date.now() }; }
+  return maint.on;
+}
+// Still reachable in maintenance: unsubscribing from emails must always work.
+const DURING_MAINTENANCE = new Set(['unsubscribe']);
+
 export function staticSite(root) {
   const router = express.Router();
-  const pages = new Set(fs.readdirSync(root).filter(f => f.endsWith('.html')).map(f => f.slice(0, -5)));
+  // maintenance.html is only ever sent by the switch below, never as /maintenance.
+  const pages = new Set(fs.readdirSync(root).filter(f => f.endsWith('.html')).map(f => f.slice(0, -5)).filter(p => p !== 'maintenance'));
   const adminDir = path.join(root, 'admin');
   const sendPage = (res, file) => res.set('Cache-Control', NO_CACHE).sendFile(file);
   // Storefront pages go out with their canonical, preview and robots tags (seo.js).
@@ -81,6 +96,10 @@ export function staticSite(root) {
   router.get('/{*page}', async (req, res, next) => {
     const qs = req.originalUrl.slice(req.path.length);
     const m = req.path.match(/^\/([\w-]+)(\.html)?$/);
+    if ((await maintenanceOn()) && !(m && DURING_MAINTENANCE.has(m[1]))) {
+      return res.status(503).set({ 'Cache-Control': 'no-store', 'Retry-After': '600', 'X-Robots-Tag': 'noindex' })
+        .sendFile(path.join(root, 'maintenance.html'));
+    }
     if (req.path === '/') return sendSitePage(req, res, (await shopOpen()) ? 'store' : 'index');
     // Open, the store lives at the main address, so /store goes there. Closed, /store stays reachable.
     if (m && m[1] === 'store' && !m[2] && (await shopOpen())) return sendTo(res, '/' + qs);

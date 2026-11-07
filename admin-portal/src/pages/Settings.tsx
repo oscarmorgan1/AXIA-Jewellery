@@ -1,9 +1,9 @@
 import { Fragment, useEffect, useState, type FormEvent } from 'react';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { Lock } from 'lucide-react';
+import { Construction, Rocket } from 'lucide-react';
 import { db, usingEmulators } from '../firebase';
 import { useAuth } from '../auth';
-import { useAssumptions } from '../lib/data';
+import { useAssumptions, useMaintenance } from '../lib/data';
 import { useToast } from '../components/Toast';
 import { LARP_LEVELS, useLarpMode } from '../lib/larp';
 import type { CostAssumptions } from '../types';
@@ -15,6 +15,53 @@ const FIELDS: { key: keyof CostAssumptions; label: string; pct?: boolean; step: 
   { key: 'shippingAUD', label: 'Shipping cost to AXIA (A$)', step: '0.01' },
   { key: 'returnsReservePct', label: 'Returns reserve (%)', pct: true, step: '0.1' },
 ];
+
+/**
+ * Maintenance / Production switch. Maintenance puts every storefront page behind
+ * the "AXIA is unavailable" page and stops checkout (server/static.js, server/checkout.js).
+ * The portal keeps working either way.
+ */
+function SiteModeCard() {
+  const { data, loading, error } = useMaintenance();
+  const [busy, setBusy] = useState(false);
+  const toast = useToast();
+
+  async function setOn(on: boolean) {
+    if (on === data.on) return;
+    if (on && !window.confirm('Put the site into maintenance? Visitors will see "AXIA is unavailable" and nobody can check out until you switch back to production.')) return;
+    setBusy(true);
+    try {
+      await setDoc(doc(db, 'site', 'maintenance'), { on, updatedAt: serverTimestamp() });
+      toast.show(on ? 'Maintenance on. Visitors see “AXIA is unavailable” within a few seconds.' : 'Back in production. The site is live again within a few seconds.');
+    } catch (e) {
+      toast.show(`Couldn’t save: ${(e as Error).message}`);
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <div className="card">
+      <div className="card__head">
+        <div>
+          <h2>Site mode</h2>
+          <div className="card__sub">
+            {data.on
+              ? 'Maintenance: every page of the site shows “AXIA is unavailable” and checkout is off. This portal still works.'
+              : 'Production: the site is live as normal.'}
+            {data.updatedAt ? ` Changed ${data.updatedAt.toDate().toLocaleString('en-AU')}.` : ''}
+          </div>
+        </div>
+        <span className="spacer" />
+        {!loading && <span className={`chip ${data.on ? 'chip--warn' : 'chip--good'}`}>{data.on ? 'Maintenance' : 'Production'}</span>}
+      </div>
+      {error && <div className="notice notice--error">{error.message}</div>}
+      <div className="segmented" role="radiogroup" aria-label="Site mode">
+        <button type="button" role="radio" aria-checked={!data.on} className={!data.on ? 'on' : ''} disabled={busy || loading} onClick={() => setOn(false)}><Rocket size={15} /> Production</button>
+        <button type="button" role="radio" aria-checked={data.on} className={data.on ? 'on' : ''} disabled={busy || loading} onClick={() => setOn(true)}><Construction size={15} /> Maintenance</button>
+      </div>
+      {toast.node}
+    </div>
+  );
+}
 
 export default function Settings() {
   const { user } = useAuth();
@@ -47,7 +94,6 @@ export default function Settings() {
       <div className="page-head"><h1>Settings</h1></div>
       <div className="grid-2">
         <form className="card" onSubmit={save}>
-          <div className="private-note"><Lock size={14} /> Admin only</div>
           <div className="card__head"><div><h2>Cost assumptions</h2><div className="card__sub">Used to work out contribution, break-even ROAS and max ad spend.</div></div></div>
           <div className="form-grid">
             {FIELDS.map(f => (
@@ -60,6 +106,7 @@ export default function Settings() {
         </form>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <SiteModeCard />
           <div className="card">
             <div className="card__head">
               <h2>Larp mode</h2>

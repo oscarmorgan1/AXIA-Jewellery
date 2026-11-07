@@ -9,7 +9,7 @@ rules_version = '2';
 //   signups/{id}         waitlist sign-ups: written by the server, only admins read
 //   messages/{id}        support form: written by the server, only admins read
 //   visits/{day_vid}     anonymous unique-visitor counts: written by the server, only admins read
-//   site/{doc}           public site settings (launch countdown): anyone reads, only admins write
+//   site/{doc}           public site settings (launch countdown, shop open, maintenance): anyone reads, only admins write
 //   orders/{id}          admins only (Stripe webhooks will write via the Admin SDK)
 //   pieces/{key}         PRIVATE piece registry (serial, supplier, order): admins only.
 //                        The public /genuine check never reads it from the browser: it
