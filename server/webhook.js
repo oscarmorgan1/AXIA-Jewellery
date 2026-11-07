@@ -13,6 +13,7 @@ import { confirmationEmail, sendEmail } from './email.js';
 import { emailEntry, historyEntry, push, upsertCustomer, customerId } from './orders.js';
 import { sendAccountInvite } from './account.js';
 import { syncOrder } from './sync.js';
+import { wasDeleted } from './deletes.js';
 
 const cents = n => (n || 0) / 100;
 
@@ -65,6 +66,8 @@ async function buildOrder(sessionId) {
 }
 
 async function recordCheckout(sessionId, siteUrl) {
+  // Deleted in the admin portal (usually a test order): a re-sent event mustn't bring it back.
+  if (await wasDeleted(sessionId)) return;
   const order = await buildOrder(sessionId);
   const ref = db.collection('orders').doc(sessionId);
   const existing = await ref.get();

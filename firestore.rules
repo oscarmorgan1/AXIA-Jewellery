@@ -23,6 +23,9 @@ rules_version = '2';
 //   accountInvites/{h}   claim-your-account links (hashed): server only (no rule below)
 //   pieceTransfers/{id}  piece transfers between customers: server only (no rule below).
 //                        Each side sees its part under accounts/{uid} (server/transfers.js).
+//   deletedOrders/{id}   ids of orders deleted in the portal, so a re-sent Stripe webhook
+//                        doesn't bring one back: server only (no rule below)
+//   erasures/{id}        log of privacy erasures (when, by whom, counts; not whose): server only
 //
 // "Admin" means a signed-in user whose ID token carries the custom claim
 // admin == true (set with `npm run set-admin -- <email>`) AND who has entered
@@ -89,8 +92,10 @@ service cloud.firestore {
         && !request.resource.data.keys().hasAny(['economics', 'factory_cost_AUD', 'factoryCostAUD', 'cost']);
     }
 
+    // Deleting an order goes through the server (POST /api/admin/orders/:id/delete,
+    // server/deletes.js), which also cleans up every reference to it.
     match /orders/{orderId} {
-      allow read, write: if isAdmin();
+      allow read, create, update: if isAdmin();
     }
 
     // One physical piece, keyed by its serial in capitals with only letters and
@@ -118,8 +123,9 @@ service cloud.firestore {
       allow update: if isAdmin() && validPiece() && request.resource.data.serial == resource.data.serial;
     }
 
+    // Deleting goes through the server, which refuses while registry pieces name the supplier.
     match /suppliers/{id} {
-      allow read, delete: if isAdmin();
+      allow read: if isAdmin();
       allow create, update: if isAdmin()
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 120;
     }

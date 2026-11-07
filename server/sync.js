@@ -70,6 +70,9 @@ export async function uidFor(email) {
 const NOT_SOLD = ['pending', 'cancelled', 'refunded'];
 const sydneyDate = d => d.toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' });
 
+/** The owner of a piece whose holder was erased for a privacy request (server/deletes.js): nobody's portal. */
+export const ERASED_OWNER = '(erased)';
+
 /** Transferred to someone else (server/transfers.js) from the order it's still in. */
 export const passedOn = piece => typeof piece.ownerUid === 'string' && !!piece.ownerUid && (piece.ownerOrderId || null) === (piece.orderId || null);
 
@@ -110,7 +113,7 @@ export async function syncPiece(key) {
     // A piece passed on (server/transfers.js) belongs to its new owner, as long as the sale stands.
     // (It only counts for the order it was passed on from: re-assigned to another order, it's that buyer's.)
     const owner = !sold ? null
-      : passedOn(piece) ? piece.ownerUid
+      : passedOn(piece) ? (piece.ownerUid === ERASED_OWNER ? null : piece.ownerUid)
       : await uidFor(o.customer && o.customer.email);
     const before = piece && typeof piece.portalUid === 'string' ? piece.portalUid : null;
     if (before && before !== owner) await db.collection('accounts').doc(before).collection('pieces').doc(key).delete();

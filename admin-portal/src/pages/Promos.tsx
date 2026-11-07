@@ -1,11 +1,12 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, TicketPercent } from 'lucide-react';
+import { Plus, TicketPercent, Trash2 } from 'lucide-react';
 import { useOrders } from '../lib/data';
 import { adminApi } from '../lib/api';
 import { aud } from '../lib/format';
 import { isSale, orderNo } from '../lib/orders';
 import Drawer from '../components/Drawer';
+import ConfirmDelete from '../components/ConfirmDelete';
 import StatCard from '../components/StatCard';
 import { useToast } from '../components/Toast';
 import type { Order, PromoCode } from '../types';
@@ -69,6 +70,7 @@ export default function Promos() {
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<PromoCode | null>(null);
   const { data: orders } = useOrders();
   const toast = useToast();
 
@@ -88,6 +90,17 @@ export default function Promos() {
       const u = m.get(id) || blankUsage();
       u.orders.push(o); u.salesAUD += o.totalAUD || 0; u.discountAUD += o.discountAUD || 0;
       m.set(id, u);
+    }
+    return m;
+  }, [orders, promos]);
+
+  // Any order at all with the code, paid or not: those codes can't be deleted.
+  const onOrders = useMemo(() => {
+    const m = new Map<string, number>();
+    const byCode = new Map((promos || []).map(p => [p.code, p.id]));
+    for (const o of orders) {
+      const id = o.promotionCodeId || (o.promotionCode && byCode.get(o.promotionCode.toUpperCase())) || '';
+      if (id) m.set(id, (m.get(id) || 0) + 1);
     }
     return m;
   }, [orders, promos]);
@@ -193,6 +206,11 @@ export default function Promos() {
                             </div>
                           )) : <span className="muted">No orders with this code yet.</span>}
                           <div className="muted" style={{ fontSize: 12.5, marginTop: 8 }}>Created {day(p.createdAt)}{p.affiliate?.email ? ` · ${p.affiliate.email}` : ''} · Stripe {p.stripe.promotionCodeId}</div>
+                          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                            {onOrders.get(p.id)
+                              ? <span className="muted" style={{ fontSize: 12.5 }}>Used on {onOrders.get(p.id)} {onOrders.get(p.id) === 1 ? 'order' : 'orders'}, so it can’t be deleted. Turn it off instead.</span>
+                              : <button className="btn btn--sm btn--danger" onClick={() => setDeleting(p)}><Trash2 size={14} /> Delete code</button>}
+                          </div>
                         </td></tr>
                       )}
                     </Fragment>
@@ -204,6 +222,17 @@ export default function Promos() {
         )}
       </div>
 
+      {deleting && (
+        <ConfirmDelete title={`Delete ${deleting.code}?`} action="Delete code" onClose={() => setDeleting(null)}
+          onConfirm={async () => {
+            await adminApi(`/promos/${encodeURIComponent(deleting.id)}/delete`, {});
+            setDeleting(null); setOpen(null); toast.show(`${deleting.code} deleted`); load();
+          }}>
+          <p>No order has used {deleting.code}, so it can go. It stops working at checkout straight away and leaves this list.</p>
+          <p className="muted">Stripe doesn’t let promotion codes be deleted, so it’s switched off there and stays in your Stripe dashboard as an inactive code.</p>
+          {deleting.code === WELCOME_CODE && <div className="notice notice--warn">{WELCOME_CODE} is the code the welcome email gives everyone who signs up. Without it, that email offers a code that won’t work.</div>}
+        </ConfirmDelete>
+      )}
       {creating && <NewPromo onClose={() => setCreating(false)} onCreated={code => { setCreating(false); toast.show(`${code} created in Stripe`); load(); }} />}
       {toast.node}
     </>

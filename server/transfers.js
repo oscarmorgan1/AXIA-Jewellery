@@ -70,7 +70,7 @@ export async function syncIncoming(id) {
  * Ends a pending transfer (cancelled, declined, expired). Returns the transfer
  * as it was, or null if it had already ended.
  */
-async function close(id, status, extra = {}) {
+export async function closeTransfer(id, status, extra = {}) {
   const ref = transfers().doc(id);
   const t = await db.runTransaction(async tx => {
     const snap = await tx.get(ref);
@@ -95,7 +95,7 @@ async function tellSender(t, outcome) {
 /** Expires one transfer if its time is up, and tells the sender. Returns true if it expired. */
 async function expireIfDue(id, t) {
   if (t.status !== 'pending' || (ms(t.expiresAt) || Infinity) > Date.now()) return false;
-  const was = await close(id, 'expired');
+  const was = await closeTransfer(id, 'expired');
   if (was) await tellSender({ ...was, id }, 'expired');
   return true;
 }
@@ -206,13 +206,13 @@ export function transferRoutes() {
 
   router.post('/api/account/transfers/:id/cancel', handle(async req => {
     const { id } = await mine(req, 'from');
-    await close(id, 'cancelled');
+    await closeTransfer(id, 'cancelled');
     return { ok: true };
   }));
 
   router.post('/api/account/transfers/:id/decline', handle(async req => {
     const { id } = await mine(req, 'to');
-    const was = await close(id, 'declined', { toUid: req.customer.uid });
+    const was = await closeTransfer(id, 'declined', { toUid: req.customer.uid });
     if (was) await tellSender({ ...was, id }, 'declined');
     return { ok: true };
   }));
