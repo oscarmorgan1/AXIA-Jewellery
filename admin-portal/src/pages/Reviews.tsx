@@ -56,7 +56,7 @@ export default function Reviews() {
         </div></div>
         {(error || reviews.error) && <div className="notice notice--error">{error || reviews.error?.message}</div>}
         {reviews.loading ? <div className="skeleton" style={{ height: 120 }} aria-hidden="true" />
-          : <ReviewVideos videos={reviews.data} onError={setError} />}
+          : <ReviewVideos videos={reviews.data} products={products.data} onError={setError} />}
       </div>
       {toast.node}
     </>
