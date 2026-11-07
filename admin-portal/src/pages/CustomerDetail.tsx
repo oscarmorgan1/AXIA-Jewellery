@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Mail, MessageSquare, Phone, Save, Send, Trash2, UserPlus } from 'lucide-react';
+import { ArrowLeft, KeyRound, Mail, MessageSquare, Phone, Save, Send, Trash2, UserPlus } from 'lucide-react';
 import { doc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import { adminApi } from '../lib/api';
@@ -36,7 +36,8 @@ export default function CustomerDetail() {
     return [...m.values()].sort((a, b) => b.qty - a.qty);
   }, [p]);
 
-  const sent = [...(p?.record?.emails || [])].filter(e => e.type === 'message' || e.type === 'reply' || e.type === 'welcome').reverse();
+  const sent = [...(p?.record?.emails || [])].filter(e => ['message', 'reply', 'welcome', 'account-invite'].includes(e.type)).reverse();
+  const [inviting, setInviting] = useState(false);
 
   if (loading) return <SkeletonPage stats />;
   if (!p) return <div className="card empty"><b>Customer not found</b><Link className="btn" to="/customers">Back to customers</Link></div>;
@@ -47,6 +48,14 @@ export default function CustomerDetail() {
       await adminApi(`/customers/${encodeURIComponent(p!.id)}/notes`, { notes: notes || '' });
       toast.show('Notes saved'); reload();
     } catch (e) { toast.show((e as Error).message); } finally { setSaving(false); }
+  }
+
+  async function resendInvite() {
+    setInviting(true);
+    try {
+      const r = await adminApi<{ status: string }>(`/customers/${encodeURIComponent(p!.id)}/invite`, {});
+      toast.show(r.status === 'sent' ? 'Invite sent' : 'Invite made, but email isn’t set up here'); reload();
+    } catch (e) { toast.show((e as Error).message); } finally { setInviting(false); }
   }
 
   async function removeSignups() {
@@ -102,7 +111,7 @@ export default function CustomerDetail() {
                 {sent.map((e, i) => (
                   <div className="feed__item" key={'s' + i} style={{ alignItems: 'flex-start' }}>
                     <span className="feed__icon stat__icon--dark"><Send size={16} /></span>
-                    <div className="feed__body"><b>{e.type === 'welcome' ? 'Welcome email' : `You ${e.type === 'reply' ? 'replied' : 'wrote'}`}: {e.subject}</b>
+                    <div className="feed__body"><b>{e.type === 'welcome' ? 'Welcome email' : e.type === 'account-invite' ? 'Account invite' : `You ${e.type === 'reply' ? 'replied' : 'wrote'}`}: {e.subject}</b>
                       <small style={{ whiteSpace: 'pre-wrap', display: 'block' }}>{(e.body || '').slice(0, 240)}</small>
                       <small style={{ display: 'block' }}>{e.sentAt ? new Date(e.sentAt).toLocaleString('en-AU') : ''}{e.by ? ` · ${e.by}` : ''} · Resend <code>{e.resendId || 'not sent'}</code></small></div>
                   </div>
@@ -125,6 +134,26 @@ export default function CustomerDetail() {
         </div>
 
         <div className="editor__side">
+          {p.sales.length > 0 && (() => {
+            const acc = p.record?.account;
+            return (
+              <div className="card">
+                <div className="card__head"><h2>Portal account</h2><span className="spacer" />
+                  {acc?.status === 'active' ? <span className="chip chip--good">Active</span> : acc?.status === 'invited' ? <span className="chip chip--warn">Invited</span> : <span className="chip chip--muted">None</span>}
+                </div>
+                <p className="card__sub" style={{ marginTop: 0 }}>
+                  {acc?.status === 'active' ? `Signed up ${acc.since ? fmtDate(new Date(acc.since)) : ''}. They see their details at /portal.`
+                    : acc?.status === 'invited' ? `Invite emailed ${acc.invitedAt ? fmtDate(new Date(acc.invitedAt)) : ''}, not claimed yet. Links work for 30 days.`
+                    : 'No invite sent. Orders before accounts launched don’t get one automatically.'}
+                </p>
+                {acc?.status !== 'active' && (
+                  <button className="btn btn--sm" style={{ marginTop: 12 }} disabled={inviting} onClick={resendInvite}>
+                    <KeyRound size={15} /> {inviting ? 'Sending…' : acc?.status === 'invited' ? 'Resend invite' : 'Send invite'}
+                  </button>
+                )}
+              </div>
+            );
+          })()}
           <div className="card">
             <div className="card__head"><h2>Contact</h2></div>
             <dl className="kv kv--left">

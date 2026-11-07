@@ -47,8 +47,14 @@ export async function unsubscribeUrl(email) {
 /** Takes them off the mailing list (or back on, with resubscribe). */
 export async function setSubscribed(email, subscribed, via) {
   const id = customerId(email);
-  const signups = await db.collection('signups').where('email', '==', id).get();
+  const [signups, customer] = await Promise.all([
+    db.collection('signups').where('email', '==', id).get(),
+    db.collection('customers').doc(id).get(),
+  ]);
   const batch = db.batch();
+  // Their portal account (if they have one) shows the same switch.
+  const uid = customer.exists && customer.get('uid');
+  if (typeof uid === 'string' && uid) batch.set(db.collection('accounts').doc(uid), { marketing: { email: !!subscribed } }, { merge: true });
   batch.set(db.collection('customers').doc(id), {
     email: id,
     unsubscribed: subscribed ? FieldValue.delete() : { at: FieldValue.serverTimestamp(), via },

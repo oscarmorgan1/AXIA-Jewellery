@@ -12,6 +12,7 @@ import { signupRoutes } from './signup.js';
 import { unsubscribeRoutes } from './unsubscribe.js';
 import { publicFormRoutes } from './forms.js';
 import { genuineRoutes } from './genuine.js';
+import { accountRoutes } from './account.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const app = express();
@@ -45,6 +46,7 @@ app.use(signupRoutes());
 app.use(unsubscribeRoutes());
 app.use(publicFormRoutes());
 app.use(genuineRoutes());
+app.use(accountRoutes());
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 app.use(staticSite(root));
 // Unknown URLs: browsers get the styled 404 page, everything else (missing images, scripts) a plain one.

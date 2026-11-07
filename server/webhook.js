@@ -11,6 +11,7 @@ import { db, stripe } from './services.js';
 import { orderNumber } from './checkout.js';
 import { confirmationEmail, sendEmail } from './email.js';
 import { emailEntry, historyEntry, push, upsertCustomer, customerId } from './orders.js';
+import { sendAccountInvite } from './account.js';
 
 const cents = n => (n || 0) / 100;
 
@@ -86,6 +87,18 @@ async function recordCheckout(sessionId, siteUrl) {
     const result = await sendEmail({ to: order.customer.email, ...mail, idempotencyKey: `order-confirmation/${sessionId}` });
     if (result) {
       await ref.update({ emailSentAt: FieldValue.serverTimestamp(), emails: push(emailEntry('confirmation', order.customer.email, mail.subject, result)) });
+    }
+  }
+  // Then, in its own email, an invite to claim a portal account (only if they don't have one).
+  if (order.status === 'paid' && order.customer.email && !(existing.exists && existing.data().accountInvite)) {
+    try {
+      const invite = await sendAccountInvite({ email: order.customer.email, name: order.customer.name, orderId: sessionId, orderNumber: order.orderNumber, siteUrl });
+      await ref.update({
+        accountInvite: { status: invite.status, at: FieldValue.serverTimestamp() },
+        ...(invite.subject ? { emails: push(emailEntry('account-invite', customerId(order.customer.email), invite.subject, invite.sent)) } : {}),
+      });
+    } catch (err) {
+      console.error('webhook: account invite failed', sessionId, err); // never fail the webhook over it
     }
   }
 }

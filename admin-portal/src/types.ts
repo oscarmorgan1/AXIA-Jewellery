@@ -227,6 +227,8 @@ export interface CustomerRecord {
   createdAt?: number | null;
   /** Set when they used the unsubscribe link in an email (at in millis). */
   unsubscribed?: { at: number | null; via: string } | null;
+  /** Their customer portal (/portal) account: invited by email after an order, or active once claimed (millis). */
+  account?: { status: 'invited' | 'active'; invitedAt: number | null; since: number | null } | null;
   /** Messages and replies sent to them from the portal (sentAt in millis). */
   emails?: (Omit<OrderEmail, 'sentAt'> & { sentAt: number | null })[];
 }

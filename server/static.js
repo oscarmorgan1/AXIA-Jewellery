@@ -1,8 +1,8 @@
 // Serves the storefront and the built admin portal the way firebase.json did:
 // clean URLs (/collection serves collection.html, /collection.html redirects),
-// /admin/** falls back to the portal's index.html, and the same cache headers.
+// /admin/** and /portal/** fall back to their app's index.html, and the same cache headers.
 //
-// Only the root .html pages, assets/ and admin/ are served. Everything else in
+// Only the root .html pages, assets/, admin/ and portal/ are served. Everything else in
 // the repo (package.json, scripts/, server/, rules, private/) is never sent.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -47,7 +47,6 @@ export function staticSite(root) {
   const router = express.Router();
   // maintenance.html and offline.html are only ever sent by the switch below, never as pages.
   const pages = new Set(fs.readdirSync(root).filter(f => f.endsWith('.html')).map(f => f.slice(0, -5)).filter(p => p !== 'maintenance' && p !== 'offline'));
-  const adminDir = path.join(root, 'admin');
   const sendPage = (res, file) => res.set('Cache-Control', NO_CACHE).sendFile(file);
   // Storefront pages go out with their canonical, preview and robots tags (seo.js).
   const sendSitePage = async (req, res, name) => {
@@ -57,7 +56,7 @@ export function staticSite(root) {
 
   // Crawlers ask for these on every visit; answering saves a stream of 404s.
   router.get('/robots.txt', (req, res) => res.set('Cache-Control', WEEK).type('text')
-    .send('User-agent: *\nDisallow: /admin\nDisallow: /api/\nDisallow: /checkout\nDisallow: /unsubscribe\nDisallow: /styleguide\n'));
+    .send('User-agent: *\nDisallow: /admin\nDisallow: /portal\nDisallow: /api/\nDisallow: /checkout\nDisallow: /unsubscribe\nDisallow: /styleguide\n'));
   router.get('/favicon.ico', (req, res) => res.set('Cache-Control', WEEK).redirect(301, '/assets/img/favicon.svg'));
 
   // Web-sized photos (scripts/images.mjs). If a WebP version hasn't been made
@@ -76,20 +75,26 @@ export function staticSite(root) {
     setHeaders: (res, file) => res.set('Cache-Control', MEDIA.test(file) ? WEEK : NO_CACHE),
   }));
 
-  router.use('/admin', (req, res, next) => { res.set('X-Robots-Tag', 'noindex'); next(); });
-  router.use('/admin/assets', express.static(path.join(adminDir, 'assets'), {
-    index: false, redirect: false, dotfiles: 'ignore', fallthrough: false,
-    setHeaders: res => res.set('Cache-Control', YEAR),
-  }));
-  router.use('/admin', express.static(adminDir, {
-    index: false, redirect: false, dotfiles: 'ignore',
-    setHeaders: (res, file) => res.set('Cache-Control', MEDIA.test(file) ? WEEK : NO_CACHE),
-  }));
-  router.get(['/admin', '/admin/{*rest}'], (req, res, next) => {
-    const index = path.join(adminDir, 'index.html');
-    if (!fs.existsSync(index)) return next(); // portal not built (run `npm run build`)
-    sendPage(res, index);
-  });
+  // The admin portal (/admin) and the customer portal (/portal) are single-page
+  // apps built by admin-portal/: hashed assets cached for a year, and every other
+  // path under them falls back to their index.html. Neither is indexed.
+  for (const app of ['admin', 'portal']) {
+    const dir = path.join(root, app);
+    router.use(`/${app}`, (req, res, next) => { res.set('X-Robots-Tag', 'noindex'); next(); });
+    router.use(`/${app}/assets`, express.static(path.join(dir, 'assets'), {
+      index: false, redirect: false, dotfiles: 'ignore', fallthrough: false,
+      setHeaders: res => res.set('Cache-Control', YEAR),
+    }));
+    router.use(`/${app}`, express.static(dir, {
+      index: false, redirect: false, dotfiles: 'ignore',
+      setHeaders: (res, file) => res.set('Cache-Control', MEDIA.test(file) ? WEEK : NO_CACHE),
+    }));
+    router.get([`/${app}`, `/${app}/{*rest}`], (req, res, next) => {
+      const index = path.join(dir, 'index.html');
+      if (!fs.existsSync(index)) return next(); // not built (run `npm run build`)
+      sendPage(res, index);
+    });
+  }
 
   // Temporary (302) and uncached, so flipping the switch takes effect at once.
   const sendTo = (res, url) => res.set('Cache-Control', 'no-store').redirect(302, url);
