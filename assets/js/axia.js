@@ -184,7 +184,13 @@
     $('#ctot').textContent = fmt(paid);
     $$('[data-rm]', b).forEach(x => x.onclick = () => { cart.splice(+x.dataset.rm, 1); save(); });
   }
-  function save() { localStorage.setItem(KEY, JSON.stringify(cart)); render(); }
+  // `axia_cart_at` stamps each change so a signed-in customer's saved bag
+  // (admin-portal/portal/sync.ts) knows which copy is newest.
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(cart)); localStorage.setItem('axia_cart_at', String(Date.now())); } catch (e) {}
+    render();
+    document.dispatchEvent(new CustomEvent('axia:cart', { detail: cart }));
+  }
   render();
 
   const toast = $('#toast'); let tt;
@@ -203,7 +209,23 @@
   });
 
   // public API for page-level scripts (collection, product)
-  window.AXIA = { openCart: openC, closeCart: closeC, toast: say, addToCart(it) { cart.push({ q: 1, ...it }); save(); say(shopOpen() ? 'Added to bag' : 'Reserved'); openC(); } };
+  window.AXIA = {
+    openCart: openC, closeCart: closeC, toast: say,
+    addToCart(it) { cart.push({ q: 1, ...it }); save(); say(shopOpen() ? 'Added to bag' : 'Reserved'); openC(); },
+    getCart: () => cart.slice(),
+    // Replaces the bag with the saved one from their account, keeping its timestamp.
+    setCart(lines, at) {
+      cart = Array.isArray(lines) ? lines.slice() : [];
+      try { localStorage.setItem(KEY, JSON.stringify(cart)); localStorage.setItem('axia_cart_at', String(at || Date.now())); } catch (e) {}
+      render();
+    },
+  };
+
+  /* ---- Account: the header person icon opens /portal. Signed in (the portal
+     sets axia_account), it gets a dot and the bag is saved to their account. ---- */
+  let signedIn = false; try { signedIn = !!localStorage.getItem('axia_account'); } catch (e) {}
+  $$('.nav__icon--account').forEach(a => { a.classList.toggle('is-in', signedIn); a.setAttribute('aria-label', signedIn ? 'Your account' : 'Sign in'); });
+  if (signedIn) import('/portal/sync.js').catch(e => console.warn('account sync unavailable', e));
 
   /* ---- Search overlay (built from the live catalogue) ---- */
   const fmtASearch = n => 'A$' + Number(n).toLocaleString('en-AU');

@@ -15,6 +15,7 @@ import { STATUS_EMAILS, statusEmail, messageEmail, sendEmail } from './email.js'
 import { isVerifiedAdmin } from './twofactor.js';
 import { sydneyDay } from './forms.js';
 import { emailEntry, historyEntry, push, upsertCustomer, customerId } from './orders.js';
+import { sendAccountInvite } from './account.js';
 
 /** Statuses an admin can set. `refunded` only comes from Stripe, with the money. */
 export const ADMIN_STATUSES = ['paid', 'in_progress', 'shipped', 'fulfilled', 'cancelled'];
@@ -208,7 +209,8 @@ async function listCustomers(backfill = true) {
   }
   return customers.docs.map(d => {
     const v = d.data();
-    return { ...v, id: d.id, emails: (v.emails || []).map(e => ({ ...e, sentAt: millis(e.sentAt) })), unsubscribed: v.unsubscribed ? { ...v.unsubscribed, at: millis(v.unsubscribed.at) } : null, firstOrderAt: millis(v.firstOrderAt), lastOrderAt: millis(v.lastOrderAt), createdAt: millis(v.createdAt), updatedAt: millis(v.updatedAt) };
+    return { ...v, id: d.id, emails: (v.emails || []).map(e => ({ ...e, sentAt: millis(e.sentAt) })), unsubscribed: v.unsubscribed ? { ...v.unsubscribed, at: millis(v.unsubscribed.at) } : null, firstOrderAt: millis(v.firstOrderAt), lastOrderAt: millis(v.lastOrderAt), createdAt: millis(v.createdAt), updatedAt: millis(v.updatedAt),
+      account: v.account ? { status: v.account.status, invitedAt: millis(v.account.invitedAt), since: millis(v.account.since) } : null };
   });
 }
 
@@ -217,6 +219,26 @@ async function saveCustomerNotes(req) {
   if (!(await ref.get()).exists) throw new HttpError(404, 'Customer not found');
   await ref.update({ notes: str(req.body.notes, 5000), updatedAt: FieldValue.serverTimestamp() });
   return { ok: true };
+}
+
+/** Emails (another) "Claim your AXIA account" link, for their latest order. */
+async function resendInvite(req) {
+  const id = customerId(str(req.params.id, 200));
+  const snap = await db.collection('customers').doc(id).get();
+  if (!snap.exists) throw new HttpError(404, 'Customer not found');
+  const orderIds = snap.get('orderIds') || [];
+  if (!orderIds.length) throw new HttpError(400, 'Invites are for customers who have ordered');
+  const orders = await db.getAll(...orderIds.slice(-20).map(o => db.collection('orders').doc(o)));
+  const latest = orders.filter(o => o.exists).sort((a, b) => (millis(b.get('createdAt')) || 0) - (millis(a.get('createdAt')) || 0))[0];
+  const result = await sendAccountInvite({
+    email: id, name: snap.get('name') || '', orderId: latest ? latest.id : null,
+    orderNumber: latest ? latest.get('orderNumber') || '' : '', siteUrl: siteOrigin(req, latest && latest.data()),
+  });
+  if (result.status === 'has_account') throw new HttpError(409, 'They already have an account');
+  if (result.subject) {
+    await db.collection('customers').doc(id).update({ emails: push({ ...emailEntry('account-invite', id, result.subject, result.sent), by: req.admin.email || req.admin.uid }) });
+  }
+  return { status: result.status };
 }
 
 // ---- Messages: reply to an Inbox inquiry or write to a customer, sent through
@@ -279,6 +301,7 @@ export function adminRoutes() {
   router.get('/api/admin/orders/:id/receipt', handle(orderReceipt));
   router.get('/api/admin/customers', handle(() => listCustomers()));
   router.post('/api/admin/customers/:id/notes', handle(saveCustomerNotes));
+  router.post('/api/admin/customers/:id/invite', handle(resendInvite));
   router.post('/api/admin/messages/send', handle(sendMessage));
   router.post('/api/admin/media/upload-url', handle(req => videoUploadUrl({
     slot: str(req.body.slot, 20), contentType: str(req.body.contentType, 100), size: Number(req.body.size), origin: req.get('origin'),

@@ -3,6 +3,8 @@ node_modules/
 
 # admin portal build output (built from admin-portal/, served at /admin)
 /admin/
+# customer portal build output (admin-portal/portal/, served at /portal)
+/portal/
 
 # Firebase local state
 .firebase/

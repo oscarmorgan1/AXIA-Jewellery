@@ -19,7 +19,8 @@
     "deploy": "firebase deploy --project axia-jewellery",
     "postinstall": "npm --prefix admin-portal install",
     "migrate:collections": "node scripts/migrate-collections.mjs",
-    "images": "node scripts/images.mjs"
+    "images": "node scripts/images.mjs",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-axia-rules \"node --test tests/rules.test.mjs\""
   },
   "dependencies": {
     "express": "^5.3.0",
@@ -29,6 +30,8 @@
     "stripe": "^23.0.0"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "firebase": "^12.19.0",
     "firebase-tools": "^14.19.0",
     "sharp": "^0.34.5"
   }

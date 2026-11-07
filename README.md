@@ -62,6 +62,8 @@ Pages show web-sized WebP copies of the photos in `assets/img` (600px and 1200px
 | `pieces/{key}` | admins | admins | The piece registry: one physical piece per serial (key = serial in capitals, letters and digits only), with its product, supplier, supplier order date, the order line it fills and its shipped date (set when the order is marked Shipped). The public `/genuine` check goes through `GET /api/genuine`, which returns only the product name and the customer's purchase date (the order's date), and only for a piece in a paid order that wasn't cancelled or refunded; anything else is a 404. Rate limited |
 | `suppliers/{id}` | admins | admins | Manufacturers and suppliers (name, contact, usual lead time, notes), picked when adding a piece. A piece also keeps the supplier's order number, the date it was ordered from them and `receivedOn` (null while it's still being made) |
 | `customers/{email}` | nobody | nobody | One record per buyer, keyed by lower-cased email: latest name, phone and address, order ids, first and last order dates, and private notes. Created or updated by the webhook on every order; the portal reads it through `/api/admin/customers`, which also creates records for older orders |
+| `accounts/{uid}` (+ subfolders) | that signed-in customer, admins | server only (`/api/account/*`) | A customer's portal account at `/portal`: name, phone, address, `marketing.email`. Later PRs add customer-safe copies of their orders, pieces and messages here, so the private collections stay admin-only. Linked from `customers/{email}` (`uid`, `account.status`: invited or active) |
+| `accountInvites/{hash}` | nobody | nobody | "Claim your AXIA account" links, keyed by the SHA-256 of the emailed token: email, order, 30-day expiry, used date. Server only |
 | `adminSignInCodes/{uid}` | nobody | nobody | The admin's current sign-in code, hashed, with its expiry and attempt count. Server only (`/api/auth/code/*`) |
 | `promoCodes/{id}` | nobody | nobody | Promo codes, keyed by Stripe promotion code id. Only the server reads and writes them (portal goes through `/api/admin/promos`) |
 
@@ -194,3 +196,13 @@ Promo codes are made under Promo codes in the portal. Each one becomes a Stripe 
 ### Going live with payments
 
 At cutover, add a live-mode webhook endpoint in Stripe with the same URL and events, then replace `stripe-secret-key` and `stripe-webhook-secret` with the live values (run the same `secrets:set` commands; they add a new version) and roll out again. Orders record whether they were test or live (`stripe.livemode`).
+
+## Customer portal (/portal)
+
+Customers get an account at `/portal` (source in `admin-portal/portal/`, built to `/portal` by `npm run build`; it shares the admin's sign-in design and styles but none of its code). When an order is paid and that email has no account yet, the webhook sends a separate "Claim your AXIA account" email with a link to `/portal/claim?t=…` (works for 30 days; an expired link offers a fresh one). Claiming sets a password and the "new drops and offers" choice, which uses the same `unsubscribed` flag as the unsubscribe link. Customers can also sign in with Google using the same email. Forgot password emails a link to `/portal/reset` through Resend.
+
+The portal has a sidebar: Saved bag, Details, Address, Emails and Sign-in. The person icon in the store header opens `/portal` (with a dot once signed in). Signed in, the bag is saved to the account (`accounts/{uid}/saved/cart`, through `/api/account/cart`) by `/portal/sync.js` (source `admin-portal/portal/sync.ts`), which `assets/js/axia.js` loads only for signed-in visitors: the first sync on a browser merges the guest bag with the saved one, then the most recently changed bag wins, so checking out on one device empties it everywhere.
+
+Admins can send or resend an invite from a customer's page (Portal account card). Customers who ordered before accounts launched aren't invited automatically.
+
+Locally, with no Resend key, `npm run serve` prints invite and reset links in its terminal. Develop the portal with `npm --prefix admin-portal run dev:portal` (http://127.0.0.1:5174/portal/). Rules tests: `npm run test:rules` (needs Java for the emulator).

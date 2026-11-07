@@ -222,6 +222,52 @@ export function messageEmail({ name, subject, body, siteUrl, quote, orderNumber 
   return { subject, html, text };
 }
 
+/**
+ * "Claim your AXIA account", sent once an order is paid when that email has no
+ * account yet (server/account.js). The link sets a password and opens the portal.
+ */
+export function accountInviteEmail({ name, orderNumber, url, days, siteUrl }) {
+  const first = String(name || '').trim().split(/\s+/)[0];
+  const perks = [
+    ['Follow your order', 'from the setter’s bench to your door, with tracking the day it ships.'],
+    ['Keep your pieces', 'with their serial numbers, ready to verify any time.'],
+    ['Message us', 'about sizing, care or anything else, all in one place.'],
+  ];
+  const body = [
+    p(`${first ? `Hi ${esc(first)},` : 'Hi,'}`),
+    p(`${orderNumber ? `Thanks again for order <b>#${esc(orderNumber)}</b>. ` : ''}Your AXIA account is ready. Set a password to claim it.`),
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 4px;${font};font-size:14px;line-height:1.55;color:${C.ink}">
+      ${perks.map(([b, t]) => `<tr><td width="22" style="vertical-align:top;color:${C.ice};font-weight:700">&#10003;</td><td style="padding-bottom:8px"><b>${b}</b> <span style="color:${C.soft}">${t}</span></td></tr>`).join('')}
+    </table>`,
+    button(url, 'Claim your account'),
+    p(`<span style="font-size:13px">This link is just for you and works for ${esc(days)} days. If it expires, open it anyway and we’ll send a new one.</span>`, C.soft),
+  ].join('');
+  const text = [first ? `Hi ${first},` : 'Hi,',
+    `${orderNumber ? `Thanks again for order #${orderNumber}. ` : ''}Your AXIA account is ready. Set a password to claim it:`, url,
+    'Follow your order, keep your pieces with their serial numbers, and message us, all in one place.',
+    `This link is just for you and works for ${days} days.`].join('\n\n');
+  return {
+    subject: 'Claim your AXIA account',
+    html: layout({ siteUrl, preheader: 'Set a password to follow your order and keep your pieces in one place.', heading: 'Your account is ready', body }),
+    text,
+  };
+}
+
+/** Password reset for a portal account. The link opens /portal/reset and works for one hour. */
+export function passwordResetEmail({ url, siteUrl }) {
+  const body = [
+    p('Tap the button to choose a new password for your AXIA account.'),
+    button(url, 'Set a new password'),
+    p('<span style="font-size:13px">The link works for one hour. If you didn’t ask for this, you can ignore this email: your password stays the same.</span>', C.soft),
+  ].join('');
+  return {
+    subject: 'Reset your AXIA password',
+    html: layout({ siteUrl, preheader: 'Choose a new password for your AXIA account.', heading: 'Reset your password', body,
+      reason: 'You’re receiving this email because someone asked to reset the password for your AXIA account.' }),
+    text: ['Choose a new password for your AXIA account:', url, 'The link works for one hour. If you didn’t ask for this, ignore this email.'].join('\n\n'),
+  };
+}
+
 /** Welcome email for a new sign-up, with their first-order code. */
 export function welcomeEmail({ name, code, percentOff, siteUrl }) {
   const first = String(name || '').trim().split(/\s+/)[0];

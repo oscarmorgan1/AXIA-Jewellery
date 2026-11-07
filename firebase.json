@@ -19,7 +19,8 @@
       "private/**",
       "**/*backend-data*.json",
       "**/*service-account*.json",
-      "*.log"
+      "*.log",
+      "tests/**"
     ],
     "cleanUrls": true,
     "rewrites": [
@@ -30,6 +31,14 @@
       {
         "source": "/admin/**",
         "destination": "/admin/index.html"
+      },
+      {
+        "source": "/portal",
+        "destination": "/portal/index.html"
+      },
+      {
+        "source": "/portal/**",
+        "destination": "/portal/index.html"
       }
     ],
     "headers": [
