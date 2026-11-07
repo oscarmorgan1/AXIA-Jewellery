@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="theme-color" content="#111315" />
+<title>AXIA Admin · Offline</title>
+<style>
+  :root { --bg: #F4F1EA; --ink: #111315; --muted: #5f6166; --line: rgba(17,19,21,.14); }
+  @media (prefers-color-scheme: dark) { :root { --bg: #0E0F11; --ink: #F4F1EA; --muted: #a3a49f; --line: rgba(244,241,234,.16); } }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px;
+    background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 360px; text-align: center; }
+  svg { width: 56px; height: 56px; border-radius: 14px; }
+  h1 { font-size: 22px; margin: 20px 0 8px; letter-spacing: -.01em; }
+  p { margin: 0 0 24px; color: var(--muted); }
+  button { font: inherit; font-weight: 600; padding: 10px 22px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--ink); color: var(--bg); cursor: pointer; }
+</style>
+</head>
+<body>
+<main>
+  <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" fill="#111315"/><g fill="#F4F1EA" transform="translate(4.8 4.8) scale(.7)"><polygon points="16,5 6,27 9.5,27"/><polygon points="16,5 22.5,27 26,27"/><rect x="9" y="20.4" width="14" height="1.7"/></g></svg>
+  <h1>You're offline</h1>
+  <p>The admin portal needs a connection. It will load again as soon as you're back online.</p>
+  <button type="button" onclick="location.reload()">Try again</button>
+</main>
+<script>addEventListener('online', function () { location.reload(); });</script>
+</body>
+</html>

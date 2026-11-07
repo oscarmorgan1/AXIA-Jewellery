@@ -73,6 +73,12 @@ After the password or Google step, the portal emails a 6-digit code to the admin
 
 This is enforced on the server side, not only in the portal: `POST /api/auth/code/verify` adds the sign-in's `auth_time` to the user's `mfa` custom claim, and the Firestore rules, Storage rules and `/api/admin/*` all refuse an admin token whose `auth_time` isn't in that list. Codes are stored hashed in `adminSignInCodes/{uid}`, which only the server can read. Locally with no Resend key, `npm run serve` prints the code in its terminal instead of emailing it.
 
+### Admin on the home screen (PWA)
+
+The portal can be installed like an app. On iPhone or iPad open `/admin` in Safari, tap Share, then **Add to Home Screen**; on Android Chrome use the menu's **Install app** (desktop Chrome shows an install icon in the address bar). It opens full screen at `/admin` with the AXIA icon.
+
+The files are in `admin-portal/public/` (manifest, `sw.js`, `offline.html`, icons; regenerate the icons with `node scripts/admin-icons.mjs`). The service worker is scoped to `/admin/` so the storefront is untouched, and it caches nothing from the signed-in portal: no pages, API responses, Firestore data or images. The only stored file is the "You're offline" page shown when a page load fails with no connection.
+
 The raw `AXIA-backend-data.json` must never be committed or deployed: `.gitignore` and the Hosting `ignore` list both exclude it.
 
 ## Going live (one time)
