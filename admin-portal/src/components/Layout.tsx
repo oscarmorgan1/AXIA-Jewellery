@@ -113,7 +113,7 @@ export default function Layout() {
           <NavLink to="/" className="header__logo" aria-label="Dashboard"><Logo height={17} /></NavLink>
           <div className="header__title">AXIA / <b>{title}</b></div>
           <span className="spacer" />
-          {shop.loading ? <span className="skeleton skeleton--chip" aria-hidden="true" /> : <NavLink to="/website" className={`chip header__shop ${shop.data.open ? 'chip--good' : 'chip--warn'}`} title="Open or close the shop" data-short={shop.data.open ? 'Open' : 'Closed'} aria-label={shop.data.open ? 'Shop open' : 'Shop closed'}><span className="header__shop-text">{shop.data.open ? 'Shop open' : 'Shop closed'}</span></NavLink>}
+          {shop.loading ? <span className="skeleton skeleton--chip" aria-hidden="true" /> : <NavLink to="/settings" className={`chip header__shop ${shop.data.open ? 'chip--good' : 'chip--warn'}`} title="Open or close the shop" data-short={shop.data.open ? 'Open' : 'Closed'} aria-label={shop.data.open ? 'Shop open' : 'Shop closed'}><span className="header__shop-text">{shop.data.open ? 'Shop open' : 'Shop closed'}</span></NavLink>}
           <button className="search-trigger" onClick={() => setPalette(true)} aria-label="Search">
             <Search size={16} /><span>Search anything</span><kbd>{isMac ? '⌘' : 'Ctrl'} K</kbd>
           </button>

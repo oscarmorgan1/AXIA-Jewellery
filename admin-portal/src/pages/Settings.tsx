@@ -1,9 +1,9 @@
 import { Fragment, useEffect, useState, type FormEvent } from 'react';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { Construction, PowerOff, Rocket } from 'lucide-react';
+import { Construction, Lock, PowerOff, Rocket, ShoppingBag } from 'lucide-react';
 import { db, usingEmulators } from '../firebase';
 import { useAuth } from '../auth';
-import { useAssumptions, useMaintenance } from '../lib/data';
+import { useAssumptions, useMaintenance, useShop } from '../lib/data';
 import { useToast } from '../components/Toast';
 import { LARP_LEVELS, useLarpMode } from '../lib/larp';
 import type { CostAssumptions, MaintenanceSettings } from '../types';
@@ -81,6 +81,49 @@ function SiteModeCard() {
   );
 }
 
+/** The Open shop switch. While closed, the bag still works but checkout is refused (the server checks too). */
+function ShopCard() {
+  const { data, loading, error } = useShop();
+  const [busy, setBusy] = useState(false);
+  const toast = useToast();
+
+  async function setOpen(open: boolean) {
+    if (open && !window.confirm('Open the shop? Customers will be able to check out and pay straight away.')) return;
+    setBusy(true);
+    try {
+      await setDoc(doc(db, 'site', 'shop'), { open, updatedAt: serverTimestamp() });
+      toast.show(open ? 'The shop is open. Checkout works on the next page load.' : 'The shop is closed. Bags are kept, checkout is off.');
+    } catch (e) {
+      toast.show(`Couldn’t save: ${(e as Error).message}`);
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <div className="card">
+      <div className="card__head">
+        <div>
+          <h2>Shop</h2>
+          <div className="card__sub">
+            {data.open
+              ? 'Open: the main address shows the store, “Add to bag” and checkout work, and payments go through Stripe.'
+              : 'Closed: the main address shows the waitlist page (the store is still at /store), buttons say “Reserve your spot” and checkout is switched off.'}
+            {data.updatedAt ? ` Changed ${data.updatedAt.toDate().toLocaleString('en-AU')}.` : ''}
+          </div>
+        </div>
+        <span className="spacer" />
+        {!loading && <span className={`chip ${data.open ? 'chip--good' : 'chip--warn'}`}>{data.open ? 'Open' : 'Closed'}</span>}
+      </div>
+      {error && <div className="notice notice--error">{error.message}</div>}
+      <div style={{ display: 'flex', gap: 10 }}>
+        {data.open
+          ? <button className="btn" onClick={() => setOpen(false)} disabled={busy || loading}><Lock size={15} /> {busy ? 'Closing…' : 'Close shop'}</button>
+          : <button className="btn btn--primary" onClick={() => setOpen(true)} disabled={busy || loading}><ShoppingBag size={15} /> {busy ? 'Opening…' : 'Open shop'}</button>}
+      </div>
+      {toast.node}
+    </div>
+  );
+}
+
 export default function Settings() {
   const { user } = useAuth();
   const { data } = useAssumptions();
@@ -135,6 +178,7 @@ export default function Settings() {
             </dl>
           </div>
           <SiteModeCard />
+          <ShopCard />
           <div className="card">
             <div className="card__head">
               <h2>Larp mode</h2>
