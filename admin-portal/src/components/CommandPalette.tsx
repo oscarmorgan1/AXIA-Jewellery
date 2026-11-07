@@ -6,7 +6,9 @@ import { firstImage } from '../lib/catalogue';
 import { adminApi } from '../lib/api';
 import { STATUS_LABEL, orderNo } from '../lib/orders';
 import { aud } from '../lib/format';
-import type { Collection, Message, Order, Product, PromoCode, Signup } from '../types';
+import type { Collection, Message, Order, Piece, Product, PromoCode, Signup } from '../types';
+import { usePieces } from '../lib/data';
+import { STATE_LABEL, pieceState, serialKey } from '../lib/pieces';
 
 interface Item { group: string; label: string; hint?: string; img?: string; to: string }
 
@@ -26,11 +28,12 @@ const PAGES: Item[] = [
   { group: 'Go to', label: 'Settings', to: '/settings' },
 ];
 
-/** ⌘K / Ctrl+K search across pages, orders, customers, products, collections, messages and promo codes. */
+/** ⌘K / Ctrl+K search across pages, orders, piece serials, customers, products, collections, messages and promo codes. */
 export default function CommandPalette({ open, onClose, products, collections, signups, orders, messages }: {
   open: boolean; onClose: () => void; products: Product[]; collections: Collection[]; signups: Signup[]; orders: Order[]; messages: Message[];
 }) {
   const nav = useNavigate();
+  const { data: pieces } = usePieces();
   const [q, setQ] = useState('');
   const [sel, setSel] = useState(0);
   const input = useRef<HTMLInputElement>(null);
@@ -53,11 +56,18 @@ export default function CommandPalette({ open, onClose, products, collections, s
     };
     orders.forEach(o => o.customer?.email && person(o.customer.email, o.customer.name || '', `${o.customer.phone || ''} ${o.shipping?.address?.city || ''}`, true));
     signups.forEach(x => person(x.email, x.firstName, `${x.mobile || ''} ${x.instagram || ''}`, false));
-    const orderText = (o: Order) => [orderNo(o), o.id, o.customer?.name, o.customer?.email, o.customer?.phone, o.promotionCode, o.tracking?.number,
+    // Serials match however they're typed ("axia 7k2q", "AXIA-7K2Q…"), on 3+ letters or digits.
+    const k = serialKey(q);
+    const serialHit = (p: Piece) => k.length >= 3 && p.key.includes(k);
+    const serialsOf = new Map<string, string[]>();
+    pieces.forEach(p => p.orderId && serialsOf.set(p.orderId, [...(serialsOf.get(p.orderId) || []), p.key]));
+    const orderText = (o: Order) => [...(serialsOf.get(o.id) || []),orderNo(o), o.id, o.customer?.name, o.customer?.email, o.customer?.phone, o.promotionCode, o.tracking?.number,
       STATUS_LABEL[o.status || ''], ...(o.items || []).flatMap(i => [i.name, i.engraving])].join(' ');
     return [
       ...PAGES.filter(p => match(p.label)).slice(0, s ? 4 : PAGES.length),
-      ...(s ? orders.filter(o => match(orderText(o) + ' #' + orderNo(o))).slice(0, 6)
+      ...(s ? pieces.filter(serialHit).slice(0, 6)
+        .map(p => ({ group: 'Pieces', label: `${p.serial} · ${p.productName}`, hint: `${STATE_LABEL[pieceState(p)]}${p.orderNumber ? ` · #${p.orderNumber}` : ''}`, to: `/pieces?open=${encodeURIComponent(p.key)}` })) : []),
+      ...(s ? orders.filter(o => match(orderText(o) + ' #' + orderNo(o)) || (k.length >= 3 && (serialsOf.get(o.id) || []).some(x => x.includes(k)))).slice(0, 6)
         .map(o => ({ group: 'Orders', label: `#${orderNo(o)} · ${o.customer?.name || o.customer?.email || ''}`, hint: `${STATUS_LABEL[o.status || ''] || o.status} · ${aud(o.totalAUD)}`, to: `/orders/${encodeURIComponent(o.id)}` })) : []),
       ...(s ? [...people.values()].filter(p => match(`${p.name} ${p.email} ${p.text}`)).slice(0, 6)
         .map(p => ({ group: 'Customers', label: p.name ? `${p.name} · ${p.email}` : p.email, hint: p.orders ? `${p.orders} order${p.orders > 1 ? 's' : ''}` : 'Waitlist', to: `/customers/${encodeURIComponent(p.email)}` })) : []),
@@ -70,7 +80,7 @@ export default function CommandPalette({ open, onClose, products, collections, s
       ...(s ? messages.filter(m => match(`${m.name} ${m.email} ${m.topic} ${m.order || ''} ${m.message}`)).slice(0, 5)
         .map(m => ({ group: 'Messages', label: `${m.topic} from ${m.name}`, hint: m.status === 'done' ? 'Done' : 'New', to: '/inbox' })) : []),
     ] as Item[];
-  }, [q, products, collections, signups, orders, messages, promos]);
+  }, [q, products, collections, signups, orders, messages, promos, pieces]);
 
   useEffect(() => { setSel(0); }, [q]);
   if (!open) return null;
@@ -89,7 +99,7 @@ export default function CommandPalette({ open, onClose, products, collections, s
       <div className="overlay" onClick={onClose} />
       <div className="palette" role="dialog" aria-label="Search">
         <div className="palette__input"><Search size={18} />
-          <input ref={input} aria-label="Search" autoFocus value={q} onChange={e => setQ(e.target.value)} onKeyDown={onKey} placeholder="Search orders, customers, engraving, products, codes…" />
+          <input ref={input} aria-label="Search" autoFocus value={q} onChange={e => setQ(e.target.value)} onKeyDown={onKey} placeholder="Search orders, serials, customers, engraving, products, codes…" />
           <kbd style={{ fontSize: 11, color: 'var(--faint)' }}>esc</kbd>
         </div>
         <div className="palette__list">

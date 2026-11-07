@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
 import { usePieces, useSuppliers } from '../lib/data';
@@ -18,6 +18,14 @@ export default function Pieces() {
   const [filter, setFilter] = useState<Filter>((params.get('state') as Filter) || 'all');
   const [supplier, setSupplier] = useState(params.get('supplier') || '');
   const [editing, setEditing] = useState<Piece | 'new' | null>(null);
+  // /pieces?open=KEY (from the header search) opens that piece once the registry has loaded.
+  const openKey = params.get('open');
+  useEffect(() => {
+    if (!openKey || loading) return;
+    const p = pieces.find(x => x.key === openKey);
+    if (p) setEditing(p);
+    setParams(prev => { const n = new URLSearchParams(prev); n.delete('open'); return n; }, { replace: true });
+  }, [openKey, loading, pieces, setParams]);
   const toast = useToast();
   const q = params.get('q') || '';
 
