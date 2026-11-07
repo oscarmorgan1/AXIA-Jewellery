@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 
 /**
- * Larp mode: the dashboard shows made-up, rich-looking numbers at one of four levels.
+ * Larp mode: the dashboard shows made-up, rich-looking numbers at one of five levels.
  * Display only. It lives in this browser's localStorage and never touches Firestore or the public site.
  */
 const KEY = 'axia_admin_larp';
 const EVENT = 'axia-larp-change';
 
 export interface LarpLevel {
-  id: 1 | 2 | 3 | 4;
+  /** what's stored; kept stable so a saved choice survives new levels being added */
+  id: 1 | 2 | 3 | 4 | 5;
   name: string;
   blurb: string;
   /** multiplies every fake count and dollar figure (Millionaire is 1) */
@@ -17,21 +18,23 @@ export interface LarpLevel {
   growth: string;
 }
 
+/** Listed smallest to largest; the number shown is the position, not the id. */
 export const LARP_LEVELS: LarpLevel[] = [
+  { id: 5, name: 'Micro Larp', blurb: 'About A$50K a month. Doing numbers, quietly.', scale: 0.0104, margin: 52.6, growth: '+21%' },
   { id: 1, name: 'Side hustle', blurb: 'About A$240K a month. Quitting the day job soon.', scale: 0.05, margin: 64.2, growth: '+48%' },
   { id: 2, name: 'Millionaire', blurb: 'About A$4.8M a month. Lambo on order.', scale: 1, margin: 87.4, growth: '+312%' },
   { id: 3, name: 'Mogul', blurb: 'About A$96M a month. Buying the competition.', scale: 20, margin: 92.8, growth: '+1,140%' },
   { id: 4, name: 'Billionaire', blurb: 'About A$1.9B a month. Private island, plural.', scale: 400, margin: 98.6, growth: '+9,999%' },
 ];
 
-/** 0 is off; 1 to 4 pick a level. The old on/off setting ('1') reads as Millionaire. */
+/** 0 is off; 1 to 5 pick a level by id. The old on/off setting ('1') reads as Millionaire. */
 function read(): number {
   try {
     const v = localStorage.getItem(KEY);
     if (v === '1') return 2;
     if (!v || !v.startsWith('level:')) return 0;
     const n = Number(v.slice(6));
-    return n >= 1 && n <= 4 ? n : 0;
+    return LARP_LEVELS.some(l => l.id === n) ? n : 0;
   } catch { return 0; }
 }
 
