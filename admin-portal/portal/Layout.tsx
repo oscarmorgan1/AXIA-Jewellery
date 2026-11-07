@@ -4,6 +4,7 @@ import { Gem, LogOut, Mail, MapPin, MessageSquare, Package, ShieldCheck, Shoppin
 import Logo from '../src/components/Logo';
 import { useAccount } from './account';
 import { useMyThreads } from './support';
+import { useIncoming } from './pieces';
 
 /** Portal sections, in sidebar order. */
 export const TABS = [
@@ -22,6 +23,8 @@ export default function Layout({ children }: { children: ReactNode }) {
   const { account, user, logout } = useAccount();
   const name = account?.name || user?.displayName || '';
   const unread = (useMyThreads().threads || []).filter(t => t.unread).length;
+  const incoming = (useIncoming() || []).length;
+  const badge: Record<string, number> = { '/support': unread, '/pieces': incoming };
   return (
     <div className="pt">
       <header className="pt__head">
@@ -39,7 +42,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           <nav className="pt__nav" aria-label="Your account">
             {TABS.map(t => (
               <NavLink key={t.to} to={t.to} className="nav-link pt__link"><t.icon size={17} /> {t.label}
-                {t.to === '/support' && unread > 0 && <span className="pt__badge" aria-label={`${unread} unread`}>{unread}</span>}</NavLink>
+                {badge[t.to] > 0 && <span className="pt__badge" aria-label={t.to === '/pieces' ? `${badge[t.to]} waiting for you` : `${badge[t.to]} unread`}>{badge[t.to]}</span>}</NavLink>
             ))}
           </nav>
         </aside>
