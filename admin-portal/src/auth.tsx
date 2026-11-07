@@ -9,6 +9,8 @@ interface AuthState {
   verified: boolean;
   loading: boolean;
   refresh: () => Promise<void>;
+  /** Re-render with the signed-in user's latest profile (display name, photo) after an update. */
+  profileChanged: () => void;
   logout: () => Promise<void>;
 }
 
@@ -19,6 +21,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(true);
+  // updateProfile edits the same User object in place, so bump this to re-render readers of it
+  const [, setProfileTick] = useState(0);
 
   useEffect(() => onIdTokenChanged(auth, async u => {
     setUser(u);
@@ -36,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user, isAdmin, verified, loading,
     // pick up a freshly granted admin claim (or a just-verified code) without signing out
     refresh: async () => { if (auth.currentUser) await auth.currentUser.getIdToken(true); },
+    profileChanged: () => setProfileTick(t => t + 1),
     logout: () => signOut(auth),
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
