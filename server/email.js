@@ -444,3 +444,121 @@ export function inquiryAlertEmail({ name, email, topic, order, message, reply })
     `Open the Inbox: ${inbox}`].filter(Boolean).join('\n\n');
   return { subject: `${reply ? 'New reply' : `New ${kind}`} from ${name}${order ? ` (order ${order})` : ''}`, html, text };
 }
+
+// ---- Returns (server/returns.js). One email per step of the return tracker.
+
+const RETURN_STAGES = [
+  { key: 'requested', label: 'Requested' },
+  { key: 'label_created', label: 'Label sent' },
+  { key: 'received', label: 'Received' },
+  { key: 'refunded', label: 'Refunded' },
+];
+
+function returnProgress(status) {
+  const at = RETURN_STAGES.findIndex(s => s.key === status);
+  if (at < 0) return '';
+  const cells = RETURN_STAGES.map((s, i) => {
+    const done = i <= at;
+    return `<td width="25%" style="padding:0 3px;vertical-align:top">
+      <div style="height:4px;border-radius:2px;background:${done ? C.ice : C.line}"></div>
+      <p style="margin:8px 0 0;${font};font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:${done ? C.ink : C.soft};${i === at ? 'font-weight:700;' : ''}">${s.label}</p></td>`;
+  }).join('');
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:22px 0 6px"><tr>${cells}</tr></table>`;
+}
+
+export const RETURN_EMAILS = {
+  requested: {
+    subject: n => `We’ve got your return request (#${n})`,
+    heading: 'Return requested',
+    intro: 'We’ve received your request to return the piece below. We’ll check it and email you a prepaid return label shortly. Please don’t send anything back until it arrives.',
+  },
+  opened: {
+    subject: n => `Your AXIA return has started (#${n})`,
+    heading: 'Your return has started',
+    intro: 'We’ve opened a return for the piece below. We’ll email you a prepaid return label shortly. Please don’t send anything back until it arrives.',
+  },
+  label_created: {
+    subject: n => `Your AXIA return label is ready (#${n})`,
+    heading: 'Your return label is ready',
+    intro: 'Pack the piece in its original AXIA box with its authenticity card, put your return slip inside, and send it with the prepaid label. Keep the tracking number until we confirm it’s arrived.',
+  },
+  received: {
+    subject: n => `We’ve received your return (#${n})`,
+    heading: 'Your return has arrived',
+    intro: 'Your parcel is back with us. We’re inspecting the piece now, and once it’s checked we’ll refund you to your original payment method.',
+  },
+  refunded: {
+    subject: n => `Your AXIA refund is on its way (#${n})`,
+    heading: 'Your refund is on its way',
+    intro: 'We’ve refunded you to your original payment method. It usually shows on your statement within 5 to 10 business days.',
+  },
+  closed: {
+    subject: n => `Your AXIA return is complete (#${n})`,
+    heading: 'Your return is complete',
+    intro: 'Your return is complete and closed. Thank you for giving AXIA a try. If there’s anything else we can help with, reply to this email.',
+  },
+  declined: {
+    subject: n => `About your AXIA return (#${n})`,
+    heading: 'About your return',
+    intro: 'We weren’t able to accept this return. The note below explains why. If you have questions, reply to this email and we’ll talk it through.',
+  },
+};
+
+/**
+ * The customer email for one step of a return. `kind` is a key of RETURN_EMAILS
+ * ("opened" is a return the team started, rather than the customer).
+ */
+export function returnEmail(ret, kind, siteUrl, { note } = {}) {
+  const t = RETURN_EMAILS[kind];
+  if (!t) throw new Error(`No email for return step ${kind}`);
+  const first = String((ret.customer && ret.customer.name) || '').split(' ')[0];
+  const url = ret.orderId ? `${brandUrl()}/portal/orders/${encodeURIComponent(ret.orderId)}` : `${brandUrl()}/portal`;
+  const label = ret.label || {};
+  const labelBlock = kind === 'label_created' && (label.number || label.url)
+    ? `${sectionTitle('Return label')}<p style="margin:0;${font};font-size:15px;color:${C.ink}">${esc(label.carrier || 'Carrier')}${label.number ? `: <b>${esc(label.number)}</b>` : ''}</p>${label.url ? button(label.url, 'Get your label') : ''}`
+    : '';
+  const refundBlock = kind === 'refunded' && ret.refund && ret.refund.amountAUD
+    ? `${sectionTitle('Refund')}<p style="margin:0;${font};font-size:15px;color:${C.ink}">${aud(ret.refund.amountAUD)} AUD</p>` : '';
+  const items = (ret.items || []).map(i => `<tr><td style="padding:10px 0;border-bottom:1px solid ${C.line};${font};font-size:14px;color:${C.ink}"><b>${esc(i.productName)}</b>${i.variant ? `<br><span style="font-size:13px;color:${C.soft}">${esc(i.variant)}</span>` : ''}${i.serial ? `<br><span style="font-size:12px;color:${C.soft}">Serial ${esc(i.serial)}</span>` : ''}</td></tr>`).join('');
+  const step = kind === 'opened' ? 'requested' : kind;
+  const body = [
+    p(`${first ? `Hi ${esc(first)},` : 'Hi,'}`),
+    p(t.intro),
+    note ? `<div style="margin:6px 0 4px;padding:14px 16px;border-left:3px solid ${C.ice};background:${C.iceBg};${font};font-size:14px;line-height:1.55;color:${C.ink}">${esc(note).replace(/\n/g, '<br>')}</div>` : '',
+    returnProgress(step),
+    labelBlock,
+    refundBlock,
+    sectionTitle(`Return ${ret.number} · order #${ret.orderNumber}`),
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${items}</table>`,
+    button(url, kind === 'label_created' ? 'Print your return slip' : 'Follow your return'),
+  ].join('');
+  const text = [
+    t.heading, '', t.intro, ...(note ? ['', note] : []),
+    ...(labelBlock ? ['', `Return label: ${label.carrier || ''} ${label.number || ''} ${label.url || ''}`.trim()] : []),
+    ...(refundBlock ? ['', `Refund: ${aud(ret.refund.amountAUD)} AUD`] : []),
+    '', `Return ${ret.number} · order #${ret.orderNumber}`, ...(ret.items || []).map(i => `${i.productName}${i.serial ? ` (serial ${i.serial})` : ''}`),
+    '', `Follow your return: ${url}`, `Help centre: ${brandUrl()}/support`,
+  ].join('\n');
+  return { subject: t.subject(ret.orderNumber), html: layout({ siteUrl, preheader: t.intro.slice(0, 110), heading: t.heading, body }), text };
+}
+
+/** Tells the team a customer asked to return a piece from their account. Plain, like the inquiry alert. */
+export function returnAlertEmail({ id, name, email, number, orderNumber, items, reason, note }) {
+  const link = `${brandUrl()}/admin/returns/${encodeURIComponent(id)}`;
+  const what = (items || []).map(i => `${i.productName}${i.serial ? ` (${i.serial})` : ''}`).join(', ');
+  const row = (l, v) => v ? `<tr><td style="padding:4px 14px 4px 0;${font};font-size:13px;color:${C.soft};white-space:nowrap;vertical-align:top">${l}</td><td style="padding:4px 0;${font};font-size:14px;color:${C.ink}">${esc(v)}</td></tr>` : '';
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>New AXIA return request</title></head>
+<body style="margin:0;padding:0;background:${C.page}">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.page}"><tr><td align="center" style="padding:32px 14px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px">
+  <tr><td style="background:${C.bone};border:1px solid ${C.line};border-radius:6px;padding:32px 30px">
+    <p style="margin:0 0 6px;${font};font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:${C.soft}">AXIA admin · New return request</p>
+    <h1 style="margin:0 0 16px;${font};font-size:22px;line-height:1.2;color:${C.ink}">${esc(name || email)} wants to return a piece</h1>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px">${row('From', `${name} <${email}>`)}${row('Return', number)}${row('Order', `#${orderNumber}`)}${row('Piece', what)}${row('Reason', reason)}</table>
+    ${note ? `<div style="border-left:3px solid ${C.line};padding:4px 0 4px 14px;${font};font-size:14.5px;line-height:1.6;color:${C.ink}">${esc(note).replace(/\n/g, '<br>')}</div>` : ''}
+    <div style="margin-top:20px">${button(link, 'Open the return')}</div>
+  </td></tr>
+</table></td></tr></table></body></html>`;
+  const text = [`New return request ${number} from ${name} <${email}>`, `Order #${orderNumber}`, `Piece: ${what}`, `Reason: ${reason}`, note || '', `Open the return: ${link}`].filter(Boolean).join('\n\n');
+  return { subject: `Return request from ${name || email} (order ${orderNumber})`, html, text };
+}

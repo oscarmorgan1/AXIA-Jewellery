@@ -105,11 +105,18 @@ async function recordCheckout(sessionId, siteUrl) {
   }
 }
 
-async function setStatusByPaymentIntent(paymentIntent, status) {
+async function setStatusByPaymentIntent(paymentIntent, status, extra = {}) {
   if (!paymentIntent) return;
   const snap = await db.collection('orders').where('stripe.paymentIntent', '==', paymentIntent).limit(1).get();
   if (!snap.empty) {
-    await snap.docs[0].ref.update({ status, statusHistory: push(historyEntry(status, 'stripe')), updatedAt: FieldValue.serverTimestamp() });
+    // An order with a return open keeps `in_return`: the return's own tracker
+    // records the refund, then closes it (server/returns.js).
+    const keep = snap.docs[0].get('status') === 'in_return';
+    await snap.docs[0].ref.update({
+      ...extra,
+      ...(keep ? {} : { status, statusHistory: push(historyEntry(status, 'stripe')) }),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
     await syncOrder(snap.docs[0].id);
   }
 }
@@ -142,9 +149,16 @@ export function webhookRoutes() {
           }
           break;
         }
-        case 'charge.refunded':
-          if (obj.refunded) await setStatusByPaymentIntent(typeof obj.payment_intent === 'string' ? obj.payment_intent : obj.payment_intent && obj.payment_intent.id, 'refunded');
+        case 'charge.refunded': {
+          const pi = typeof obj.payment_intent === 'string' ? obj.payment_intent : obj.payment_intent && obj.payment_intent.id;
+          const refundedAUD = Math.round(Number(obj.amount_refunded) || 0) / 100; // what Stripe has refunded so far, partial or full
+          if (obj.refunded) await setStatusByPaymentIntent(pi, 'refunded', { 'stripe.refundedAUD': refundedAUD });
+          else if (pi) {
+            const snap = await db.collection('orders').where('stripe.paymentIntent', '==', pi).limit(1).get();
+            if (!snap.empty) await snap.docs[0].ref.update({ 'stripe.refundedAUD': refundedAUD, updatedAt: FieldValue.serverTimestamp() });
+          }
           break;
+        }
         default:
           break; // not an event we act on
       }

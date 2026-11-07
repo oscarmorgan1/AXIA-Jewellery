@@ -5,7 +5,7 @@ import { isSale } from './orders';
 import type { CustomerRecord, Message, Order, Signup } from '../types';
 
 /** Orders that still need something from us. */
-export const OPEN_STATUSES = ['paid', 'in_progress', 'shipped'];
+export const OPEN_STATUSES = ['paid', 'in_progress', 'shipped', 'in_return'];
 export const isOpen = (o: Order) => OPEN_STATUSES.includes(o.status || '');
 
 /** One person, joined by email across orders, their customer record, waitlist sign-ups and messages. */

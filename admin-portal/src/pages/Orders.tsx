@@ -44,7 +44,7 @@ export function OrdersTable({ orders, empty, pieces }: { orders: Order[]; empty:
 }
 
 type Filter = 'open' | 'shipped' | 'done' | 'all';
-const OPEN = ['pending', 'paid', 'in_progress'];
+const OPEN = ['pending', 'paid', 'in_progress', 'in_return'];
 
 export default function Orders() {
   const { data, loading, error } = useOrders();

@@ -137,6 +137,46 @@ ${head('Tax invoice', o, `<div class="no">Issued ${esc(day(o))}</div>`)}
 <p class="note">All prices are in Australian dollars and include GST. ${esc(BUSINESS.name)}, ABN ${esc(BUSINESS.abn)}.</p>`);
 }
 
+/** What a return slip needs. Built from a return in admin, or from the customer's copy in the portal. */
+export interface ReturnSlip {
+  number: string;
+  orderNumber: string;
+  /** Who's sending it back (the order's shipping address). */
+  from: string[];
+  /** Where it goes: the return address set under Returns in admin. */
+  to: string;
+  reason: string;
+  items: { productName: string; variant?: string; serial?: string }[];
+  label?: { carrier?: string; number?: string } | null;
+  startedOn?: Date | null;
+}
+
+/** Goes in the returned parcel: which return, what's inside, and where it's going. */
+export function returnSlipHtml(r: ReturnSlip): string {
+  const to = r.to.split(/\n/).map(t => t.trim()).filter(Boolean);
+  const rows = r.items.map(i => `
+    <tr><td><b>${esc(i.productName)}</b>${i.variant ? `<small>${esc(i.variant)}</small>` : ''}</td>
+      <td>${i.serial ? `<span style="font-variant-numeric:tabular-nums">${esc(i.serial)}</span>` : '<small>No serial</small>'}</td>
+      <td class="n"><span class="tick"></span></td></tr>`).join('');
+  const started = (r.startedOn || new Date()).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+  return page(`Return slip ${r.number}`, `
+<header>
+  <div><div class="mark">AXIA</div><div class="issuer">${esc(BUSINESS.name)} · ABN ${esc(BUSINESS.abn)}<br>${esc(BUSINESS.site)} · ${esc(BUSINESS.email)}</div></div>
+  <div class="doc"><h1>Return slip</h1><div class="no">${esc(r.number)}</div><div class="no">Order #${esc(r.orderNumber)}</div></div>
+</header>
+<section class="meta">
+  <div><h2>Return to</h2><p>${to.map(esc).join('<br>') || `${esc(BUSINESS.name)} Returns<br><small style="color:#565D66">Use the address on your return label</small>`}</p></div>
+  <div><h2>From</h2><p>${r.from.map(esc).join('<br>') || '–'}</p></div>
+  <div><h2>Return label</h2><p>${r.label?.number ? `${esc(r.label.carrier || '')} ${esc(r.label.number)}` : '–'}<br><small style="color:#565D66">Started ${esc(started)}</small></p></div>
+</section>
+<table><thead><tr><th>Piece</th><th>Serial</th><th class="n">Packed</th></tr></thead><tbody>${rows}</tbody></table>
+<p class="note"><b>Reason:</b> ${esc(r.reason || '–')}</p>
+<p class="note"><b>Put this slip inside the parcel.</b> Pack each piece in its AXIA box with its authenticity card, unworn and in its original condition. Seal the parcel and attach the prepaid return label to the outside. Questions? Email ${esc(BUSINESS.email)} with your return number.</p>`);
+}
+
+/** The order's shipping address as lines (for return slips). */
+export const shipFrom = (o: Order) => addressLines(o);
+
 /**
  * Opens an empty tab to fill in a moment later. Must run straight from the
  * click, or the browser blocks it. Null when it was blocked anyway.

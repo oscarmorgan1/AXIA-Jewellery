@@ -23,6 +23,10 @@ rules_version = '2';
 //   accountInvites/{h}   claim-your-account links (hashed): server only (no rule below)
 //   pieceTransfers/{id}  piece transfers between customers: server only (no rule below).
 //                        Each side sees its part under accounts/{uid} (server/transfers.js).
+//   returns/{id}         returns of shipped pieces: admins read; only the server writes
+//                        (server/returns.js), because each step moves the order, the
+//                        pieces, Stripe refunds and emails together. The buyer sees
+//                        their copy under accounts/{uid}/returns.
 //
 // "Admin" means a signed-in user whose ID token carries the custom claim
 // admin == true (set with `npm run set-admin -- <email>`) AND who has entered
@@ -116,6 +120,12 @@ service cloud.firestore {
       allow create: if isAdmin() && validPiece();
       // the serial is the record: it can't be changed in place
       allow update: if isAdmin() && validPiece() && request.resource.data.serial == resource.data.serial;
+    }
+
+    // Written only by the server (/api/admin/returns, /api/account/returns).
+    match /returns/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
     match /suppliers/{id} {

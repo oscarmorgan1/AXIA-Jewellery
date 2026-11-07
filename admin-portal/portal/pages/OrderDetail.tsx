@@ -6,6 +6,8 @@ import { accountApi } from '../api';
 import { STAGES, aud, day, statusOf, useMyOrder, type MyOrder } from '../orders';
 import { thumb } from './Orders';
 import { useMyPieces } from '../pieces';
+import { useMyReturns } from '../returns';
+import { ReturnCard } from './Returns';
 
 /** Ordered → Being made → Shipped → Delivered, with the date each step happened. */
 function Progress({ order }: { order: MyOrder }) {
@@ -58,6 +60,7 @@ export default function OrderDetail() {
   const order = useMyOrder(id);
   const { pieces } = useMyPieces();
   const serials = (pieces || []).filter(p => p.orderId === id);
+  const returns = (useMyReturns() || []).filter(r => r.orderId === id && r.status !== 'withdrawn');
   useEffect(() => { document.title = order ? `Order #${order.orderNumber} · AXIA` : 'Order · AXIA'; }, [order]);
 
   if (order === undefined) return <div className="page pt-page"><div className="card"><div className="skeleton" style={{ height: 160 }} /></div></div>;
@@ -83,7 +86,9 @@ export default function OrderDetail() {
         <p className="lede">Placed {day(order.placedAt)}</p>
       </div>
 
-      <div className="card">
+      {returns.map(r => <ReturnCard key={r.id} ret={r} order={order} />)}
+
+      {order.status !== 'in_return' && <div className="card">
         {closed ? (
           <div className="notice notice--warn">
             {order.status === 'refunded' ? 'This order was refunded to your original payment method.' : 'This order was cancelled. If you paid, your refund goes back to your original payment method, usually within 5 to 10 business days.'}
@@ -114,7 +119,7 @@ export default function OrderDetail() {
             {notes.map((n, i) => <p key={i}><small>{day(n.at)} · from AXIA</small>{n.note}</p>)}
           </div>
         )}
-      </div>
+      </div>}
 
       <div className="card">
         <div className="card__head"><h2>Items</h2><span className="spacer" /><ReceiptButton order={order} /></div>

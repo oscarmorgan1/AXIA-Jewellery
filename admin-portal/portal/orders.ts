@@ -35,6 +35,7 @@ export const STATUS: Record<string, { label: string; chip: string }> = {
   in_progress: { label: 'Being made', chip: 'chip--ice' },
   shipped: { label: 'Shipped', chip: 'chip--warn' },
   fulfilled: { label: 'Delivered', chip: 'chip--good' },
+  in_return: { label: 'Return in progress', chip: 'chip--ice' },
   cancelled: { label: 'Cancelled', chip: 'chip--muted' },
   refunded: { label: 'Refunded', chip: 'chip--muted' },
 };
