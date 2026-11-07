@@ -6,6 +6,8 @@ import Claim from './pages/Claim';
 import Reset from './pages/Reset';
 import { AddressPage, DetailsPage, EmailsPage, SecurityPage } from './pages/Account';
 import Bag from './pages/Bag';
+import Orders from './pages/Orders';
+import OrderDetail from './pages/OrderDetail';
 import Layout from './Layout';
 
 function Loading() {
@@ -36,12 +38,14 @@ export default function App() {
   return (
     <Layout>
       <Routes>
+        <Route path="/orders" element={<Orders />} />
+        <Route path="/orders/:id" element={<OrderDetail />} />
         <Route path="/bag" element={<Bag />} />
         <Route path="/details" element={<DetailsPage />} />
         <Route path="/address" element={<AddressPage />} />
         <Route path="/emails" element={<EmailsPage />} />
         <Route path="/security" element={<SecurityPage />} />
-        <Route path="*" element={<Navigate to="/details" replace />} />
+        <Route path="*" element={<Navigate to="/orders" replace />} />
       </Routes>
     </Layout>
   );

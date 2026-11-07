@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LogOut, Mail, MapPin, ShieldCheck, ShoppingBag, UserRound } from 'lucide-react';
+import { LogOut, Mail, MapPin, Package, ShieldCheck, ShoppingBag, UserRound } from 'lucide-react';
 import Logo from '../src/components/Logo';
 import { useAccount } from './account';
 
-/** Portal sections, in sidebar order. Orders, Pieces and Support join this list as they ship. */
+/** Portal sections, in sidebar order. Pieces and Support join this list as they ship. */
 export const TABS = [
+  { to: '/orders', label: 'Orders', icon: Package },
   { to: '/bag', label: 'Saved bag', icon: ShoppingBag },
   { to: '/details', label: 'Details', icon: UserRound },
   { to: '/address', label: 'Address', icon: MapPin },
