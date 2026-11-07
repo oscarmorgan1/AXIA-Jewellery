@@ -1,20 +1,51 @@
 import type { Order, Piece, Return, ReturnStatus } from '../types';
 
-/** The tracker, in order. Closed is the final step: the order is cancelled (or back where it was, for a partial return). */
-export const RETURN_STEPS: { key: ReturnStatus; label: string }[] = [
-  { key: 'requested', label: 'Return started' },
-  { key: 'label_created', label: 'Label created' },
-  { key: 'received', label: 'Product received' },
-  { key: 'refunded', label: 'Payment refunded' },
-  { key: 'closed', label: 'Cancelled' },
-];
+export type Outcome = 'refund' | 'exchange';
+export const outcomeOf = (r: Pick<Return, 'outcome'>): Outcome => (r.outcome === 'exchange' ? 'exchange' : 'refund');
+export const OUTCOME_LABEL: Record<Outcome, string> = { refund: 'Refund', exchange: 'Exchange' };
+
+/**
+ * The tracker for each end goal. A refund ends with the order cancelled (or back
+ * where it was, for part of an order); an exchange ends with the replacement
+ * delivered and the order back where it was.
+ */
+export const STEPS: Record<Outcome, { key: ReturnStatus; label: string }[]> = {
+  refund: [
+    { key: 'requested', label: 'Return started' },
+    { key: 'label_created', label: 'Label created' },
+    { key: 'received', label: 'Product received' },
+    { key: 'refunded', label: 'Payment refunded' },
+    { key: 'closed', label: 'Cancelled' },
+  ],
+  exchange: [
+    { key: 'requested', label: 'Return started' },
+    { key: 'label_created', label: 'Label created' },
+    { key: 'received', label: 'Product received' },
+    { key: 'replacement_sent', label: 'Replacement sent' },
+    { key: 'closed', label: 'Exchanged' },
+  ],
+};
+/** The refund tracker (kept for callers that don't know the return). */
+export const RETURN_STEPS = STEPS.refund;
+
+/** A return's tracker steps with the date each happened. */
+export function trackerSteps(r: Return, day: (d: Date | null) => string) {
+  const o = outcomeOf(r);
+  return STEPS[o].map(s => ({ label: s.key === 'closed' && o === 'refund' && !r.full ? 'Closed' : s.label, when: day(stepAt(r, s.key)) }));
+}
+
+/** What a finished return is called: Cancelled (full refund), Exchanged, or Closed. */
+export function statusText(r: Return) {
+  if (r.status !== 'closed') return RETURN_LABEL[r.status] || r.status;
+  return outcomeOf(r) === 'exchange' ? 'Exchanged' : r.full ? 'Cancelled' : 'Closed';
+}
 
 export const RETURN_LABEL: Record<string, string> = {
-  requested: 'Requested', label_created: 'Label created', received: 'Received', refunded: 'Refunded',
+  requested: 'Requested', label_created: 'Label created', received: 'Received', refunded: 'Refunded', replacement_sent: 'Replacement sent',
   closed: 'Closed', declined: 'Declined', withdrawn: 'Withdrawn',
 };
 
-export const OPEN_RETURN: ReturnStatus[] = ['requested', 'label_created', 'received', 'refunded'];
+export const OPEN_RETURN: ReturnStatus[] = ['requested', 'label_created', 'received', 'refunded', 'replacement_sent'];
 export const isOpen = (r: Return) => OPEN_RETURN.includes(r.status);
 
 export function returnChip(s: string) {
@@ -34,9 +65,10 @@ export const RETURNABLE = ['shipped', 'fulfilled'];
 
 /** The tracker step a return is at. Declined or withdrawn: the furthest step it reached first. */
 export function stepIndex(r: Return) {
-  const at = RETURN_STEPS.findIndex(s => s.key === r.status);
+  const steps = STEPS[outcomeOf(r)];
+  const at = steps.findIndex(s => s.key === r.status);
   if (at >= 0) return at;
-  return Math.max(0, ...(r.history || []).map(h => RETURN_STEPS.findIndex(s => s.key === h.status)));
+  return Math.max(0, ...(r.history || []).map(h => steps.findIndex(s => s.key === h.status)));
 }
 
 /** When a step happened (its latest entry in the return's history). */

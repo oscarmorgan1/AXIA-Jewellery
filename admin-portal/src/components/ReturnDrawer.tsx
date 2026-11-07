@@ -15,6 +15,8 @@ export default function ReturnDrawer({ order, pieces, onClose, onDone }: { order
   const units = returnUnits(order, pieces);
   const [picked, setPicked] = useState<Set<string>>(() => new Set(units.filter(u => !u.busy).length === 1 ? units.filter(u => !u.busy).map(u => u.id) : []));
   const [reason, setReason] = useState('fit');
+  const [outcome, setOutcome] = useState<'refund' | 'exchange'>('refund');
+  const [wanted, setWanted] = useState('');
   const [note, setNote] = useState('');
   const [label, setLabel] = useState<Tracking>({ carrier: 'Australia Post', number: '', url: '' });
   const [notify, setNotify] = useState(true);
@@ -35,7 +37,7 @@ export default function ReturnDrawer({ order, pieces, onClose, onDone }: { order
     setBusy(true); setError('');
     try {
       const r = await adminApi<{ id: string; number: string; email: { resendId: string | null } | null }>('/returns', {
-        orderId: order.id, items: chosen.map(u => ({ line: u.line, key: u.key })), reason, note, notify: notify && !!email,
+        orderId: order.id, items: chosen.map(u => ({ line: u.line, key: u.key })), outcome, wanted: outcome === 'exchange' ? wanted.trim() : '', reason, note, notify: notify && !!email,
         ...(hasLabel ? { label } : {}),
       });
       onDone(`Return ${r.number} opened${r.email ? (r.email.resendId ? `, emailed ${email}` : ', email not sent (Resend isn’t set up)') : ''}`, r.id);
@@ -52,7 +54,7 @@ export default function ReturnDrawer({ order, pieces, onClose, onDone }: { order
     <>
       <button className="btn" onClick={onClose}>Cancel</button>
       <span style={{ flex: 1 }} />
-      <button className="btn btn--primary" onClick={() => setConfirming(true)} disabled={!chosen.length}>Review return</button>
+      <button className="btn btn--primary" onClick={() => setConfirming(true)} disabled={!chosen.length || (outcome === 'exchange' && wanted.trim().length < 2)}>Review return</button>
     </>
   );
 
@@ -61,7 +63,21 @@ export default function ReturnDrawer({ order, pieces, onClose, onDone }: { order
       {error && <div className="notice notice--error">{error}</div>}
       {!confirming ? (
         <>
-          <p className="card__sub" style={{ margin: 0 }}>The order shows <b>In return</b> until the return is finished. Closing a return of every piece cancels the order.</p>
+          <div className="field">End goal
+            <div className="status-pick">
+              <label className={`status-opt${outcome === 'refund' ? ' on' : ''}`}>
+                <input type="radio" name="outcome" checked={outcome === 'refund'} onChange={() => setOutcome('refund')} />
+                <span><b>Refund</b><small>Money back once it’s returned. Returning everything cancels the order.</small></span>
+              </label>
+              <label className={`status-opt${outcome === 'exchange' ? ' on' : ''}`}>
+                <input type="radio" name="outcome" checked={outcome === 'exchange'} onChange={() => setOutcome('exchange')} />
+                <span><b>Exchange</b><small>A replacement goes out once it’s returned. The order stays.</small></span>
+              </label>
+            </div>
+          </div>
+          {outcome === 'exchange' && <label className="field">What they’d like instead
+            <input className="input" value={wanted} onChange={e => setWanted(e.target.value)} placeholder="e.g. same chain in 18in" />
+          </label>}
           <div className="field">What’s coming back
             <div className="return-pick">
               {units.length ? units.map(u => (
@@ -93,7 +109,8 @@ export default function ReturnDrawer({ order, pieces, onClose, onDone }: { order
       ) : (
         <div className="confirm">
           <p><Undo2 size={15} style={{ verticalAlign: -2 }} /> You’re opening a return of <b>{chosen.length} {chosen.length === 1 ? 'piece' : 'pieces'}</b> from order <b>#{orderNo(order)}</b>{chosen.some(u => u.serial) ? <> ({chosen.filter(u => u.serial).map(u => u.serial).join(', ')})</> : null}.</p>
-          <p>The order moves to <b>In return</b>. {full ? 'This is everything on the order, so closing the return cancels it.' : 'It’s part of the order, so closing the return puts the order back where it is now.'}</p>
+          <p>End goal: <b>{outcome === 'exchange' ? `Exchange${wanted.trim() ? ` for ${wanted.trim()}` : ''}` : 'Refund'}</b>.</p>
+          <p>The order moves to <b>In return</b>. {outcome === 'exchange' ? 'Once the replacement is sent and you finish the exchange, the order goes back to where it is now.' : full ? 'This is everything on the order, so closing the return cancels it.' : 'It’s part of the order, so closing the return puts the order back where it is now.'}</p>
           <p>{hasLabel ? <>It starts at <b>Label created</b> ({label.carrier} {label.number}).</> : <>It starts at <b>Return started</b>. Add the label when it’s made.</>}</p>
           {notify && email
             ? <div className="notice notice--warn"><Mail size={15} /> This emails <b>{email}</b> straight away: {hasLabel ? '“Your return label is ready”, with the label.' : '“Your return has started”.'}</div>

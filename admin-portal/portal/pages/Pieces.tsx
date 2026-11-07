@@ -7,7 +7,7 @@ import { accountApi } from '../api';
 import { useIncoming, useMyPieces, ymd, type IncomingPiece, type MyPiece } from '../pieces';
 import { thumb } from './Orders';
 import { useMyOrders } from '../orders';
-import { RETURN_STATUS, isOpenReturn, useMyReturns } from '../returns';
+import { statusChip, canStillReturn, isOpenReturn, useMyReturns } from '../returns';
 import { ReturnRequestDrawer } from './Returns';
 
 const day = (t: number | null) => (t ? new Date(t).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '');
@@ -25,10 +25,10 @@ export default function Pieces() {
   const nav = useNavigate();
   // The open return a piece is in, if any.
   const inReturn = (p: MyPiece) => returns.find(r => isOpenReturn(r) && r.items.some(i => i.key === p.key));
-  // Returnable: delivered from their own order (not passed on to them), no transfer waiting, order not already in a return.
+  // Returnable: within 30 days of shipping, from their own order (not passed on to them), no transfer waiting, order not already in a return.
   const canReturn = (p: MyPiece) => {
     const o = (orders || []).find(x => x.id === p.orderId);
-    return !!p.orderId && !!p.shippedOn && !p.transfer && !!o && ['shipped', 'fulfilled'].includes(o.status);
+    return !!p.orderId && canStillReturn(p.shippedOn) && !p.transfer && !!o && ['shipped', 'fulfilled'].includes(o.status);
   };
   const [notice, setNotice] = useState('');
   const [actionError, setActionError] = useState('');
@@ -69,7 +69,7 @@ export default function Pieces() {
               <article key={p.key} className="card pt-piece">
                 <div className="pt-piece__img">
                   {img(p.image)}
-                  <span className="chip chip--onimg">{inReturn(p) ? RETURN_STATUS[inReturn(p)!.status]?.label : p.transfer ? 'Transfer pending' : p.shippedOn ? 'With you' : 'Being finished'}</span>
+                  <span className="chip chip--onimg">{inReturn(p) ? statusChip(inReturn(p)!).label : p.transfer ? 'Transfer pending' : p.shippedOn ? 'With you' : 'Being finished'}</span>
                 </div>
                 <div className="pt-piece__body">
                   <h2>{p.productName}</h2>
@@ -93,7 +93,7 @@ export default function Pieces() {
                       ? <button className="btn btn--sm" disabled={busy === p.transfer.id} onClick={() => act(`/transfers/${encodeURIComponent(p.transfer!.id)}/cancel`, 'Transfer cancelled. The piece stays with you.', p.transfer!.id)}><X size={15} /> Cancel transfer</button>
                       : p.shippedOn && <>
                         <button className="btn btn--sm" onClick={() => { setNotice(''); setSending(p); }}><Send size={15} /> Transfer</button>
-                        {canReturn(p) && <button className="btn btn--sm" onClick={() => { setNotice(''); setReturning(p); }}><Undo2 size={15} /> Return</button>}
+                        {canReturn(p) && <button className="btn btn--sm" onClick={() => { setNotice(''); setReturning(p); }}><Undo2 size={15} /> Return or exchange</button>}
                       </>}
                   </div>
                 </div>

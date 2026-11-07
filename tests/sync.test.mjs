@@ -102,3 +102,26 @@ test('a return’s portal copy shows the steps, label and refund, never notes, s
   const json = JSON.stringify(out);
   for (const secret of ['internal', 'admin@axia', 're_secret', 'a@b.c', 'javascript:', 'return:requested']) assert.ok(!json.includes(secret), `leaked ${secret}`);
 });
+
+test('an exchange’s portal copy says what they asked for and how the replacement is coming', async () => {
+  const { customerReturn } = await import('../server/sync.js');
+  const out = customerReturn({
+    number: 'R-AX1-2', orderId: 'o1', status: 'replacement_sent', outcome: 'exchange', exchange: { wanted: '18in instead of 20in' },
+    items: [{ line: 0, key: 'AXIA1', serial: 'AXIA1', productName: 'Cuban' }],
+    replacement: { carrier: 'AusPost', number: 'TR9', url: 'https://t.example/TR9', by: 'admin@axia', at: ts(5),
+      pieces: [{ key: 'AXIA2', serial: 'AXIA2', productName: 'Cuban', variant: '18in', line: 0, replaces: 'AXIA1' }] },
+    history: [],
+  });
+  assert.equal(out.outcome, 'exchange'); assert.equal(out.wanted, '18in instead of 20in');
+  assert.deepEqual(out.replacement, { carrier: 'AusPost', number: 'TR9', url: 'https://t.example/TR9', pieces: [{ serial: 'AXIA2', productName: 'Cuban', variant: '18in' }] });
+  assert.ok(!JSON.stringify(out).includes('admin@axia'));
+  assert.equal(customerReturn({ status: 'requested', outcome: 'refund', exchange: { wanted: 'x' } }).wanted, '');
+});
+
+test('the return window closes 30 days after the ship date', async () => {
+  const { returnWindowOpen } = await import('../server/returns.js');
+  const at = s => Date.parse(s);
+  assert.equal(returnWindowOpen('2026-10-01', at('2026-10-31T10:00:00+11:00')), true);
+  assert.equal(returnWindowOpen('2026-10-01', at('2026-11-01T02:00:00+11:00')), false);
+  assert.equal(returnWindowOpen(null), false);
+});
