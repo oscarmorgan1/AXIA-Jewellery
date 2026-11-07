@@ -6,6 +6,12 @@
 // customer can read, and the portal listens to it live. Customers without an
 // account (no `uid` on customers/{email}) are skipped; their orders are copied
 // when they claim one (syncCustomerOrders, called from ensureAccount).
+//
+// Pieces work the same way: pieces/{key} is admin-only (supplier, notes), and
+// syncPiece() writes the owner's copy to accounts/{uid}/pieces/{key}. The owner
+// is the account of the paid order the piece went out in. The private record
+// remembers where its copy lives (`portalUid`), so a piece that is unassigned,
+// moved to another order or whose order is cancelled is taken back out.
 import { FieldValue } from 'firebase-admin/firestore';
 import { db, stripe } from './services.js';
 import { customerId } from './orders.js';
@@ -54,6 +60,60 @@ export async function uidFor(email) {
   return typeof uid === 'string' && uid ? uid : null;
 }
 
+/** Orders in these states haven't sold their pieces (same rule as /genuine, server/genuine.js). */
+const NOT_SOLD = ['pending', 'cancelled', 'refunded'];
+const sydneyDate = d => d.toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' });
+
+/** The fields of a piece its owner sees. Supplier, supplier order, received date and notes stay private. */
+export function customerPiece(piece, order, product) {
+  const placed = order && order.createdAt && typeof order.createdAt.toDate === 'function' ? order.createdAt.toDate() : null;
+  const img = product && ((product.images && product.images[0])
+    || Object.values(product.imagesByColor || {}).find(a => a && a.length)?.[0]
+    || (product.widths || []).find(w => w.image)?.image) || '';
+  return {
+    serial: piece.serial || '',
+    productId: piece.productId || '',
+    productName: piece.productName || '',
+    variant: piece.variant || '',
+    image: img,
+    purchasedOn: placed ? sydneyDate(placed) : null,
+    orderId: piece.orderId || null,
+    orderNumber: (order && order.orderNumber) || piece.orderNumber || '',
+    shippedOn: piece.shippedOn || null,
+  };
+}
+
+/** Writes, moves or removes the owner's copy of one piece. Never throws. */
+export async function syncPiece(key) {
+  try {
+    const ref = db.collection('pieces').doc(key);
+    const snap = await ref.get();
+    const piece = snap.exists ? snap.data() : null;
+    const order = piece && piece.orderId ? await db.collection('orders').doc(piece.orderId).get() : null;
+    const o = order && order.exists ? order.data() : null;
+    const sold = o && !NOT_SOLD.includes(o.status || 'pending');
+    const owner = sold ? await uidFor(o.customer && o.customer.email) : null;
+    const before = piece && typeof piece.portalUid === 'string' ? piece.portalUid : null;
+    if (before && before !== owner) await db.collection('accounts').doc(before).collection('pieces').doc(key).delete();
+    if (owner) {
+      const product = piece.productId ? await db.collection('products').doc(piece.productId).get() : null;
+      await db.collection('accounts').doc(owner).collection('pieces').doc(key)
+        .set({ ...customerPiece(piece, o, product && product.exists ? product.data() : null), syncedAt: FieldValue.serverTimestamp() });
+    }
+    if (snap.exists && before !== owner) await ref.update({ portalUid: owner || null });
+    return !!owner;
+  } catch (err) {
+    console.error('sync: piece copy failed', key, err);
+    return false;
+  }
+}
+
+/** Every piece assigned to an order, after the order changes. */
+export async function syncOrderPieces(orderId) {
+  const snap = await db.collection('pieces').where('orderId', '==', orderId).select().get();
+  await Promise.all(snap.docs.map(d => syncPiece(d.id)));
+}
+
 /** Writes (or refreshes) the customer's copy of one order. Never throws: the portal copy must not break an order flow. */
 export async function syncOrder(orderId, { uid } = {}) {
   try {
@@ -61,9 +121,10 @@ export async function syncOrder(orderId, { uid } = {}) {
     if (!snap.exists) return false;
     const o = snap.data();
     const owner = uid || await uidFor(o.customer && o.customer.email);
-    if (!owner) return false;
+    if (!owner) { await syncOrderPieces(orderId); return false; }
     await db.collection('accounts').doc(owner).collection('orders').doc(orderId)
       .set({ ...customerOrder(o), syncedAt: FieldValue.serverTimestamp() });
+    await syncOrderPieces(orderId);
     return true;
   } catch (err) {
     console.error('sync: order copy failed', orderId, err);

@@ -29,3 +29,13 @@ test('customerOrder keeps what the customer needs and drops the private fields',
   assert.equal(out.receiptUrl, 'https://pay.stripe.com/r');
   assert.equal(out.placedAt, 1000);
 });
+
+test('customerPiece shows the serial and purchase date, never the supplier side', async () => {
+  const { customerPiece } = await import('../server/sync.js');
+  const out = customerPiece(
+    { serial: 'AXIA1', productId: 'p', productName: 'Cuban', variant: '10mm', supplier: 'Maker Co', supplierOrderNo: 'SO-1', receivedOn: '2026-01-02', notes: 'private', orderId: 'o1', shippedOn: '2026-01-05' },
+    { orderNumber: 'AX1', createdAt: { toDate: () => new Date('2026-01-01T13:30:00Z') }, stripe: { paymentIntent: 'pi' } },
+    { images: ['assets/img/x.jpg'], factoryCostAUD: 50 },
+  );
+  assert.deepEqual(out, { serial: 'AXIA1', productId: 'p', productName: 'Cuban', variant: '10mm', image: 'assets/img/x.jpg', purchasedOn: '2026-01-02', orderId: 'o1', orderNumber: 'AX1', shippedOn: '2026-01-05' });
+});

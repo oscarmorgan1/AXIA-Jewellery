@@ -8,6 +8,7 @@ import { AddressPage, DetailsPage, EmailsPage, SecurityPage } from './pages/Acco
 import Bag from './pages/Bag';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
+import Pieces from './pages/Pieces';
 import Layout from './Layout';
 
 function Loading() {
@@ -40,6 +41,7 @@ export default function App() {
       <Routes>
         <Route path="/orders" element={<Orders />} />
         <Route path="/orders/:id" element={<OrderDetail />} />
+        <Route path="/pieces" element={<Pieces />} />
         <Route path="/bag" element={<Bag />} />
         <Route path="/details" element={<DetailsPage />} />
         <Route path="/address" element={<AddressPage />} />
