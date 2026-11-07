@@ -14,6 +14,12 @@ export const brandUrl = () => (process.env.EMAIL_LINK_URL || 'https://axiajewell
 
 const font = "font-family:'Helvetica Neue',Helvetica,Arial,sans-serif";
 
+/** The order's page in the customer portal (sign-in first if needed), or null without an id. */
+const orderUrl = order => {
+  const id = order && ((order.stripe && order.stripe.sessionId) || order.id);
+  return id ? `${brandUrl()}/portal/orders/${encodeURIComponent(id)}` : null;
+};
+
 /** The stages a customer sees, in order. */
 const STAGES = [
   { key: 'paid', label: 'Ordered' },
@@ -153,7 +159,7 @@ export function confirmationEmail(order, siteUrl) {
       <tr><td width="26" style="vertical-align:top;color:${C.ice};font-weight:700">2</td><td style="padding-bottom:8px"><b>Checked and boxed.</b> <span style="color:${C.soft}">Each piece is tested and packed in its AXIA box with its GRA certificate.</span></td></tr>
       <tr><td width="26" style="vertical-align:top;color:${C.ice};font-weight:700">3</td><td><b>Shipped to you.</b> <span style="color:${C.soft}">You’ll get tracking details by email the day it leaves us.</span></td></tr>
     </table>`,
-    button(`${brandUrl()}/support`, 'Visit the help centre'),
+    (orderUrl(order) ? button(orderUrl(order), 'Track your order') : button(`${brandUrl()}/support`, 'Visit the help centre')),
   ].join('');
 
   const text = [
@@ -162,6 +168,7 @@ export function confirmationEmail(order, siteUrl) {
     ...(order.gift ? [`${order.gift.name}${order.gift.length ? ' (' + order.gift.length + ')' : ''}: free gift`] : []),
     '', `Total paid: ${aud(order.totalAUD)} AUD`, '',
     'Every piece is hand-set and made to order, so allow approximately 3 to 5 weeks before it ships.',
+    ...(orderUrl(order) ? [`Track your order: ${orderUrl(order)}`] : []),
     `Help centre: ${brandUrl()}/support`,
   ].join('\n');
 
@@ -189,13 +196,14 @@ export function statusEmail(order, status, siteUrl, { tracking, note } = {}) {
     itemsTable(order, siteUrl),
     status === 'shipped' ? address(order) : '',
     status === 'fulfilled' ? `${sectionTitle('Looking after it')}${p(`Wipe it with the included cloth and keep it in its box when you’re not wearing it. More tips in our <a href="${esc(brandUrl())}/support#care" style="color:${C.ice}">care guide</a>.`, C.soft)}` : '',
-    button(`${brandUrl()}/support`, 'Visit the help centre'),
+    (orderUrl(order) ? button(orderUrl(order), status === 'cancelled' ? 'View your order' : 'Track your order') : button(`${brandUrl()}/support`, 'Visit the help centre')),
   ].join('');
 
   const text = [
     t.heading, '', t.intro, ...(note ? ['', note] : []),
     ...(trackingBlock ? ['', `Tracking: ${tracking.carrier || ''} ${tracking.number || ''} ${tracking.url || ''}`.trim()] : []),
     '', `Order #${order.orderNumber}`, ...order.items.map(i => `${i.name}${i.qty > 1 ? ' x ' + i.qty : ''}`),
+    ...(orderUrl(order) ? ['', `Track your order: ${orderUrl(order)}`] : []),
     '', `Help centre: ${brandUrl()}/support`,
   ].join('\n');
 

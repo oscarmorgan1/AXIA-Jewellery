@@ -12,6 +12,7 @@ import { orderNumber } from './checkout.js';
 import { confirmationEmail, sendEmail } from './email.js';
 import { emailEntry, historyEntry, push, upsertCustomer, customerId } from './orders.js';
 import { sendAccountInvite } from './account.js';
+import { syncOrder } from './sync.js';
 
 const cents = n => (n || 0) / 100;
 
@@ -89,6 +90,7 @@ async function recordCheckout(sessionId, siteUrl) {
       await ref.update({ emailSentAt: FieldValue.serverTimestamp(), emails: push(emailEntry('confirmation', order.customer.email, mail.subject, result)) });
     }
   }
+  await syncOrder(sessionId); // their portal copy, if they have an account
   // Then, in its own email, an invite to claim a portal account (only if they don't have one).
   if (order.status === 'paid' && order.customer.email && !(existing.exists && existing.data().accountInvite)) {
     try {
@@ -106,7 +108,10 @@ async function recordCheckout(sessionId, siteUrl) {
 async function setStatusByPaymentIntent(paymentIntent, status) {
   if (!paymentIntent) return;
   const snap = await db.collection('orders').where('stripe.paymentIntent', '==', paymentIntent).limit(1).get();
-  if (!snap.empty) await snap.docs[0].ref.update({ status, statusHistory: push(historyEntry(status, 'stripe')), updatedAt: FieldValue.serverTimestamp() });
+  if (!snap.empty) {
+    await snap.docs[0].ref.update({ status, statusHistory: push(historyEntry(status, 'stripe')), updatedAt: FieldValue.serverTimestamp() });
+    await syncOrder(snap.docs[0].id);
+  }
 }
 
 export function webhookRoutes() {
@@ -131,7 +136,10 @@ export function webhookRoutes() {
           break;
         case 'checkout.session.async_payment_failed': {
           const ref = db.collection('orders').doc(obj.id);
-          if ((await ref.get()).exists) await ref.update({ status: 'cancelled', statusHistory: push(historyEntry('cancelled', 'stripe')), updatedAt: FieldValue.serverTimestamp() });
+          if ((await ref.get()).exists) {
+            await ref.update({ status: 'cancelled', statusHistory: push(historyEntry('cancelled', 'stripe')), updatedAt: FieldValue.serverTimestamp() });
+            await syncOrder(obj.id);
+          }
           break;
         }
         case 'charge.refunded':

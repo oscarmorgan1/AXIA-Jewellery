@@ -16,6 +16,7 @@ import { isVerifiedAdmin } from './twofactor.js';
 import { sydneyDay } from './forms.js';
 import { emailEntry, historyEntry, push, upsertCustomer, customerId } from './orders.js';
 import { sendAccountInvite } from './account.js';
+import { syncOrder, stripeReceipt } from './sync.js';
 
 /** Statuses an admin can set. `refunded` only comes from Stripe, with the money. */
 export const ADMIN_STATUSES = ['paid', 'in_progress', 'shipped', 'fulfilled', 'cancelled'];
@@ -81,6 +82,7 @@ async function changeStatus(req) {
     emailed: !!(email && email.resendId), ...(note ? { note } : {}), ...(tracking ? { tracking } : {}),
   }));
   await ref.update(update);
+  await syncOrder(ref.id); // the customer's portal shows it straight away
   const pieces = status === 'shipped' ? await markPiecesShipped(ref.id) : 0;
   return { status, pieces, email: email && { resendId: email.resendId, status: email.status } };
 }
@@ -108,20 +110,10 @@ async function markPiecesShipped(orderId) {
 // and saved on the order (stripe.receiptUrl) so the next time is instant.
 
 async function orderReceipt(req) {
-  const ref = db.collection('orders').doc(str(req.params.id, 300));
-  const snap = await ref.get();
-  if (!snap.exists) throw new HttpError(404, 'Order not found');
-  const s = snap.get('stripe') || {};
-  if (s.receiptUrl) return { url: s.receiptUrl, card: s.card || null };
-  if (!s.paymentIntent) throw new HttpError(404, 'This order has no Stripe payment yet');
-  if (!stripe) throw new HttpError(503, 'Stripe is not configured');
-  const pi = await stripe.paymentIntents.retrieve(s.paymentIntent, { expand: ['latest_charge'] });
-  const charge = pi.latest_charge && typeof pi.latest_charge === 'object' ? pi.latest_charge : null;
-  if (!charge || !charge.receipt_url) throw new HttpError(404, 'Stripe has no receipt for this payment yet');
-  const c = charge.payment_method_details && charge.payment_method_details.card;
-  const card = c ? { brand: c.brand || '', last4: c.last4 || '' } : null;
-  await ref.update({ 'stripe.receiptUrl': charge.receipt_url, 'stripe.card': card });
-  return { url: charge.receipt_url, card };
+  try { return await stripeReceipt(db.collection('orders').doc(str(req.params.id, 300))); } catch (err) {
+    if (err.status) throw new HttpError(err.status, err.message);
+    throw err;
+  }
 }
 
 // ---- Promo codes: a Stripe coupon (the discount) plus a promotion code (what

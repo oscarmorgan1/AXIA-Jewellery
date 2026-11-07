@@ -265,6 +265,8 @@
   const $=s=>document.querySelector(s);
   const form=$('#cForm'); if(!form) return;
   const err=$('#cErr'), btn=form.querySelector('button[type="submit"]');
+  // From an order page in the customer portal (/support?order=…#contact): fill in the order number.
+  const preOrder=new URLSearchParams(location.search).get('order'); if(preOrder&&$('#cOrder')) $('#cOrder').value=preOrder.slice(0,60);
   const fail=m=>{ err.textContent=m; err.scrollIntoView({block:'center',behavior:'smooth'}); };
   form.addEventListener('submit',async e=>{
     e.preventDefault(); err.textContent='';

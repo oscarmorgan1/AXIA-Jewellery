@@ -36,7 +36,7 @@ export default function Claim() {
       await accountApi('/claim', { token, password, name: name.trim(), marketing });
       if (auth.currentUser) await signOut(auth); // someone else was signed in on this browser
       await signInWithEmailAndPassword(auth, invite.email, password);
-      nav('/details', { replace: true });
+      nav('/orders', { replace: true });
     } catch (err) {
       setError((err as Error).message);
       if ((err as { status?: number }).status === 409) setInvite({ ...invite, state: 'has_account' });

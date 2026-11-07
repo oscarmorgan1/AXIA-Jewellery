@@ -21,6 +21,7 @@
 //   POST /api/account/marketing       signed in: news and offers on or off
 //   POST /api/account/cart/get        signed in: their saved bag
 //   POST /api/account/cart            signed in: saves the bag (accounts/{uid}/saved/cart)
+//   POST /api/account/orders/:id/receipt  signed in: the Stripe receipt link for one of their orders
 import express from 'express';
 import { createHash, randomBytes } from 'node:crypto';
 import { getAuth } from 'firebase-admin/auth';
@@ -30,6 +31,7 @@ import { customerId } from './orders.js';
 import { setSubscribed } from './unsubscribe.js';
 import { accountInviteEmail, passwordResetEmail, sendEmail, brandUrl } from './email.js';
 import { rateLimit, clientIp } from './limit.js';
+import { syncCustomerOrders, stripeReceipt } from './sync.js';
 
 export const INVITE_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -119,7 +121,10 @@ export async function ensureAccount(uid, email, { name } = {}) {
     updatedAt: FieldValue.serverTimestamp(),
   };
   await ref.set(account);
-  if (cust.exists) await markActive(id, uid);
+  if (cust.exists) {
+    await markActive(id, uid);
+    await syncCustomerOrders(uid, id); // their order history, from day one
+  }
   return account;
 }
 
@@ -249,7 +254,7 @@ export function accountRoutes() {
     return { ok: true };
   }));
 
-  router.use(['/api/account/session', '/api/account/profile', '/api/account/marketing', '/api/account/cart'], express.json({ limit: '64kb' }), requireCustomer);
+  router.use(['/api/account/session', '/api/account/profile', '/api/account/marketing', '/api/account/cart', '/api/account/orders'], express.json({ limit: '64kb' }), requireCustomer);
 
   router.post('/api/account/session', handle(async req => {
     await ensureAccount(req.customer.uid, req.customer.email, { name: req.customer.name });
@@ -280,6 +285,20 @@ export function accountRoutes() {
     await setSubscribed(email, on, 'portal');
     await db.collection('accounts').doc(uid).update({ marketing: { email: on }, updatedAt: FieldValue.serverTimestamp() });
     return { ok: true };
+  }));
+
+  // Their own orders only: the portal copy (accounts/{uid}/orders/{id}) proves it's theirs.
+  router.post('/api/account/orders/:id/receipt', handle(async req => {
+    const id = str(req.params.id, 300);
+    const mine = await db.collection('accounts').doc(req.customer.uid).collection('orders').doc(id).get();
+    if (!id || !mine.exists) throw new HttpError(404, 'Order not found');
+    try {
+      const { url } = await stripeReceipt(db.collection('orders').doc(id));
+      return { url };
+    } catch (err) {
+      if (err.status === 404 || err.status === 503) throw new HttpError(404, 'Your receipt isn’t ready yet. Try again later, or contact us.');
+      throw err;
+    }
   }));
 
   // The saved bag. `at` is when the bag last changed on the device that sent it,
