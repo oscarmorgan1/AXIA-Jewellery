@@ -13,6 +13,7 @@ import Drawer from '../components/Drawer';
 import { useToast } from '../components/Toast';
 import type { Message } from '../types';
 import { SkeletonRows } from '../components/Skeleton';
+import { useConfirm } from '../components/Confirm';
 
 type Filter = 'new' | 'done' | 'all';
 
@@ -35,6 +36,7 @@ export default function Inbox() {
   const [replying, setReplying] = useState(false);
   const { data: orders } = useOrders();
   const toast = useToast();
+  const confirm = useConfirm();
 
   const counts = { new: messages.filter(m => m.status !== 'done').length, done: messages.filter(m => m.status === 'done').length, all: messages.length };
   const shown = useMemo(() => messages.filter(m => filter === 'all' || (filter === 'done' ? m.status === 'done' : m.status !== 'done')), [messages, filter]);
@@ -52,7 +54,7 @@ export default function Inbox() {
     if (status === 'done') setOpenId(null);
   }
   async function remove(m: Message) {
-    if (!confirm(`Delete this message from ${m.name}?`)) return;
+    if (!(await confirm({ title: `Delete this message from ${m.name}?`, tone: 'danger', confirmLabel: 'Delete message', body: 'It can’t be brought back.' }))) return;
     // Portal conversations also have the customer's copy to take down, which only the server can.
     try { await (m.uid ? adminApi(`/messages/${encodeURIComponent(m.id)}/delete`, {}) : deleteDoc(doc(db, 'messages', m.id))); } catch (e) { return toast.show(`Couldn’t save: ${(e as Error).message}`); }
     setOpenId(null);

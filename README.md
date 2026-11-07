@@ -124,7 +124,7 @@ Before later deploys, refresh the offline fallback so it matches Firestore: `npm
 
 ## Payments and email
 
-Checkout only works while the shop is open: **Website > Shop > Open shop** in the portal. The server checks the same switch before creating any payment, so closing it stops checkout immediately.
+Checkout only works while the shop is open: **Settings > Shop > Open shop** in the portal. The server checks the same switch before creating any payment, so closing it stops checkout immediately.
 
 Checkout uses **Stripe Checkout** (Stripe's hosted payment page). `checkout.html` shows the bag, then `POST /api/checkout` prices every piece from Firestore. The browser only sends which piece, width, length, colour, engraving and quantity; any price it sends is ignored and sends the buyer to Stripe, which collects the address, shipping choice (free standard or A$25 express), discount code and card. Stripe then calls `POST /api/stripe/webhook`, which writes the order to `orders/` (shown in the portal) and emails a confirmation through **Resend**. Refunds made in the Stripe dashboard mark the order Refunded.
 

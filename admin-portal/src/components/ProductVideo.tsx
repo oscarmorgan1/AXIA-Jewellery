@@ -4,6 +4,7 @@ import { doc, getDoc, serverTimestamp, updateDoc, deleteField } from 'firebase/f
 import { db, siteUrl } from '../firebase';
 import { uploadVideo, type VideoStage } from '../lib/video';
 import VideoProgress from './VideoProgress';
+import { useConfirm } from './Confirm';
 
 interface Made { video: string; videoPoster: string; sizeBytes: number; seconds: number | null; trimmed: boolean; saved: boolean }
 
@@ -19,6 +20,7 @@ export default function ProductVideo({ productId, video, poster, onChange, onErr
   onChange: (v: { video?: string; videoPoster?: string }) => void; onError: (msg: string) => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
+  const confirm = useConfirm();
   const [stage, setStage] = useState<VideoStage>('');
   const [progress, setProgress] = useState(0);
   const [note, setNote] = useState('');
@@ -34,7 +36,7 @@ export default function ProductVideo({ productId, video, poster, onChange, onErr
   }
 
   async function remove() {
-    if (!confirm('Remove this video from the product?')) return;
+    if (!(await confirm({ title: 'Remove this video?', body: 'It comes off this product’s page.', tone: 'danger', confirmLabel: 'Remove video' }))) return;
     try {
       const ref = doc(db, 'products', productId);
       if (productId && (await getDoc(ref)).exists()) await updateDoc(ref, { video: deleteField(), videoPoster: deleteField(), updatedAt: serverTimestamp() });

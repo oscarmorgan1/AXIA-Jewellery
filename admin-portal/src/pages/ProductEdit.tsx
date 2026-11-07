@@ -13,6 +13,7 @@ import VariantsTable from '../components/VariantsTable';
 import { useToast } from '../components/Toast';
 import ProductSales from '../components/ProductSales';
 import type { Product, ProductCost, WidthOption } from '../types';
+import { useConfirm } from '../components/Confirm';
 
 const BLANK: Product = {
   id: '', name: '', desc: '', cat: 'bracelet', coll: ['cuban'], col: ['Silver'], art: 'cuban', level: 1,
@@ -39,6 +40,7 @@ export default function ProductEdit() {
   const isNew = !routeId;
   const nav = useNavigate();
   const toast = useToast();
+  const confirm = useConfirm();
   const { data: products } = useProducts();
   const { data: assumptions } = useAssumptions();
   const { data: collections } = useCollections();
@@ -128,7 +130,8 @@ export default function ProductEdit() {
   }
 
   async function destroy() {
-    if (!confirm(`Permanently delete "${draft!.name}"? This removes it and its cost record. Archiving is reversible; this isn't.`)) return;
+    if (!(await confirm({ title: `Permanently delete “${draft!.name}”?`, tone: 'danger', word: 'DELETE', confirmLabel: 'Delete for good',
+      body: 'This removes the product and its cost record. Archiving can be undone; this can’t.' }))) return;
     const b = writeBatch(db);
     b.delete(doc(db, 'products', id));
     b.delete(doc(db, 'productCosts', id));

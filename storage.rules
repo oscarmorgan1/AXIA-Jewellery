@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Product photos uploaded from the admin portal live under products/.
+// Product photos uploaded from the admin portal live under products/, admins' own photos under admins/.
 // Anyone can view them (they're shown on the storefront); only admins who have
 // entered their emailed sign-in code (see firestore.rules) upload.
 service firebase.storage {
@@ -12,6 +12,16 @@ service firebase.storage {
         && request.auth.token.auth_time in request.auth.token.get('mfa', [])
         && request.resource.size < 15 * 1024 * 1024
         && request.resource.contentType.matches('(image|video)/.*');
+    }
+    // Each admin's own profile photo ("Manage your account"). Public to read, since the
+    // download URL is their Firebase photoURL; only that admin, past their code, writes it.
+    match /admins/{uid}/{file} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid && request.auth.token.admin == true
+        && request.auth.token.get('mfa', []) is list
+        && request.auth.token.auth_time in request.auth.token.get('mfa', [])
+        && (request.resource == null
+          || (request.resource.size < 5 * 1024 * 1024 && request.resource.contentType.matches('image/.*')));
     }
     match /{allPaths=**} {
       allow read, write: if false;
