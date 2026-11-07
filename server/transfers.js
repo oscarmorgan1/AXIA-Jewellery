@@ -131,7 +131,7 @@ async function sendOffer(id, t) {
     : await createInvite({ email: t.toEmail, name: '', transfer: { id, productName: t.productName, fromName: t.fromName } });
   const mail = transferOfferEmail({ fromName: t.fromName, productName: t.productName, note: t.note, url, days: TRANSFER_DAYS, hasAccount, siteUrl: site() });
   const sent = await sendEmail({ to: t.toEmail, ...mail });
-  if (!hasAccount) await markInvited(t.toEmail);
+  if (!hasAccount) await markInvited(t.toEmail, { kind: 'transfer', from: t.fromName });
   return sent;
 }
 

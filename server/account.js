@@ -10,7 +10,8 @@
 // account yet, the buyer is emailed a "Claim your AXIA account" link
 // (/portal/claim?t=<token>, 30 days). Only the token's SHA-256 is stored, in
 // the server-only `accountInvites/{hash}`, so a database read can't be turned
-// into a working link.
+// into a working link. Once the account exists those records are deleted and
+// what the invite was for is kept on accounts/{uid}.invite (settleInvites).
 //
 //   POST /api/account/invite          what an invite link is for (email, state)
 //   POST /api/account/invite/renew    emails a fresh link for an expired one
@@ -77,7 +78,7 @@ export async function sendAccountInvite({ email, name, orderId, orderNumber, sit
   const url = await createInvite({ email: id, name, orderId, orderNumber });
   const mail = accountInviteEmail({ name, orderNumber, url, days: INVITE_DAYS, siteUrl });
   const sent = await sendEmail({ to: id, ...mail });
-  await markInvited(id);
+  await markInvited(id, { kind: 'order', orderId, orderNumber });
   return { status: sent ? 'sent' : 'skipped', subject: mail.subject, sent };
 }
 
@@ -98,24 +99,63 @@ export async function createInvite({ email, name, orderId, orderNumber, transfer
   return url;
 }
 
-/** Marks the customer record as invited (the admin Customers page shows it). */
-export async function markInvited(id) {
+/**
+ * Marks the customer record as invited, with what the invite was for (the admin
+ * Customers page shows it). `kind`: 'order' (after a purchase) or 'transfer'
+ * (someone is sending them a piece).
+ */
+export async function markInvited(id, { kind = 'order', orderId = null, orderNumber = '', from = '' } = {}) {
   // Doesn't downgrade an account that was claimed in the meantime.
   await db.runTransaction(async tx => {
     const ref = db.collection('customers').doc(id);
     const snap = await tx.get(ref);
     if (snap.exists && snap.get('account.status') === 'active') return;
-    tx.set(ref, { email: id, account: { status: 'invited', invitedAt: FieldValue.serverTimestamp() }, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    const now = Timestamp.now();
+    tx.set(ref, { email: id, account: {
+      status: 'invited', invitedAt: now,
+      invite: { kind, orderId: orderId || null, orderNumber: orderNumber || '', ...(from ? { from } : {}),
+        sentAt: now, expiresAt: Timestamp.fromMillis(now.toMillis() + INVITE_DAYS * DAY_MS), count: FieldValue.increment(1) },
+    }, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   });
+}
+
+/**
+ * Once they have an account, their invite links have done their job: what the
+ * invite was (sent when, for which order, claimed when and how) is kept on
+ * accounts/{uid}.invite and customers/{email}.account.invite, and the link
+ * records (accountInvites/*, only ever a hashed token) are deleted.
+ */
+export async function settleInvites(uid, email, { via, used } = {}) {
+  const id = customerId(email);
+  const snap = await db.collection('accountInvites').where('email', '==', id).get();
+  if (!snap.size) return;
+  const docs = snap.docs.map(d => ({ ref: d.ref, ...d.data() }))
+    .sort((a, b) => (millis(b.createdAt) || 0) - (millis(a.createdAt) || 0));
+  const inv = (used && docs.find(d => d.ref.id === used.id)) || docs.find(d => d.usedAt) || docs[0];
+  via ||= docs.some(d => d.usedAt) ? 'invite' : 'sign-in';
+  const invite = {
+    kind: inv.transfer ? 'transfer' : 'order',
+    orderId: inv.orderId || null, orderNumber: inv.orderNumber || '',
+    ...(inv.transfer ? { from: inv.transfer.fromName || '' } : {}),
+    sentAt: (docs[docs.length - 1] && docs[docs.length - 1].createdAt) || null, // the first one
+    lastSentAt: inv.createdAt || null, expiresAt: inv.expiresAt || null, count: docs.length,
+    claimedAt: Timestamp.now(), via, // 'invite': set a password from the link; 'sign-in': Google or another way in
+  };
+  const batch = db.batch();
+  batch.set(db.collection('accounts').doc(uid), { invite }, { merge: true });
+  batch.set(db.collection('customers').doc(id), { account: { invite } }, { merge: true });
+  for (const d of docs) batch.delete(d.ref);
+  await batch.commit();
 }
 
 /** The invite behind a link, with its state. Throws 404 for an unknown token. */
 async function readInvite(token) {
   const t = str(token, 100);
-  if (t.length < 20) throw new HttpError(404, 'That link isn’t valid. Use the button in your latest email.');
+  const gone = 'That link has already been used or isn’t valid. If you’ve set up your account, sign in. Otherwise use the button in your latest email.';
+  if (t.length < 20) throw new HttpError(404, gone);
   const ref = db.collection('accountInvites').doc(hashToken(t));
   const snap = await ref.get();
-  if (!snap.exists) throw new HttpError(404, 'That link isn’t valid. Use the button in your latest email.');
+  if (!snap.exists) throw new HttpError(404, gone);
   const inv = snap.data();
   const user = await findUser(inv.email);
   const state = user ? 'has_account'
@@ -125,7 +165,7 @@ async function readInvite(token) {
 }
 
 /** Creates accounts/{uid} on first sign-in, filled from their customer record. Returns the account. */
-export async function ensureAccount(uid, email, { name } = {}) {
+export async function ensureAccount(uid, email, { name, claiming = false } = {}) {
   const id = customerId(email);
   const ref = db.collection('accounts').doc(uid);
   const snap = await ref.get();
@@ -144,6 +184,8 @@ export async function ensureAccount(uid, email, { name } = {}) {
     updatedAt: FieldValue.serverTimestamp(),
   };
   await ref.set(account);
+  // Signed in some other way (Google) while an invite was waiting: keep what it was for.
+  if (!claiming) await settleInvites(uid, id, { via: 'sign-in' }).catch(err => console.error('account: invites not settled', err));
   if (cust.exists) {
     await markActive(id, uid);
     await syncCustomerOrders(uid, id); // their order history, from day one
@@ -258,10 +300,10 @@ export function accountRoutes() {
       if (err && err.code === 'auth/invalid-password') throw new HttpError(400, `Use at least ${MIN_PASSWORD} characters for your password.`);
       throw err;
     }
-    await ensureAccount(user.uid, inv.email, { name });
+    await ensureAccount(user.uid, inv.email, { name, claiming: true });
     await markActive(inv.email, user.uid);
     await setSubscribed(inv.email, b.marketing === true, 'portal');
-    await ref.update({ uid: user.uid });
+    await settleInvites(user.uid, inv.email, { via: 'invite', used: ref });
     return { ok: true, email: inv.email, next: inv.transfer ? '/pieces' : '/orders' };
   }));
 
@@ -286,6 +328,8 @@ export function accountRoutes() {
     await ensureAccount(req.customer.uid, req.customer.email, { name: req.customer.name });
     // Transfers sent to this email (including before the account existed), and any that ran out.
     await settleTransfers(req.customer.uid, req.customer.email);
+    // Accounts claimed before invites were kept on the account still have their link records.
+    await settleInvites(req.customer.uid, req.customer.email).catch(err => console.error('account: invites not settled', err));
     return { ok: true };
   }));
 
