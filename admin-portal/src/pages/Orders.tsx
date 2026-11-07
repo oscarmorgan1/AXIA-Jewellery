@@ -1,17 +1,18 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PenLine, Search } from 'lucide-react';
-import { useOrders } from '../lib/data';
+import { useOrders, usePieces } from '../lib/data';
+import { orderPieceStage, stageLabel } from '../lib/pieces';
 import { aud } from '../lib/format';
 import { STATUS_LABEL, hasEngraving, itemCount, orderNo, statusClass } from '../lib/orders';
-import type { Order } from '../types';
+import type { Order, Piece } from '../types';
 import { SkeletonRows } from '../components/Skeleton';
 
 export function statusChip(s?: string) {
   return <span className={`chip ${statusClass(s)}`}>{STATUS_LABEL[s || ''] || (s ? s[0].toUpperCase() + s.slice(1) : 'Pending')}</span>;
 }
 
-export function OrdersTable({ orders, empty }: { orders: Order[]; empty: string }) {
+export function OrdersTable({ orders, empty, pieces }: { orders: Order[]; empty: string; pieces?: Piece[] }) {
   const nav = useNavigate();
   if (!orders.length) return <div className="empty"><b>No orders yet</b>{empty}</div>;
   return (
@@ -28,7 +29,10 @@ export function OrdersTable({ orders, empty }: { orders: Order[]; empty: string 
                 {(o.items || []).map(i => i.name).join(', ') || '–'}
                 {hasEngraving(o) && <span className="chip chip--ice chip--plain" style={{ marginLeft: 6 }} title="Has custom engraving"><PenLine size={12} /> Engraving</span>}
               </td>
-              <td>{statusChip(o.status)}</td>
+              <td>{statusChip(o.status)}{pieces && ['paid', 'in_progress'].includes(o.status || '') && (() => {
+                const st = stageLabel(orderPieceStage(o, pieces));
+                return <small className="muted" style={{ display: 'block', marginTop: 4 }}>{st.text}</small>;
+              })()}</td>
               <td>{itemCount(o)} items</td>
               <td className="num">{aud(o.totalAUD, 2)}</td>
             </tr>
@@ -44,6 +48,7 @@ const OPEN = ['pending', 'paid', 'in_progress'];
 
 export default function Orders() {
   const { data, loading, error } = useOrders();
+  const { data: pieces } = usePieces();
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<Filter>('open');
   const counts = {
@@ -76,7 +81,7 @@ export default function Orders() {
           <div className="search"><Search size={16} /><input aria-label="Search orders" placeholder="Search orders, customers, engraving" value={q} onChange={e => setQ(e.target.value)} /></div>
         </div>
         {error && <div className="notice notice--error">{error.message}</div>}
-        {loading ? <SkeletonRows rows={5} cols={5} /> : <div className="fade-in"><OrdersTable orders={shown} empty={filter === 'open' ? 'Nothing waiting on you. New paid orders land here.' : 'No orders match.'} /></div>}
+        {loading ? <SkeletonRows rows={5} cols={5} /> : <div className="fade-in"><OrdersTable orders={shown} pieces={pieces} empty={filter === 'open' ? 'Nothing waiting on you. New paid orders land here.' : 'No orders match.'} /></div>}
       </div>
     </>
   );

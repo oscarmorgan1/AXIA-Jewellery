@@ -250,15 +250,41 @@ export interface Piece {
   productName: string;
   /** Width, length, colour: whatever tells this piece apart from others of the product. */
   variant?: string;
+  /** The size and colour picked from the product's options; `variant` joins them. */
+  size?: string;
+  colour?: string;
+  /** Supplier's name as it was when picked (the record is suppliers/{supplierId}). */
   supplier?: string;
-  /** Date bought from the supplier, YYYY-MM-DD. */
+  supplierId?: string | null;
+  /** The supplier's order or invoice number for this piece. */
+  supplierOrderNo?: string;
+  /** Date ordered from the supplier, YYYY-MM-DD. This is the purchase date /genuine shows. */
   purchasedOn: string;
+  /**
+   * Date it arrived from the supplier, YYYY-MM-DD. null means it's still being made;
+   * missing (pieces added before this field existed) counts as received.
+   */
+  receivedOn?: string | null;
   /** Date it left in an order, YYYY-MM-DD. Set when the order is marked shipped. */
   shippedOn?: string | null;
   orderId?: string | null;
   orderNumber?: string | null;
   /** Which line of the order's items it fills (index into order.items). */
   orderLine?: number | null;
+  notes?: string;
+  createdAt?: Ts;
+  updatedAt?: Ts;
+}
+
+/** A manufacturer or supplier (Firestore `suppliers/{id}`), admins only. */
+export interface Supplier {
+  id: string;
+  name: string;
+  contact?: string;
+  email?: string;
+  phone?: string;
+  /** Usual days from order to delivery, for the "due" hint on pieces being made. */
+  leadDays?: number | null;
   notes?: string;
   createdAt?: Ts;
   updatedAt?: Ts;

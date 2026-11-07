@@ -94,7 +94,10 @@ async function markPiecesShipped(orderId) {
   const todo = snap.docs.filter(d => !d.get('shippedOn'));
   if (!todo.length) return 0;
   const batch = db.batch();
-  todo.forEach(d => batch.update(d.ref, { shippedOn: day, updatedAt: FieldValue.serverTimestamp() }));
+  // A piece still marked as with the maker has evidently arrived if it's in the box.
+  todo.forEach(d => batch.update(d.ref, {
+    shippedOn: day, ...(d.get('receivedOn') === null ? { receivedOn: day } : {}), updatedAt: FieldValue.serverTimestamp(),
+  }));
   await batch.commit();
   return todo.length;
 }
