@@ -40,6 +40,12 @@ env:
     value: "support@axiajewellery.com"
     availability: [RUNTIME]
 
+  # Who gets an email for each new support-page inquiry (comma-separate for
+  # more than one). Server-side only: never sent to the browser.
+  - variable: INQUIRY_ALERT_TO
+    value: "dear.konrad@gmail.com"
+    availability: [RUNTIME]
+
   # Public address used in Stripe return links and email images. Pinned so a
   # forged Host header can't point them at another site.
   - variable: PUBLIC_SITE_URL

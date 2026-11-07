@@ -297,3 +297,32 @@ export function signInCodeEmail({ code, minutes, ip, agent }) {
     'If you didn’t just sign in, someone has your password. Don’t share this code: change your password, or ask the owner to remove your admin access.'].filter(Boolean).join('\n\n');
   return { subject: `${code} is your AXIA admin sign-in code`, html, text };
 }
+
+/**
+ * Internal alert for a new support-page inquiry (server/forms.js), sent to the
+ * team address in INQUIRY_ALERT_TO. Plain, with no marketing footer or
+ * unsubscribe link, like the sign-in code. Reply-To is the customer, so
+ * replying from the inbox answers them directly.
+ */
+export function inquiryAlertEmail({ name, email, topic, order, message }) {
+  const inbox = `${brandUrl()}/admin/inbox`;
+  const kind = topic === 'Support' ? 'support request' : 'inquiry';
+  const row = (l, v) => v ? `<tr><td style="padding:4px 14px 4px 0;${font};font-size:13px;color:${C.soft};white-space:nowrap;vertical-align:top">${l}</td><td style="padding:4px 0;${font};font-size:14px;color:${C.ink}">${esc(v)}</td></tr>` : '';
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>New AXIA inquiry</title></head>
+<body style="margin:0;padding:0;background:${C.page}">
+<span style="display:none!important;visibility:hidden;opacity:0;height:0;width:0;overflow:hidden">${esc(String(message).slice(0, 110))}</span>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.page}"><tr><td align="center" style="padding:32px 14px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px">
+  <tr><td style="background:${C.bone};border:1px solid ${C.line};border-radius:6px;padding:32px 30px">
+    <p style="margin:0 0 6px;${font};font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:${C.soft}">AXIA admin · New ${kind}</p>
+    <h1 style="margin:0 0 16px;${font};font-size:22px;line-height:1.2;color:${C.ink}">${esc(name)} sent a message</h1>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px">${row('From', `${name} <${email}>`)}${row('Topic', topic)}${row('Order', order)}</table>
+    <div style="border-left:3px solid ${C.line};padding:4px 0 4px 14px;${font};font-size:14.5px;line-height:1.6;color:${C.ink}">${esc(message).replace(/\n/g, '<br>')}</div>
+    <div style="margin-top:20px">${button(inbox, 'Open the Inbox')}</div>
+    ${p('<span style="font-size:13px">Reply to this email to answer them directly, or reply from the Inbox so it’s logged on their customer record.</span>', C.soft)}
+  </td></tr>
+</table></td></tr></table></body></html>`;
+  const text = [`New ${kind} from ${name} <${email}>`, order ? `Order: ${order}` : '', message,
+    `Open the Inbox: ${inbox}`].filter(Boolean).join('\n\n');
+  return { subject: `New ${kind} from ${name}${order ? ` (order ${order})` : ''}`, html, text };
+}
