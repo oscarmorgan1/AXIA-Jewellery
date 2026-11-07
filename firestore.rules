@@ -15,6 +15,7 @@ rules_version = '2';
 //                        The public /genuine check never reads it from the browser: it
 //                        goes through the server (server/genuine.js), which returns only
 //                        the product name and purchase date for one serial at a time.
+//   suppliers/{id}       PRIVATE manufacturers and suppliers: admins only
 //
 // "Admin" means a signed-in user whose ID token carries the custom claim
 // admin == true (set with `npm run set-admin -- <email>`) AND who has entered
@@ -99,12 +100,21 @@ service cloud.firestore {
           && d.purchasedOn is string && d.purchasedOn.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
           && (d.get('shippedOn', null) == null
               || (d.shippedOn is string && d.shippedOn.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')))
+          && (d.get('receivedOn', null) == null
+              || (d.receivedOn is string && d.receivedOn.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')))
+          && (d.get('supplierOrderNo', '') is string && d.get('supplierOrderNo', '').size() <= 80)
           && (d.get('orderId', null) == null || d.orderId is string);
       }
       allow read, delete: if isAdmin();
       allow create: if isAdmin() && validPiece();
       // the serial is the record: it can't be changed in place
       allow update: if isAdmin() && validPiece() && request.resource.data.serial == resource.data.serial;
+    }
+
+    match /suppliers/{id} {
+      allow read, delete: if isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 120;
     }
 
     // Anything not listed above is closed.

@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, Shuffle } from 'lucide-react';
 import Drawer from './Drawer';
-import { useProducts } from '../lib/data';
-import { STATE_CHIP, STATE_LABEL, createPiece, draftError, linkPiece, pieceState, serialKey, shortDate, today, updatePiece, type PieceDraft } from '../lib/pieces';
+import { useProducts, useSuppliers } from '../lib/data';
+import { STATE_CHIP, STATE_LABEL, colourOptions, newSerial, productGroups, sizeOptions, createPiece, draftError, dueOn, isMaking, linkPiece, markReceived, pieceState, serialKey, shortDate, today, updatePiece, type PieceDraft } from '../lib/pieces';
 import type { Order, OrderItem, Piece } from '../types';
 
 const variantOf = (i?: OrderItem) => i ? [i.width, i.length, i.colour].filter(Boolean).join(' · ') || i.options || '' : '';
@@ -13,32 +13,73 @@ function PieceFields({ draft, set, existing, lockSerial }: {
   draft: PieceDraft; set: (p: Partial<PieceDraft>) => void; existing: Set<string>; lockSerial?: boolean;
 }) {
   const { data: products } = useProducts();
+  const { data: suppliers } = useSuppliers();
+  const making = !draft.receivedOn;
   const taken = !lockSerial && existing.has(serialKey(draft.serial));
+  const groups = useMemo(() => productGroups(products.filter(p => !p.archived || p.id === draft.productId)), [products, draft.productId]);
+  const group = groups.find(g => g.docs.some(p => p.id === draft.productId)) || groups.find(g => g.name === draft.productName);
+  const sizes = group ? sizeOptions(group.docs) : [];
+  const colours = group ? colourOptions(group.docs) : [];
   return (
     <div className="form-grid">
       <label className="field full">Product
-        <select className="select" value={draft.productId} onChange={e => {
-          const p = products.find(x => x.id === e.target.value);
-          set({ productId: e.target.value, productName: p ? p.name + (p.width ? `, ${p.width}` : '') : '' });
+        <select className="select" value={group?.name || ''} onChange={e => {
+          const g = groups.find(x => x.name === e.target.value);
+          const first = g ? sizeOptions(g.docs)[0] : undefined;
+          set({ productId: first?.productId || g?.docs[0]?.id || '', productName: g?.name || '', size: first?.label || '', colour: g ? colourOptions(g.docs)[0] || '' : '' });
         }}>
           <option value="">Pick a product…</option>
-          {products.filter(p => !p.archived || p.id === draft.productId).map(p => <option key={p.id} value={p.id}>{p.name}{p.width ? `, ${p.width}` : ''}</option>)}
+          {groups.map(g => <option key={g.name} value={g.name}>{g.name}</option>)}
         </select>
       </label>
-      <label className="field full">Serial number
-        <input className="input mono" value={draft.serial} disabled={lockSerial} autoCapitalize="characters" spellCheck={false} maxLength={40}
-          placeholder="As printed on the authenticity card" onChange={e => set({ serial: e.target.value.toUpperCase() })} />
+      <label className="field">Size
+        <select className="select" value={draft.size} disabled={!group} onChange={e => {
+          const o = sizes.find(x => x.label === e.target.value);
+          set({ size: e.target.value, ...(o ? { productId: o.productId } : {}) });
+        }}>
+          {!sizes.length && <option value="">One size</option>}
+          {draft.size && !sizes.some(o => o.label === draft.size) && <option value={draft.size}>{draft.size}</option>}
+          {sizes.map(o => <option key={o.label} value={o.label}>{o.label}</option>)}
+        </select>
+      </label>
+      <label className="field">Colour
+        <select className="select" value={draft.colour} disabled={!group} onChange={e => set({ colour: e.target.value })}>
+          {!colours.length && <option value="">One colour</option>}
+          {draft.colour && !colours.includes(draft.colour) && <option value={draft.colour}>{draft.colour}</option>}
+          {colours.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </label>
+      <div className="field full">
+        <label htmlFor="pieceSerial">Serial number</label>
+        <div className="serial-field">
+          <input id="pieceSerial" className="input mono" value={draft.serial} disabled={lockSerial} autoCapitalize="characters" spellCheck={false} maxLength={40}
+            placeholder="As printed on the authenticity card" onChange={e => set({ serial: e.target.value.toUpperCase() })} />
+          {!lockSerial && <button type="button" className="btn" onClick={() => set({ serial: newSerial(existing) })}><Shuffle size={15} /> Generate</button>}
+        </div>
         {taken && <small className="field__err">This serial is already in the registry.</small>}
-      </label>
-      <label className="field">Size / colour
-        <input className="input" value={draft.variant} placeholder="e.g. 12mm · 20in · White gold" onChange={e => set({ variant: e.target.value })} />
-      </label>
+      </div>
       <label className="field">Supplier
-        <input className="input" value={draft.supplier} placeholder="Optional" onChange={e => set({ supplier: e.target.value })} />
+        <select className="select" value={draft.supplierId} onChange={e => {
+          const x = suppliers.find(v => v.id === e.target.value);
+          set({ supplierId: e.target.value, supplier: x ? x.name : '' });
+        }}>
+          <option value="">{draft.supplier && !draft.supplierId ? draft.supplier : 'None'}</option>
+          {suppliers.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
+        </select>
+        {!suppliers.length && <small className="muted">Add suppliers on the <Link to="/suppliers">Suppliers</Link> page.</small>}
       </label>
-      <label className="field">Supplier purchase date
+      <label className="field">Supplier order no.
+        <input className="input" value={draft.supplierOrderNo} placeholder="Their order or invoice number" onChange={e => set({ supplierOrderNo: e.target.value })} />
+      </label>
+      <label className="field">Ordered from supplier
         <input className="input" type="date" value={draft.purchasedOn} max={today()} onChange={e => set({ purchasedOn: e.target.value })} />
+        <small className="muted">The purchase date /genuine shows.</small>
       </label>
+      <div className="field">
+        <label htmlFor="pieceReceived">Received</label>
+        <input id="pieceReceived" className="input" type="date" value={draft.receivedOn} max={today()} disabled={making} onChange={e => set({ receivedOn: e.target.value })} />
+        <label className="check"><input type="checkbox" checked={making} onChange={e => set({ receivedOn: e.target.checked ? '' : today() })} /> Still being made</label>
+      </div>
       <label className="field">Shipped date
         <input className="input" type="date" value={draft.shippedOn} onChange={e => set({ shippedOn: e.target.value })} />
         <small className="muted">Filled in when its order is marked shipped.</small>
@@ -52,8 +93,11 @@ function PieceFields({ draft, set, existing, lockSerial }: {
 }
 
 const blank = (item?: OrderItem): PieceDraft => ({
-  serial: '', productId: item?.id || '', productName: item?.name || '', variant: variantOf(item),
-  supplier: '', purchasedOn: today(), shippedOn: '', notes: '',
+  serial: '', productId: item?.id || '', productName: item?.name || '',
+  size: item ? [item.width, item.length].filter(Boolean).join(' · ') : '', colour: item?.colour || '',
+  supplierId: '', supplier: '', supplierOrderNo: '', purchasedOn: today(),
+  // a piece added from an order is usually being made for it; one added to stock has usually arrived
+  receivedOn: item ? '' : today(), shippedOn: '', notes: '',
 });
 
 /** Add a piece to the registry, or edit one. */
@@ -61,8 +105,11 @@ export function PieceDrawer({ piece, pieces, onClose, onDone }: {
   piece?: Piece; pieces: Piece[]; onClose: () => void; onDone: (msg: string) => void;
 }) {
   const [draft, setDraft] = useState<PieceDraft>(piece ? {
-    serial: piece.serial, productId: piece.productId, productName: piece.productName, variant: piece.variant || '',
-    supplier: piece.supplier || '', purchasedOn: piece.purchasedOn || '', shippedOn: piece.shippedOn || '', notes: piece.notes || '',
+    serial: piece.serial, productId: piece.productId, productName: piece.productName,
+    size: piece.size ?? piece.variant ?? '', colour: piece.colour || '',
+    supplierId: piece.supplierId || '', supplier: piece.supplier || '', supplierOrderNo: piece.supplierOrderNo || '',
+    purchasedOn: piece.purchasedOn || '', receivedOn: piece.receivedOn === undefined ? (piece.purchasedOn || today()) : piece.receivedOn || '',
+    shippedOn: piece.shippedOn || '', notes: piece.notes || '',
   } : blank());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -86,6 +133,14 @@ export function PieceDrawer({ piece, pieces, onClose, onDone }: {
   }
 
   const st = piece && pieceState(piece);
+  const { byId: suppliers } = useSuppliers();
+  const due = piece && dueOn(piece, piece.supplierId ? suppliers.get(piece.supplierId)?.leadDays : null);
+
+  async function received() {
+    if (!piece) return;
+    setBusy(true);
+    try { await markReceived(piece.key); onDone(`${piece.serial} marked received`); } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+  }
   return (
     <Drawer title={piece ? `Piece ${piece.serial}` : 'Add a piece'} onClose={onClose} footer={<>
       <button className="btn" onClick={onClose}>Cancel</button>
@@ -100,6 +155,13 @@ export function PieceDrawer({ piece, pieces, onClose, onDone }: {
             <span>Order <Link to={`/orders/${encodeURIComponent(piece.orderId)}`}>#{piece.orderNumber}</Link>{piece.shippedOn ? `, shipped ${shortDate(piece.shippedOn)}` : ''}</span>
             <button className="btn btn--sm" onClick={unlink} disabled={busy}>Unassign</button>
           </> : <span className="muted">Not tied to an order. Assign it from the order page.</span>}
+        </div>
+      )}
+      {piece && isMaking(piece) && (
+        <div className="piece-link">
+          <span className="chip chip--warn">With maker</span>
+          <span>Ordered {shortDate(piece.purchasedOn)}{piece.supplier ? ` from ${piece.supplier}` : ''}{due ? `, due about ${shortDate(due)}` : ''}</span>
+          <button className="btn btn--sm" onClick={received} disabled={busy}>Mark received</button>
         </div>
       )}
       <PieceFields draft={draft} set={set} existing={existing} lockSerial={!!piece} />
@@ -165,7 +227,7 @@ export function AssignPieceDrawer({ order, line, pieces, onClose, onDone }: {
               <button key={p.key} className="piece-pick__row" onClick={() => pick(p)} disabled={busy}>
                 <span className="mono">{p.serial}</span>
                 <span>{p.productName}{p.variant ? <small>{p.variant}</small> : null}</span>
-                <small>Bought {shortDate(p.purchasedOn)}</small>
+                <small>{isMaking(p) ? <span className="chip chip--warn chip--plain">With maker</span> : `Received ${shortDate(p.receivedOn || p.purchasedOn)}`}</small>
               </button>
             ))}
             {!shown.length && <div className="empty"><b>No free pieces{all ? '' : ' of this product'}</b>

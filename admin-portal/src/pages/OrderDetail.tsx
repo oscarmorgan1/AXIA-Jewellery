@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Check, ChevronDown, ExternalLink, FileText, Gem, Gift, Mail, Package, PenLine, Plus, Receipt, Send, Truck } from 'lucide-react';
 import { siteUrl } from '../firebase';
 import { useOrders, usePieces } from '../lib/data';
-import { orderSlots, shortDate } from '../lib/pieces';
+import { isMaking, orderPieceStage, orderSlots, shortDate, stageLabel } from '../lib/pieces';
 import { AssignPieceDrawer, PieceDrawer } from '../components/PieceDrawer';
 import { adminApi } from '../lib/api';
 import { aud } from '../lib/format';
@@ -120,6 +120,7 @@ function StatusDrawer({ order, pieces, initial, onClose, onDone, onAssign }: { o
   // Shipping: every unit on the packing slip should have its registry piece assigned first.
   const slots = orderSlots(order, pieces);
   const missing = slots.reduce((a, s) => a + s.missing, 0);
+  const withMaker = slots.reduce((a, s) => a + s.assigned.filter(isMaking).length, 0);
   const [packed, setPacked] = useState(false);
   const shipBlocked = status === 'shipped' && !packed;
 
@@ -176,6 +177,7 @@ function StatusDrawer({ order, pieces, initial, onClose, onDone, onAssign }: { o
                   </li>
                 ))}
               </ul>
+              {withMaker > 0 && <div className="notice notice--warn">{withMaker} {withMaker === 1 ? 'piece is' : 'pieces are'} still marked as with the maker. Shipping marks {withMaker === 1 ? 'it' : 'them'} received.</div>}
               {missing > 0 && <div className="notice notice--warn">{missing} {missing === 1 ? 'piece has' : 'pieces have'} no serial assigned.</div>}
               <label className="check"><input type="checkbox" checked={packed} onChange={e => setPacked(e.target.checked)} />
                 {missing ? 'Ship anyway: I’ve checked the box against the packing slip' : 'I’ve checked these serials against the packing slip'}</label>
@@ -242,6 +244,7 @@ export default function OrderDetail() {
   const emails = [...(order.emails || [])].reverse();
   const engraved = (order.items || []).filter(i => i.engraving);
   const slots = orderSlots(order, pieces);
+  const stage = ['paid', 'in_progress'].includes(order.status || '') ? stageLabel(orderPieceStage(order, pieces)) : null;
 
   return (
     <>
@@ -249,6 +252,7 @@ export default function OrderDetail() {
         <Link to="/orders" className="icon-btn" aria-label="Back"><ArrowLeft size={18} /></Link>
         <h1>Order #{orderNo(order)}</h1>
         {statusChip(order.status)}
+        {stage && <span className={`chip ${stage.chip} chip--plain`}><Gem size={12} /> {stage.text}</span>}
         {test && <span className="chip chip--muted">Test</span>}
         <span className="spacer" />
         <OrderActions order={order} pieces={pieces} stripeUrl={stripeUrl} onMessage={toast.show} />
@@ -279,8 +283,9 @@ export default function OrderDetail() {
                     {i.engraving && <div className="engrave-line"><PenLine size={13} /> Engraving: <span className="engrave-text">{i.engraving}</span></div>}
                     <div className="piece-slots">
                       {slots[n]?.assigned.map(p => (
-                        <button key={p.key} className="piece-tag" onClick={() => setViewing(p)} title={p.shippedOn ? `Shipped ${shortDate(p.shippedOn)}` : 'Assigned, not shipped yet'}>
-                          <Gem size={12} /> <span className="mono">{p.serial}</span>{p.shippedOn ? <Check size={12} /> : null}
+                        <button key={p.key} className={`piece-tag${isMaking(p) ? ' piece-tag--making' : ''}`} onClick={() => setViewing(p)}
+                          title={p.shippedOn ? `Shipped ${shortDate(p.shippedOn)}` : isMaking(p) ? `With the maker since ${shortDate(p.purchasedOn)}` : 'In hand, not shipped yet'}>
+                          <Gem size={12} /> <span className="mono">{p.serial}</span>{isMaking(p) ? <small>With maker</small> : null}{p.shippedOn ? <Check size={12} /> : null}
                         </button>
                       ))}
                       {!!slots[n]?.missing && <button className="piece-tag piece-tag--missing" onClick={() => setAssigning(n)}><Plus size={12} /> Assign piece{slots[n].missing > 1 ? ` (${slots[n].missing} left)` : ''}</button>}

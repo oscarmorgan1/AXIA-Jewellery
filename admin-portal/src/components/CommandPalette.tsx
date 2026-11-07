@@ -15,6 +15,7 @@ const PAGES: Item[] = [
   { group: 'Go to', label: 'Products', to: '/products' },
   { group: 'Go to', label: 'Add a product', to: '/products/new' },
   { group: 'Go to', label: 'Pieces (serial registry)', to: '/pieces' },
+  { group: 'Go to', label: 'Suppliers', to: '/suppliers' },
   { group: 'Go to', label: 'Collections', to: '/collections' },
   { group: 'Go to', label: 'Customers', to: '/customers' },
   { group: 'Go to', label: 'Inbox', to: '/inbox' },
