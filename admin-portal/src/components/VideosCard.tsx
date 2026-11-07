@@ -7,6 +7,7 @@ import { uploadVideo, type VideoStage } from '../lib/video';
 import { useToast } from './Toast';
 import VideoProgress from './VideoProgress';
 import type { SiteVideo } from '../types';
+import { useConfirm } from './Confirm';
 
 const DEFAULT: SiteVideo = { src: 'assets/video/axia-hero.mp4?v=2', mobileSrc: 'assets/video/axia-hero-720.mp4?v=2', poster: 'assets/video/axia-hero-poster.jpg', sizeBytes: 3725463, mobileSizeBytes: 1858779 };
 const mb = (n?: number) => (n ? `${(n / 1048576).toFixed(1)} MB` : '–');
@@ -24,6 +25,7 @@ export default function VideosCard() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
   const toast = useToast();
+  const confirm = useConfirm();
   const v = video?.src ? video : DEFAULT;
 
   async function upload(file: File) {
@@ -37,7 +39,7 @@ export default function VideosCard() {
   }
 
   async function reset() {
-    if (!confirm('Put the original AXIA film back on the waitlist and store pages?')) return;
+    if (!(await confirm({ title: 'Restore the original film?', body: 'The original AXIA film goes back on the waitlist and store pages, replacing the one there now.', confirmLabel: 'Restore film' }))) return;
     try {
       await Promise.all([adminApi('/media/reset', { slot: 'store' }), data.landing ? adminApi('/media/reset', { slot: 'landing' }) : null]);
       toast.show('Back to the original film');

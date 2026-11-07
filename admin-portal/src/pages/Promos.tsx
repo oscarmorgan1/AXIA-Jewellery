@@ -9,6 +9,7 @@ import Drawer from '../components/Drawer';
 import StatCard from '../components/StatCard';
 import { useToast } from '../components/Toast';
 import type { Order, PromoCode } from '../types';
+import { useConfirm } from '../components/Confirm';
 
 /** The code the sign-up welcome email gives out (server WELCOME_CODE). */
 const WELCOME_CODE = 'FREE15';
@@ -71,6 +72,7 @@ export default function Promos() {
   const [open, setOpen] = useState<string | null>(null);
   const { data: orders } = useOrders();
   const toast = useToast();
+  const confirm = useConfirm();
 
   const load = useCallback(() => {
     adminApi<PromoCode[]>('/promos').then(p => { setPromos(p); setError(''); }).catch(e => setError(e.message));
@@ -111,7 +113,7 @@ export default function Promos() {
   }, [usage]);
 
   async function toggle(p: PromoCode) {
-    if (p.active && !window.confirm(`Turn off ${p.code}? Customers won’t be able to use it until you turn it back on.`)) return;
+    if (p.active && !(await confirm({ title: `Turn off ${p.code}?`, tone: 'warn', confirmLabel: 'Turn off code', body: 'Customers won’t be able to use it until you turn it back on.' }))) return;
     try {
       await adminApi(`/promos/${encodeURIComponent(p.id)}/active`, { active: !p.active });
       toast.show(`${p.code} is ${p.active ? 'off' : 'on'}`);

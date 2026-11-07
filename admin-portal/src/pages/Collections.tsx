@@ -9,6 +9,7 @@ import Drawer from '../components/Drawer';
 import ImageList from '../components/ImageList';
 import { useToast } from '../components/Toast';
 import type { Collection, Product } from '../types';
+import { useConfirm } from '../components/Confirm';
 
 type Draft = Collection & { members: Set<string>; isNew: boolean };
 
@@ -17,6 +18,7 @@ export default function Collections() {
   const { data: products } = useProducts();
   const [params, setParams] = useSearchParams();
   const toast = useToast();
+  const confirm = useConfirm();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [q, setQ] = useState('');
   const [saving, setSaving] = useState(false);
@@ -73,7 +75,8 @@ export default function Collections() {
   async function remove() {
     if (!draft || draft.isNew) return;
     const n = draft.members.size;
-    if (!confirm(`Delete “${draft.name}”? ${n ? `It will be removed from ${n} product${n === 1 ? '' : 's'}. ` : ''}The products themselves stay.`)) return;
+    if (!(await confirm({ title: `Delete “${draft.name}”?`, tone: 'danger', word: 'DELETE', confirmLabel: 'Delete collection',
+      body: `${n ? `It will be removed from ${n} product${n === 1 ? '' : 's'}. ` : ''}The products themselves stay.` }))) return;
     const b = writeBatch(db);
     b.delete(doc(db, 'collections', draft.slug));
     products.filter(p => (p.coll || []).includes(draft.slug)).forEach(p =>

@@ -11,6 +11,7 @@ import ComposeEmail from '../components/ComposeEmail';
 import { OrdersTable } from './Orders';
 import { SOURCE, fmtDate, initials } from './Customers';
 import { SkeletonPage } from '../components/Skeleton';
+import { useConfirm } from '../components/Confirm';
 
 export default function CustomerDetail() {
   const { id = '' } = useParams();
@@ -21,6 +22,7 @@ export default function CustomerDetail() {
   const [saving, setSaving] = useState(false);
   const [composing, setComposing] = useState(false);
   const toast = useToast();
+  const confirm = useConfirm();
   const nav = useNavigate();
   useEffect(() => { if (p && notes === null && p.record) setNotes(p.notes); }, [p, notes]);
 
@@ -59,7 +61,8 @@ export default function CustomerDetail() {
   }
 
   async function removeSignups() {
-    if (!confirm(`Delete ${p!.name || p!.email}’s ${p!.signups.length} waitlist sign-ups? Use this for privacy requests. Orders are kept, as they’re financial records. It can’t be undone.`)) return;
+    if (!(await confirm({ title: `Delete ${p!.name || p!.email}’s waitlist sign-ups?`, tone: 'danger', word: 'DELETE', confirmLabel: `Delete ${p!.signups.length} sign-up${p!.signups.length === 1 ? '' : 's'}`,
+      body: 'Use this for privacy requests. Orders are kept, as they’re financial records. It can’t be undone.' }))) return;
     const b = writeBatch(db);
     p!.signups.forEach(e => b.delete(doc(db, 'signups', e.id)));
     try { await b.commit(); } catch (e) { return toast.show(`Couldn’t delete: ${(e as Error).message}`); }
