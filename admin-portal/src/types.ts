@@ -237,3 +237,29 @@ export interface SiteVideo {
   by?: string;
 }
 export type SiteMedia = Partial<Record<'landing' | 'store', SiteVideo>>;
+
+/**
+ * One physical piece (Firestore `pieces/{key}`), admins only. `key` is the serial
+ * in capitals with spaces and dashes removed, so one serial is one record.
+ * The public /genuine lookup (server/genuine.js) shows only the product and `purchasedOn`.
+ */
+export interface Piece {
+  key: string;
+  serial: string;
+  productId: string;
+  productName: string;
+  /** Width, length, colour: whatever tells this piece apart from others of the product. */
+  variant?: string;
+  supplier?: string;
+  /** Date bought from the supplier, YYYY-MM-DD. */
+  purchasedOn: string;
+  /** Date it left in an order, YYYY-MM-DD. Set when the order is marked shipped. */
+  shippedOn?: string | null;
+  orderId?: string | null;
+  orderNumber?: string | null;
+  /** Which line of the order's items it fills (index into order.items). */
+  orderLine?: number | null;
+  notes?: string;
+  createdAt?: Ts;
+  updatedAt?: Ts;
+}

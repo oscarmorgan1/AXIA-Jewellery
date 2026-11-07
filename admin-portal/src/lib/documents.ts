@@ -1,7 +1,7 @@
 // Printable paperwork for one order: a packing slip to go in the box and a tax
 // invoice for the customer. Each is a self-contained A4 page opened in its own
 // window, which prints itself; "Save as PDF" in the print dialog makes a file.
-import type { Order } from '../types';
+import type { Order, Piece } from '../types';
 import { orderNo } from './orders';
 
 /** Who issues the invoice. AXIA's ABN is the one in the storefront footer. */
@@ -87,11 +87,14 @@ const head = (kind: string, o: Order, extra = '') => `
 </header>`;
 
 /** Goes in the box: what's inside, where it's going, nothing about money. */
-export function packingSlipHtml(o: Order): string {
+export function packingSlipHtml(o: Order, pieces: Piece[] = []): string {
   const ship = addressLines(o);
-  const rows = (o.items || []).map(i => `
+  // Serials of the registry pieces assigned to each line, to check against the cards in the box.
+  const serials = (line: number) => pieces.filter(p => p.orderId === o.id && p.orderLine === line).map(p => p.serial);
+  const rows = (o.items || []).map((i, line) => `
     <tr><td><b>${esc(i.name)}</b>${opts(i) ? `<small>${esc(opts(i))}</small>` : ''}
-      ${i.engraving ? `<span class="engrave">Engraved: <b>${esc(i.engraving)}</b></span>` : ''}</td>
+      ${i.engraving ? `<span class="engrave">Engraved: <b>${esc(i.engraving)}</b></span>` : ''}
+      ${serials(line).length ? `<small>Serial: ${serials(line).map(esc).join(', ')}</small>` : ''}</td>
       <td class="n">${esc(i.qty || 1)}</td><td class="n"><span class="tick"></span></td></tr>`).join('')
     + (o.gift ? `<tr><td><b>${esc(o.gift.name)}</b><small>Free gift${o.gift.length ? ` · ${esc(o.gift.length)}` : ''}</small></td><td class="n">1</td><td class="n"><span class="tick"></span></td></tr>` : '');
   return page(`Packing slip #${orderNo(o)}`, `

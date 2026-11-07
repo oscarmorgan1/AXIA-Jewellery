@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ExternalLink, FileText, Gift, Mail, Package, PenLine, Receipt, Send, Truck } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, ExternalLink, FileText, Gem, Gift, Mail, Package, PenLine, Plus, Receipt, Send, Truck } from 'lucide-react';
 import { siteUrl } from '../firebase';
-import { useOrders } from '../lib/data';
+import { useOrders, usePieces } from '../lib/data';
+import { orderSlots, shortDate } from '../lib/pieces';
+import { AssignPieceDrawer, PieceDrawer } from '../components/PieceDrawer';
 import { adminApi } from '../lib/api';
 import { aud } from '../lib/format';
 import { STATUS_LABEL, STATUS_OPTIONS, itemCount, orderNo } from '../lib/orders';
@@ -10,7 +12,7 @@ import Drawer from '../components/Drawer';
 import { useToast } from '../components/Toast';
 import ComposeEmail from '../components/ComposeEmail';
 import { statusChip } from './Orders';
-import type { Order, Tracking } from '../types';
+import type { Order, Piece, Tracking } from '../types';
 import { SkeletonPage } from '../components/Skeleton';
 import { openBlank, packingSlipHtml, taxInvoiceHtml, writeDocument } from '../lib/documents';
 
@@ -18,7 +20,7 @@ type Receipt = { url: string; card: { brand: string; last4: string } | null };
 const BLOCKED = 'Your browser blocked the new tab. Allow pop-ups for the admin portal and try again.';
 
 /** Paperwork and Stripe links for one order, behind a single Actions button. */
-function OrderActions({ order, stripeUrl, onMessage }: { order: Order; stripeUrl: string; onMessage: (m: string) => void }) {
+function OrderActions({ order, pieces, stripeUrl, onMessage }: { order: Order; pieces: Piece[]; stripeUrl: string; onMessage: (m: string) => void }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   const paid = !!order.stripe?.paymentIntent && order.status !== 'pending';
@@ -39,7 +41,7 @@ function OrderActions({ order, stripeUrl, onMessage }: { order: Order; stripeUrl
     setOpen(false);
     const w = openBlank('Preparing packing slip…');
     if (!w) return onMessage(BLOCKED);
-    writeDocument(w, packingSlipHtml(order));
+    writeDocument(w, packingSlipHtml(order, pieces));
   }
 
   async function invoice() {
@@ -102,9 +104,9 @@ const EMAIL_LABEL: Record<string, string> = {
 };
 
 /** Pick a new status, then confirm exactly what (if anything) gets emailed before it's saved. */
-function StatusDrawer({ order, onClose, onDone }: { order: Order; onClose: () => void; onDone: (msg: string) => void }) {
+function StatusDrawer({ order, pieces, initial, onClose, onDone, onAssign }: { order: Order; pieces: Piece[]; initial?: string; onClose: () => void; onDone: (msg: string) => void; onAssign: (line: number) => void }) {
   const current = order.status || 'pending';
-  const [status, setStatus] = useState(STATUS_OPTIONS.find(o => o.key !== current && o.key !== 'paid')?.key || 'in_progress');
+  const [status, setStatus] = useState(initial || STATUS_OPTIONS.find(o => o.key !== current && o.key !== 'paid')?.key || 'in_progress');
   const [notify, setNotify] = useState(true);
   const [tracking, setTracking] = useState<Tracking>({ carrier: order.tracking?.carrier || 'Australia Post', number: order.tracking?.number || '', url: order.tracking?.url || '' });
   const [note, setNote] = useState('');
@@ -115,14 +117,19 @@ function StatusDrawer({ order, onClose, onDone }: { order: Order; onClose: () =>
   const email = order.customer?.email || '';
   const willEmail = notify && !!opt.email && !!email;
   const already = (order.emails || []).some(e => e.type === `status:${status}` && e.status === 'sent');
+  // Shipping: every unit on the packing slip should have its registry piece assigned first.
+  const slots = orderSlots(order, pieces);
+  const missing = slots.reduce((a, s) => a + s.missing, 0);
+  const [packed, setPacked] = useState(false);
+  const shipBlocked = status === 'shipped' && !packed;
 
   async function save() {
     setBusy(true); setError('');
     try {
-      const r = await adminApi<{ email: { resendId: string | null; status: string } | null }>(`/orders/${encodeURIComponent(order.id)}/status`, {
+      const r = await adminApi<{ pieces?: number; email: { resendId: string | null; status: string } | null }>(`/orders/${encodeURIComponent(order.id)}/status`, {
         status, notify: willEmail, note, ...(status === 'shipped' ? { tracking } : {}),
       });
-      onDone(`Marked ${opt.label.toLowerCase()}${r.email ? (r.email.resendId ? `, emailed ${email}` : ', email not sent (Resend isn’t set up)') : ''}`);
+      onDone(`Marked ${opt.label.toLowerCase()}${r.pieces ? `, ${r.pieces} piece${r.pieces === 1 ? '' : 's'} dated shipped` : ''}${r.email ? (r.email.resendId ? `, emailed ${email}` : ', email not sent (Resend isn’t set up)') : ''}`);
     } catch (e) {
       setError((e as Error).message); setConfirming(false);
     } finally { setBusy(false); }
@@ -138,7 +145,7 @@ function StatusDrawer({ order, onClose, onDone }: { order: Order; onClose: () =>
     <>
       <button className="btn" onClick={onClose}>Cancel</button>
       <span className="spacer" style={{ flex: 1 }} />
-      <button className="btn btn--primary" onClick={() => setConfirming(true)} disabled={status === current}>Review change</button>
+      <button className="btn btn--primary" onClick={() => setConfirming(true)} disabled={status === current || shipBlocked}>Review change</button>
     </>
   );
 
@@ -155,6 +162,26 @@ function StatusDrawer({ order, onClose, onDone }: { order: Order; onClose: () =>
               </label>
             ))}
           </div>
+          {status === 'shipped' && (
+            <div className="ship-check">
+              <h3>What’s in the box</h3>
+              <ul>
+                {slots.map(s => (
+                  <li key={s.line}>
+                    <span>{s.item.name} <small>× {s.item.qty || 1}</small><br />
+                      {s.assigned.length ? <small className="mono">{s.assigned.map(p => p.serial).join(', ')}</small> : null}</span>
+                    {s.missing
+                      ? <button className="btn btn--sm" onClick={() => onAssign(s.line)}><span className="no">{s.missing} without a serial</span></button>
+                      : <span className="ok"><Check size={15} /> In registry</span>}
+                  </li>
+                ))}
+              </ul>
+              {missing > 0 && <div className="notice notice--warn">{missing} {missing === 1 ? 'piece has' : 'pieces have'} no serial assigned. Assign {missing === 1 ? 'it' : 'them'} so /genuine can find {missing === 1 ? 'it' : 'them'}.</div>}
+              <label className="check"><input type="checkbox" checked={packed} onChange={e => setPacked(e.target.checked)} />
+                {missing ? 'Ship anyway: I’ve checked the box against the packing slip' : 'I’ve checked these serials against the packing slip'}</label>
+              <small className="muted">Each assigned piece gets today as its shipped date.</small>
+            </div>
+          )}
           {status === 'shipped' && (
             <div className="form-grid">
               <label className="field">Carrier<input className="input" value={tracking.carrier} onChange={e => setTracking(t => ({ ...t, carrier: e.target.value }))} /></label>
@@ -181,6 +208,9 @@ function StatusDrawer({ order, onClose, onDone }: { order: Order; onClose: () =>
           ) : (
             <div className="notice notice--ok">No email will be sent to the customer.</div>
           )}
+          {status === 'shipped' && <div className={`notice ${missing ? 'notice--warn' : 'notice--ok'}`}><Gem size={15} /> {missing
+            ? `${slots.reduce((a, s) => a + s.assigned.length, 0)} pieces marked shipped today. ${missing} still without a serial.`
+            : `All ${slots.reduce((a, s) => a + s.assigned.length, 0)} pieces in the registry get today as their shipped date.`}</div>}
           {status === 'cancelled' && <div className="notice notice--error">Cancelling doesn’t refund the payment. Refund it in Stripe too.</div>}
           {note && <p className="card__sub">Note: “{note}”</p>}
         </div>
@@ -194,6 +224,10 @@ export default function OrderDetail() {
   const { data, loading, error } = useOrders();
   const [changing, setChanging] = useState(false);
   const [composing, setComposing] = useState(false);
+  const [assigning, setAssigning] = useState<number | null>(null);
+  const [viewing, setViewing] = useState<Piece | null>(null);
+  const [fromShip, setFromShip] = useState(false); // reopen the status drawer on Shipped after assigning
+  const { data: pieces } = usePieces();
   const toast = useToast();
   const order = data.find(o => o.id === id);
 
@@ -207,6 +241,7 @@ export default function OrderDetail() {
   const history = [...(order.statusHistory || [])].reverse();
   const emails = [...(order.emails || [])].reverse();
   const engraved = (order.items || []).filter(i => i.engraving);
+  const slots = orderSlots(order, pieces);
 
   return (
     <>
@@ -216,7 +251,7 @@ export default function OrderDetail() {
         {statusChip(order.status)}
         {test && <span className="chip chip--muted">Test</span>}
         <span className="spacer" />
-        <OrderActions order={order} stripeUrl={stripeUrl} onMessage={toast.show} />
+        <OrderActions order={order} pieces={pieces} stripeUrl={stripeUrl} onMessage={toast.show} />
         {order.customer?.email && <button className="btn" onClick={() => setComposing(true)}><Send size={16} /> Message customer</button>}
         {!['pending', 'refunded'].includes(order.status || 'pending') && <button className="btn btn--primary" onClick={() => setChanging(true)}>Change status</button>}
       </div>
@@ -242,6 +277,14 @@ export default function OrderDetail() {
                     <b>{i.id ? <Link to={`/products/${encodeURIComponent(i.id)}`}>{i.name}</Link> : i.name}</b>
                     <small>{[i.width, i.length, i.colour].filter(Boolean).join(' · ') || i.options}</small>
                     {i.engraving && <div className="engrave-line"><PenLine size={13} /> Engraving: <span className="engrave-text">{i.engraving}</span></div>}
+                    <div className="piece-slots">
+                      {slots[n]?.assigned.map(p => (
+                        <button key={p.key} className="piece-tag" onClick={() => setViewing(p)} title={p.shippedOn ? `Shipped ${shortDate(p.shippedOn)}` : 'Assigned, not shipped yet'}>
+                          <Gem size={12} /> <span className="mono">{p.serial}</span>{p.shippedOn ? <Check size={12} /> : null}
+                        </button>
+                      ))}
+                      {!!slots[n]?.missing && <button className="piece-tag piece-tag--missing" onClick={() => setAssigning(n)}><Plus size={12} /> Assign piece{slots[n].missing > 1 ? ` (${slots[n].missing} left)` : ''}</button>}
+                    </div>
                   </div>
                   <div className="order-item__qty">× {i.qty}</div>
                   <div className="order-item__price">{aud(i.priceAUD * i.qty, 2)}</div>
@@ -342,7 +385,9 @@ export default function OrderDetail() {
 
       {composing && order.customer?.email && <ComposeEmail target={{ to: order.customer.email, name: order.customer.name, subject: `About your AXIA order #${orderNo(order)}`, orderId: order.id, orderNumber: orderNo(order) }}
         onClose={() => setComposing(false)} onSent={m => { setComposing(false); toast.show(m); }} />}
-      {changing && <StatusDrawer order={order} onClose={() => setChanging(false)} onDone={m => { setChanging(false); toast.show(m); }} />}
+      {changing && assigning === null && <StatusDrawer order={order} pieces={pieces} initial={fromShip ? 'shipped' : undefined} onClose={() => { setChanging(false); setFromShip(false); }} onDone={m => { setChanging(false); setFromShip(false); toast.show(m); }} onAssign={line => { setFromShip(true); setAssigning(line); }} />}
+      {assigning !== null && <AssignPieceDrawer order={order} line={assigning} pieces={pieces} onClose={() => setAssigning(null)} onDone={m => { setAssigning(null); toast.show(m); }} />}
+      {viewing && <PieceDrawer piece={pieces.find(p => p.key === viewing.key) || viewing} pieces={pieces} onClose={() => setViewing(null)} onDone={m => { setViewing(null); toast.show(m); }} />}
       {toast.node}
     </>
   );
