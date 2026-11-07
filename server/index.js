@@ -13,6 +13,7 @@ import { unsubscribeRoutes } from './unsubscribe.js';
 import { publicFormRoutes } from './forms.js';
 import { genuineRoutes } from './genuine.js';
 import { accountRoutes } from './account.js';
+import { transferRoutes, sweepExpiredTransfers } from './transfers.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const app = express();
@@ -47,6 +48,7 @@ app.use(unsubscribeRoutes());
 app.use(publicFormRoutes());
 app.use(genuineRoutes());
 app.use(accountRoutes());
+app.use(transferRoutes());
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 app.use(staticSite(root));
 // Unknown URLs: browsers get the styled 404 page, everything else (missing images, scripts) a plain one.
@@ -64,3 +66,8 @@ app.use((err, req, res, next) => { // bad JSON, oversized bodies and anything un
 
 const port = Number(process.env.PORT) || 8080;
 app.listen(port, () => console.log(`AXIA listening on http://localhost:${port}`));
+
+// Piece transfers run out after 14 days. Signing in settles a customer's own as
+// well, so an instance that sleeps through this still never shows a stale offer.
+setTimeout(sweepExpiredTransfers, 30 * 1000).unref();
+setInterval(sweepExpiredTransfers, 6 * 60 * 60 * 1000).unref();

@@ -156,6 +156,20 @@ export function PieceDrawer({ piece, pieces, onClose, onDone }: {
           </> : <span className="muted">Not tied to an order. Assign it from the order page.</span>}
         </div>
       )}
+      {piece && (piece.owners?.length || piece.transfer) && (
+        <div className="field">Owners
+          <ol className="owners">
+            {(piece.owners || []).map((o, i) => (
+              <li key={i}>
+                <Link to={`/customers/${encodeURIComponent(o.email)}`}>{o.email}</Link>
+                <small className="muted">{o.via === 'order' ? ` bought it${piece.orderNumber ? ` (order #${piece.orderNumber})` : ''}` : ` by transfer${o.at ? `, ${o.at.toDate().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}`}</small>
+              </li>
+            ))}
+            {piece.transfer && <li><span>{piece.transfer.toEmail}</span><small className="muted"> transfer waiting for them to accept{piece.transfer.expiresAt ? `, until ${piece.transfer.expiresAt.toDate().toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : ''}</small></li>}
+          </ol>
+          <small className="muted">Customers transfer pieces from their account. /genuine never shows who owns a piece.</small>
+        </div>
+      )}
       {piece && isMaking(piece) && (
         <div className="piece-link">
           <span className="chip chip--warn">With maker</span>

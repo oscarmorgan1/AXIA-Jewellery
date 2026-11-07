@@ -255,6 +255,45 @@ export function newMessageEmail({ name, subject, body, url, siteUrl }) {
 }
 
 /**
+ * "<name> is sending you an AXIA piece": a customer started a transfer of one of
+ * their pieces to this address (server/transfers.js). The button opens their
+ * Pieces tab, or the claim page when they don't have an account yet.
+ */
+export function transferOfferEmail({ fromName, productName, note, url, days, hasAccount, siteUrl }) {
+  const from = String(fromName || '').trim() || 'An AXIA customer';
+  const html = layout({
+    siteUrl, preheader: `${from} wants to hand ${productName} over to you.`, heading: 'A piece is on its way to you',
+    reason: 'You’re receiving this email because an AXIA customer entered your address to transfer a piece.',
+    body: [
+      p(`<b>${esc(from)}</b> wants to transfer their <b>${esc(productName)}</b> to you. Accept it and it’s registered to your AXIA account, with its serial, ready to verify any time.`),
+      note ? `<div style="border-left:3px solid ${C.line};padding:4px 0 4px 14px;margin:0 0 18px;${font};font-size:14px;line-height:1.6;color:${C.soft}">${esc(note).replace(/\n/g, '<br>')}</div>` : '',
+      button(url, hasAccount ? 'Review the transfer' : 'Create your account to accept'),
+      p(`<span style="font-size:13px">The offer is open for ${esc(days)} days. If you weren’t expecting this, you can ignore this email or decline it from your account.</span>`, C.soft),
+    ].join(''),
+  });
+  const text = [`${from} wants to transfer their ${productName} to you.`, note ? `“${note}”` : '',
+    `${hasAccount ? 'Review the transfer' : 'Create your account to accept'}: ${url}`, `The offer is open for ${days} days.`].filter(Boolean).join('\n\n');
+  return { subject: `${from} is sending you an AXIA piece`, html, text };
+}
+
+/** Tells the sender how their transfer ended: accepted, declined or expired. */
+export function transferResultEmail({ name, productName, toEmail, outcome, url, siteUrl }) {
+  const first = String(name || '').trim().split(/\s+/)[0];
+  const lines = {
+    accepted: [`Your ${productName} has a new home`, `<b>${esc(toEmail)}</b> accepted the transfer, so it’s now registered to their account and no longer shows in yours.`],
+    declined: [`Your transfer was declined`, `<b>${esc(toEmail)}</b> declined your ${esc(productName)}, so it stays in your account.`],
+    expired: [`Your transfer expired`, `<b>${esc(toEmail)}</b> didn’t accept your ${esc(productName)} in time, so it stays in your account. You can send it again whenever you like.`],
+  }[outcome];
+  const html = layout({
+    siteUrl, preheader: lines[0], heading: lines[0],
+    reason: 'You’re receiving this email because you transferred a piece from your AXIA account.',
+    body: [p(`${first ? `Hi ${esc(first)},` : 'Hi,'}`), p(lines[1]), button(url, 'Open your pieces')].join(''),
+  });
+  const text = [first ? `Hi ${first},` : 'Hi,', lines[1].replace(/<[^>]+>/g, ''), `Your pieces: ${url}`].join('\n\n');
+  return { subject: lines[0], html, text };
+}
+
+/**
  * "Claim your AXIA account", sent once an order is paid when that email has no
  * account yet (server/account.js). The link sets a password and opens the portal.
  */

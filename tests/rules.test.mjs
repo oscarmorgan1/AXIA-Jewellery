@@ -30,6 +30,8 @@ beforeEach(async () => {
     await setDoc(doc(db, 'accountInvites/abc'), { email: 'ana@example.com' });
     await setDoc(doc(db, 'accounts/ana/threads/m1'), { subject: 'Sizing', messages: [] });
     await setDoc(doc(db, 'messages/m1'), { uid: 'ana', email: 'ana@example.com', message: 'Hi' });
+    await setDoc(doc(db, 'pieceTransfers/t1'), { key: 'AX123', fromUid: 'ana', toEmail: 'ben@example.com', status: 'pending' });
+    await setDoc(doc(db, 'accounts/ben/incoming/t1'), { serial: 'AX-123', fromName: 'Ana' });
   });
 });
 
@@ -62,6 +64,15 @@ test('support: a customer reads their own conversations, never the Inbox or some
   await assertFails(getDocs(collection(customer('ben'), 'accounts/ana/threads')));
   await assertFails(getDoc(doc(customer('ana'), 'messages/m1')));
   await assertFails(setDoc(doc(customer('ana'), 'accounts/ana/threads/m2'), { subject: 'x', messages: [] }));
+});
+
+test('transfers: only the server reads pieceTransfers; the recipient reads their own offer', async () => {
+  await assertFails(getDoc(doc(customer('ana'), 'pieceTransfers/t1')));
+  await assertFails(getDoc(doc(customer('ben'), 'pieceTransfers/t1')));
+  await assertSucceeds(getDoc(doc(customer('ben'), 'accounts/ben/incoming/t1')));
+  await assertFails(getDoc(doc(customer('ana'), 'accounts/ben/incoming/t1')));
+  await assertFails(setDoc(doc(customer('ben'), 'accounts/ben/incoming/t2'), { serial: 'x' }));
+  await assertFails(updateDoc(doc(customer('ana'), 'pieces/AX123'), { ownerUid: 'ana' }));
 });
 
 test('a customer can’t reach orders, pieces, customers or invites', async () => {

@@ -21,6 +21,8 @@ rules_version = '2';
 //                        server (server/account.js) writes a customer-safe copy of what
 //                        they may see, so orders/, pieces/ and customers/ stay admin-only.
 //   accountInvites/{h}   claim-your-account links (hashed): server only (no rule below)
+//   pieceTransfers/{id}  piece transfers between customers: server only (no rule below).
+//                        Each side sees its part under accounts/{uid} (server/transfers.js).
 //
 // "Admin" means a signed-in user whose ID token carries the custom claim
 // admin == true (set with `npm run set-admin -- <email>`) AND who has entered

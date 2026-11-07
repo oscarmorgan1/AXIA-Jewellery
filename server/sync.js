@@ -9,7 +9,8 @@
 //
 // Pieces work the same way: pieces/{key} is admin-only (supplier, notes), and
 // syncPiece() writes the owner's copy to accounts/{uid}/pieces/{key}. The owner
-// is the account of the paid order the piece went out in. The private record
+// is the account of the paid order the piece went out in, or whoever it was
+// transferred to since (`ownerUid`, server/transfers.js). The private record
 // remembers where its copy lives (`portalUid`), so a piece that is unassigned,
 // moved to another order or whose order is cancelled is taken back out.
 //
@@ -69,22 +70,31 @@ export async function uidFor(email) {
 const NOT_SOLD = ['pending', 'cancelled', 'refunded'];
 const sydneyDate = d => d.toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' });
 
+/** Transferred to someone else (server/transfers.js) from the order it's still in. */
+export const passedOn = piece => typeof piece.ownerUid === 'string' && !!piece.ownerUid && (piece.ownerOrderId || null) === (piece.orderId || null);
+
 /** The fields of a piece its owner sees. Supplier, supplier order, received date and notes stay private. */
 export function customerPiece(piece, order, product) {
   const placed = order && order.createdAt && typeof order.createdAt.toDate === 'function' ? order.createdAt.toDate() : null;
   const img = product && ((product.images && product.images[0])
     || Object.values(product.imagesByColor || {}).find(a => a && a.length)?.[0]
     || (product.widths || []).find(w => w.image)?.image) || '';
+  // Passed on from someone else: the original order (its number, date, page) is the buyer's, not theirs.
+  const moved = passedOn(piece);
+  const t = piece.transfer && piece.transfer.id ? piece.transfer : null;
   return {
     serial: piece.serial || '',
     productId: piece.productId || '',
     productName: piece.productName || '',
     variant: piece.variant || '',
     image: img,
-    purchasedOn: placed ? sydneyDate(placed) : null,
-    orderId: piece.orderId || null,
-    orderNumber: (order && order.orderNumber) || piece.orderNumber || '',
+    purchasedOn: moved ? null : placed ? sydneyDate(placed) : null,
+    orderId: moved ? null : piece.orderId || null,
+    orderNumber: moved ? '' : (order && order.orderNumber) || piece.orderNumber || '',
     shippedOn: piece.shippedOn || null,
+    transferredOn: moved ? piece.transferredOn || null : null,
+    // A transfer they've started and the recipient hasn't answered yet.
+    transfer: t ? { id: t.id, toEmail: t.toEmail || '', expiresAt: ms(t.expiresAt) } : null,
   };
 }
 
@@ -97,7 +107,11 @@ export async function syncPiece(key) {
     const order = piece && piece.orderId ? await db.collection('orders').doc(piece.orderId).get() : null;
     const o = order && order.exists ? order.data() : null;
     const sold = o && !NOT_SOLD.includes(o.status || 'pending');
-    const owner = sold ? await uidFor(o.customer && o.customer.email) : null;
+    // A piece passed on (server/transfers.js) belongs to its new owner, as long as the sale stands.
+    // (It only counts for the order it was passed on from: re-assigned to another order, it's that buyer's.)
+    const owner = !sold ? null
+      : passedOn(piece) ? piece.ownerUid
+      : await uidFor(o.customer && o.customer.email);
     const before = piece && typeof piece.portalUid === 'string' ? piece.portalUid : null;
     if (before && before !== owner) await db.collection('accounts').doc(before).collection('pieces').doc(key).delete();
     if (owner) {

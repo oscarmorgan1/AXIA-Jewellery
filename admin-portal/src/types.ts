@@ -290,6 +290,16 @@ export interface Piece {
   orderNumber?: string | null;
   /** Which line of the order's items it fills (index into order.items). */
   orderLine?: number | null;
+  /** The customer account its portal copy is in (server/sync.js). */
+  portalUid?: string | null;
+  /** Set once a customer transfers it to another account (server/transfers.js). */
+  ownerUid?: string | null;
+  ownerEmail?: string | null;
+  transferredOn?: string | null;
+  /** Everyone who has owned it, oldest first (from its first transfer). */
+  owners?: { uid: string; email: string; via: 'order' | 'transfer'; transferId?: string; at?: Ts | null }[];
+  /** A transfer waiting on the recipient. */
+  transfer?: { id: string; toEmail: string; expiresAt?: Ts } | null;
   notes?: string;
   createdAt?: Ts;
   updatedAt?: Ts;

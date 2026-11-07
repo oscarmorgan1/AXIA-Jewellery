@@ -728,3 +728,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--text-md);
 
 .serial-field { display: flex; gap: 8px; }
 .serial-field .input { flex: 1; min-width: 0; }
+
+/* Piece owner history (PieceDrawer) */
+.owners { margin: 4px 0 2px; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-weight: 400; color: var(--ink); }
+.owners a { color: var(--accent); }

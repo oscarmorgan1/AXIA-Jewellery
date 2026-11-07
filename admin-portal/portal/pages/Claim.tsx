@@ -6,7 +6,7 @@ import { auth } from '../../src/firebase';
 import { accountApi } from '../api';
 import PasswordField from './PasswordField';
 
-interface Invite { state: 'ready' | 'used' | 'expired' | 'has_account'; email: string; name: string; orderNumber: string }
+interface Invite { state: 'ready' | 'used' | 'expired' | 'has_account'; email: string; name: string; orderNumber: string; transfer?: { productName: string; fromName: string } }
 
 /** /portal/claim?t=…  From the "Claim your AXIA account" email: set a password and go straight in. */
 export default function Claim() {
@@ -33,10 +33,10 @@ export default function Claim() {
     if (!invite) return;
     setBusy(true); setError(null);
     try {
-      await accountApi('/claim', { token, password, name: name.trim(), marketing });
+      const res = await accountApi<{ next?: string }>('/claim', { token, password, name: name.trim(), marketing });
       if (auth.currentUser) await signOut(auth); // someone else was signed in on this browser
       await signInWithEmailAndPassword(auth, invite.email, password);
-      nav('/orders', { replace: true });
+      nav(res.next === '/pieces' ? '/pieces' : '/orders', { replace: true });
     } catch (err) {
       setError((err as Error).message);
       if ((err as { status?: number }).status === 409) setInvite({ ...invite, state: 'has_account' });
@@ -84,8 +84,8 @@ export default function Claim() {
 
   return (
     <AuthShell>
-      <h1>{first ? `Welcome, ${first}` : 'Claim your account'}</h1>
-      <p className="auth__lede">{invite.orderNumber ? `Set a password to follow order #${invite.orderNumber} and keep your pieces in one place.` : 'Set a password to follow your orders and keep your pieces in one place.'}</p>
+      <h1>{first ? `Welcome, ${first}` : invite.transfer ? 'Create your account' : 'Claim your account'}</h1>
+      <p className="auth__lede">{invite.transfer ? `${invite.transfer.fromName || 'An AXIA customer'} is sending you their ${invite.transfer.productName}. Set a password to accept it and keep it in your account.` : invite.orderNumber ? `Set a password to follow order #${invite.orderNumber} and keep your pieces in one place.` : 'Set a password to follow your orders and keep your pieces in one place.'}</p>
       <form className="auth__fields" onSubmit={submit}>
         <label className="field">Email address
           <input className="input" type="email" value={invite.email} readOnly aria-readonly="true" />
@@ -102,7 +102,7 @@ export default function Claim() {
           Email me about new drops and offers
         </label>
         {error && <div className="notice notice--error" role="alert">{error}</div>}
-        <button className="btn btn--primary auth__btn auth__btn--go" disabled={busy}>{busy ? 'Setting up…' : 'Claim my account'}</button>
+        <button className="btn btn--primary auth__btn auth__btn--go" disabled={busy}>{busy ? 'Setting up…' : invite.transfer ? 'Create my account' : 'Claim my account'}</button>
       </form>
     </AuthShell>
   );

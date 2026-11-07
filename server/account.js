@@ -25,6 +25,7 @@
 //   POST /api/account/messages        signed in: starts a support conversation (lands in the admin Inbox)
 //   POST /api/account/messages/:id/reply  signed in: adds to one of their conversations
 //   POST /api/account/messages/:id/read   signed in: marks the team's replies as read
+//   Piece transfers between accounts: server/transfers.js
 import express from 'express';
 import { createHash, randomBytes } from 'node:crypto';
 import { getAuth } from 'firebase-admin/auth';
@@ -36,6 +37,7 @@ import { accountInviteEmail, passwordResetEmail, sendEmail, brandUrl } from './e
 import { rateLimit, clientIp } from './limit.js';
 import { syncCustomerOrders, stripeReceipt, syncThread } from './sync.js';
 import { alertTeam } from './forms.js';
+import { settleTransfers, resendTransferOffer } from './transfers.js';
 
 export const INVITE_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -72,15 +74,32 @@ export async function sendAccountInvite({ email, name, orderId, orderNumber, sit
   if (!id || id.includes('/')) return { status: 'skipped' };
   if (await findUser(id)) return { status: 'has_account' };
 
+  const url = await createInvite({ email: id, name, orderId, orderNumber });
+  const mail = accountInviteEmail({ name, orderNumber, url, days: INVITE_DAYS, siteUrl });
+  const sent = await sendEmail({ to: id, ...mail });
+  await markInvited(id);
+  return { status: sent ? 'sent' : 'skipped', subject: mail.subject, sent };
+}
+
+/**
+ * Saves a new claim link for this email and returns its URL. `transfer` makes it
+ * the link in a piece transfer offer: the claim page says what's waiting and
+ * opens Pieces afterwards.
+ */
+export async function createInvite({ email, name, orderId, orderNumber, transfer }) {
   const token = randomBytes(32).toString('base64url');
   await db.collection('accountInvites').doc(hashToken(token)).set({
-    email: id, name: str(name, 100), orderId: orderId || null, orderNumber: orderNumber || '',
+    email, name: str(name, 100), orderId: orderId || null, orderNumber: orderNumber || '',
+    ...(transfer ? { transfer } : {}),
     createdAt: FieldValue.serverTimestamp(), expiresAt: Timestamp.fromMillis(Date.now() + INVITE_DAYS * DAY_MS), usedAt: null,
   });
   const url = `${brandUrl()}/portal/claim?t=${token}`;
-  if (!resend) console.log(`account: invite link for ${id}: ${url}`); // local runs without Resend
-  const mail = accountInviteEmail({ name, orderNumber, url, days: INVITE_DAYS, siteUrl });
-  const sent = await sendEmail({ to: id, ...mail });
+  if (!resend) console.log(`account: invite link for ${email}: ${url}`); // local runs without Resend
+  return url;
+}
+
+/** Marks the customer record as invited (the admin Customers page shows it). */
+export async function markInvited(id) {
   // Doesn't downgrade an account that was claimed in the meantime.
   await db.runTransaction(async tx => {
     const ref = db.collection('customers').doc(id);
@@ -88,7 +107,6 @@ export async function sendAccountInvite({ email, name, orderId, orderNumber, sit
     if (snap.exists && snap.get('account.status') === 'active') return;
     tx.set(ref, { email: id, account: { status: 'invited', invitedAt: FieldValue.serverTimestamp() }, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   });
-  return { status: sent ? 'sent' : 'skipped', subject: mail.subject, sent };
 }
 
 /** The invite behind a link, with its state. Throws 404 for an unknown token. */
@@ -133,7 +151,7 @@ export async function ensureAccount(uid, email, { name } = {}) {
   return account;
 }
 
-async function requireCustomer(req, res, next) {
+export async function requireCustomer(req, res, next) {
   try {
     const token = (req.get('authorization') || '').replace(/^Bearer\s+/i, '');
     if (!token) throw new HttpError(401, 'Sign in again');
@@ -196,7 +214,8 @@ export function accountRoutes() {
 
   router.post('/api/account/invite', json, limited(tooManyChecks, slowDown), handle(async req => {
     const { inv, state } = await readInvite(req.body && req.body.token);
-    return { state, email: inv.email, name: inv.name || '', orderNumber: inv.orderNumber || '' };
+    return { state, email: inv.email, name: inv.name || '', orderNumber: inv.orderNumber || '',
+      ...(inv.transfer ? { transfer: { productName: inv.transfer.productName || '', fromName: inv.transfer.fromName || '' } } : {}) };
   }));
 
   router.post('/api/account/invite/renew', json, limited(tooManyEmails, slowDown), handle(async req => {
@@ -206,7 +225,9 @@ export function accountRoutes() {
     const renewed = millis(inv.renewedAt);
     if (renewed && Date.now() - renewed < 60 * 1000) throw new HttpError(429, 'We’ve just sent one. Check your inbox (and spam).');
     await ref.update({ renewedAt: FieldValue.serverTimestamp(), replacedAt: FieldValue.serverTimestamp() });
-    await sendAccountInvite({ email: inv.email, name: inv.name, orderId: inv.orderId, orderNumber: inv.orderNumber, siteUrl: process.env.PUBLIC_SITE_URL || brandUrl() });
+    // A transfer link renews as the transfer offer (if it's still open), any other as the claim email.
+    if (inv.transfer && inv.transfer.id) await resendTransferOffer(inv.transfer.id);
+    else await sendAccountInvite({ email: inv.email, name: inv.name, orderId: inv.orderId, orderNumber: inv.orderNumber, siteUrl: process.env.PUBLIC_SITE_URL || brandUrl() });
     return { state: 'sent' };
   }));
 
@@ -241,7 +262,7 @@ export function accountRoutes() {
     await markActive(inv.email, user.uid);
     await setSubscribed(inv.email, b.marketing === true, 'portal');
     await ref.update({ uid: user.uid });
-    return { ok: true, email: inv.email };
+    return { ok: true, email: inv.email, next: inv.transfer ? '/pieces' : '/orders' };
   }));
 
   router.post('/api/account/password-reset', json, limited(tooManyEmails, slowDown), handle(async req => {
@@ -263,6 +284,8 @@ export function accountRoutes() {
 
   router.post('/api/account/session', handle(async req => {
     await ensureAccount(req.customer.uid, req.customer.email, { name: req.customer.name });
+    // Transfers sent to this email (including before the account existed), and any that ran out.
+    await settleTransfers(req.customer.uid, req.customer.email);
     return { ok: true };
   }));
 

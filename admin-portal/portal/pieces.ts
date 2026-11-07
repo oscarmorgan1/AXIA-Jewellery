@@ -15,6 +15,40 @@ export interface MyPiece {
   orderId: string | null;
   orderNumber: string;
   shippedOn: string | null;
+  /** Set when someone transferred it to them (then the order fields are blank). */
+  transferredOn?: string | null;
+  /** A transfer they've started that's waiting on the recipient. */
+  transfer?: { id: string; toEmail: string; expiresAt: number | null } | null;
+}
+
+/** A piece someone is transferring to them (accounts/{uid}/incoming/{id}, server/transfers.js). */
+export interface IncomingPiece {
+  id: string;
+  key: string;
+  serial: string;
+  productName: string;
+  variant: string;
+  image: string;
+  fromName: string;
+  note: string;
+  sentAt: number | null;
+  expiresAt: number | null;
+}
+
+/** Transfers waiting for them to accept, newest first, live. */
+export function useIncoming() {
+  const { user } = useAccount();
+  const [incoming, setIncoming] = useState<IncomingPiece[] | null>(null);
+  useEffect(() => {
+    if (!user) return;
+    return onSnapshot(collection(db, 'accounts', user.uid, 'incoming'), s => {
+      const now = Date.now();
+      const list = s.docs.map(d => ({ ...(d.data() as Omit<IncomingPiece, 'id'>), id: d.id })).filter(x => !x.expiresAt || x.expiresAt > now);
+      list.sort((a, b) => (b.sentAt || 0) - (a.sentAt || 0));
+      setIncoming(list);
+    }, () => setIncoming([]));
+  }, [user]);
+  return incoming;
 }
 
 /** All their pieces, newest purchase first, live. */

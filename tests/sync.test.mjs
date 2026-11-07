@@ -37,7 +37,7 @@ test('customerPiece shows the serial and purchase date, never the supplier side'
     { orderNumber: 'AX1', createdAt: { toDate: () => new Date('2026-01-01T13:30:00Z') }, stripe: { paymentIntent: 'pi' } },
     { images: ['assets/img/x.jpg'], factoryCostAUD: 50 },
   );
-  assert.deepEqual(out, { serial: 'AXIA1', productId: 'p', productName: 'Cuban', variant: '10mm', image: 'assets/img/x.jpg', purchasedOn: '2026-01-02', orderId: 'o1', orderNumber: 'AX1', shippedOn: '2026-01-05' });
+  assert.deepEqual(out, { serial: 'AXIA1', productId: 'p', productName: 'Cuban', variant: '10mm', image: 'assets/img/x.jpg', purchasedOn: '2026-01-02', orderId: 'o1', orderNumber: 'AX1', shippedOn: '2026-01-05', transferredOn: null, transfer: null });
 });
 
 test('customerThread shows their messages and the team’s replies in order, without who replied', async () => {
@@ -55,4 +55,25 @@ test('customerThread shows their messages and the team’s replies in order, wit
   const json = JSON.stringify(out);
   for (const secret of ['admin@axia', 're_1', 'a@b.c']) assert.ok(!json.includes(secret), `leaked ${secret}`);
   assert.equal(customerThread({ message: 'x', createdAt: ts(1), replies: [{ body: 'y', sentAt: ts(2) }], customerReadAt: ts(5) }).unread, false);
+});
+
+test('a piece passed on hides the original buyer’s order, and a pending transfer shows to the sender', async () => {
+  const { customerPiece } = await import('../server/sync.js');
+  const order = { orderNumber: 'AX1', createdAt: { toDate: () => new Date('2026-01-01T13:30:00Z') } };
+  const moved = customerPiece({ serial: 'AXIA1', productName: 'Cuban', orderId: 'o1', orderNumber: 'AX1', ownerUid: 'u2', ownerEmail: 'b@c.d', ownerOrderId: 'o1', transferredOn: '2026-03-01',
+    owners: [{ uid: 'u1', email: 'a@b.c' }, { uid: 'u2', email: 'b@c.d' }], shippedOn: '2026-01-05' }, order, null);
+  assert.equal(moved.orderId, null); assert.equal(moved.orderNumber, ''); assert.equal(moved.purchasedOn, null);
+  assert.equal(moved.transferredOn, '2026-03-01');
+  assert.ok(!JSON.stringify(moved).includes('a@b.c'), 'leaked the previous owner');
+  const pending = customerPiece({ serial: 'AXIA2', transfer: { id: 't1', toEmail: 'b@c.d', expiresAt: ts(5000) } }, order, null);
+  assert.deepEqual(pending.transfer, { id: 't1', toEmail: 'b@c.d', expiresAt: 5000 });
+});
+
+test('a transfer offer shows the sender’s name and note, never their email', async () => {
+  const { incomingOffer } = await import('../server/transfers.js');
+  const out = incomingOffer({ key: 'AXIA1', serial: 'AXIA1', productName: 'Cuban', fromName: 'Mia Hart', fromEmail: 'mia@x.com', fromUid: 'u1', note: 'Happy birthday', createdAt: ts(1), expiresAt: ts(2) },
+    { serial: 'AXIA1', supplier: 'Maker Co', notes: 'private' }, { images: ['assets/a.jpg'] });
+  assert.equal(out.fromName, 'Mia Hart'); assert.equal(out.image, 'assets/a.jpg'); assert.equal(out.expiresAt, 2);
+  const json = JSON.stringify(out);
+  for (const secret of ['mia@x.com', 'u1', 'Maker Co', 'private']) assert.ok(!json.includes(secret), `leaked ${secret}`);
 });
