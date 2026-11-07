@@ -2,6 +2,13 @@ import { doc, runTransaction, serverTimestamp, updateDoc } from 'firebase/firest
 import { db } from '../firebase';
 import type { Order, Piece, Product } from '../types';
 import { orderNo } from './orders';
+import { adminApi } from './api';
+
+/**
+ * Refreshes the owner's copy in the customer portal (server/sync.js) after a
+ * piece changes here. Best effort: the registry write has already succeeded.
+ */
+const syncPortal = (key: string) => adminApi(`/pieces/${encodeURIComponent(key)}/sync`, {}).catch(e => console.warn('portal copy not updated', key, e));
 
 /**
  * A serial as typed ("ax 0001-0042") to the record's key ("AX00010042"): capitals,
@@ -75,15 +82,17 @@ export async function createPiece(d: PieceDraft, link?: { order: Order; line: nu
       createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
     });
   });
+  if (link) await syncPortal(key);
   return key;
 }
 
 /** Saves changes to a piece. The serial (its key) can't change; delete and re-add instead. */
-export function updatePiece(key: string, d: Omit<PieceDraft, 'serial'>) {
-  return updateDoc(doc(db, 'pieces', key), {
+export async function updatePiece(key: string, d: Omit<PieceDraft, 'serial'>) {
+  await updateDoc(doc(db, 'pieces', key), {
     productId: d.productId, productName: d.productName, ...variantFields(d), ...supplierFields(d),
     purchasedOn: d.purchasedOn, receivedOn: d.receivedOn || null, shippedOn: d.shippedOn || null, notes: d.notes.trim(), updatedAt: serverTimestamp(),
   });
+  await syncPortal(key);
 }
 
 const variantFields = (d: Pick<PieceDraft, 'size' | 'colour'>) => ({ size: d.size.trim(), colour: d.colour.trim(), variant: joinVariant(d.size.trim(), d.colour.trim()) });
@@ -95,14 +104,15 @@ export function markReceived(key: string, on = today()) {
 }
 
 /** Ties a piece to one line of an order, or frees it (order null). */
-export function linkPiece(key: string, link: { order: Order; line: number } | null) {
-  return updateDoc(doc(db, 'pieces', key), {
+export async function linkPiece(key: string, link: { order: Order; line: number } | null) {
+  await updateDoc(doc(db, 'pieces', key), {
     orderId: link ? link.order.id : null,
     orderNumber: link ? orderNo(link.order) : null,
     orderLine: link ? link.line : null,
     ...(link ? {} : { shippedOn: null }),
     updatedAt: serverTimestamp(),
   });
+  await syncPortal(key);
 }
 
 /** Each order line with the pieces assigned to it and how many it still needs. */

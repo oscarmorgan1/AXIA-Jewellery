@@ -16,7 +16,7 @@ import { isVerifiedAdmin } from './twofactor.js';
 import { sydneyDay } from './forms.js';
 import { emailEntry, historyEntry, push, upsertCustomer, customerId } from './orders.js';
 import { sendAccountInvite } from './account.js';
-import { syncOrder, stripeReceipt } from './sync.js';
+import { syncOrder, syncPiece, stripeReceipt } from './sync.js';
 
 /** Statuses an admin can set. `refunded` only comes from Stripe, with the money. */
 export const ADMIN_STATUSES = ['paid', 'in_progress', 'shipped', 'fulfilled', 'cancelled'];
@@ -82,8 +82,8 @@ async function changeStatus(req) {
     emailed: !!(email && email.resendId), ...(note ? { note } : {}), ...(tracking ? { tracking } : {}),
   }));
   await ref.update(update);
-  await syncOrder(ref.id); // the customer's portal shows it straight away
   const pieces = status === 'shipped' ? await markPiecesShipped(ref.id) : 0;
+  await syncOrder(ref.id); // the customer's portal shows it (and its pieces) straight away
   return { status, pieces, email: email && { resendId: email.resendId, status: email.status } };
 }
 
@@ -294,6 +294,8 @@ export function adminRoutes() {
   router.get('/api/admin/customers', handle(() => listCustomers()));
   router.post('/api/admin/customers/:id/notes', handle(saveCustomerNotes));
   router.post('/api/admin/customers/:id/invite', handle(resendInvite));
+  // The portal writes pieces itself (firestore.rules); this refreshes the owner's portal copy after.
+  router.post('/api/admin/pieces/:key/sync', handle(async req => ({ owner: await syncPiece(str(req.params.key, 40).toUpperCase().replace(/[^A-Z0-9]/g, '')) })));
   router.post('/api/admin/messages/send', handle(sendMessage));
   router.post('/api/admin/media/upload-url', handle(req => videoUploadUrl({
     slot: str(req.body.slot, 20), contentType: str(req.body.contentType, 100), size: Number(req.body.size), origin: req.get('origin'),

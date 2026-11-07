@@ -5,6 +5,7 @@ import { siteUrl } from '../../src/firebase';
 import { accountApi } from '../api';
 import { STAGES, aud, day, statusOf, useMyOrder, type MyOrder } from '../orders';
 import { thumb } from './Orders';
+import { useMyPieces } from '../pieces';
 
 /** Ordered → Being made → Shipped → Delivered, with the date each step happened. */
 function Progress({ order }: { order: MyOrder }) {
@@ -55,6 +56,8 @@ function ReceiptButton({ order }: { order: MyOrder }) {
 export default function OrderDetail() {
   const { id = '' } = useParams();
   const order = useMyOrder(id);
+  const { pieces } = useMyPieces();
+  const serials = (pieces || []).filter(p => p.orderId === id);
   useEffect(() => { document.title = order ? `Order #${order.orderNumber} · AXIA` : 'Order · AXIA'; }, [order]);
 
   if (order === undefined) return <div className="page pt-page"><div className="card"><div className="skeleton" style={{ height: 160 }} /></div></div>;
@@ -135,6 +138,11 @@ export default function OrderDetail() {
             </li>
           )}
         </ul>
+        {serials.length > 0 && (
+          <p className="card__sub pt-serials">
+            Serial{serials.length > 1 ? 's' : ''}: {serials.map((p, i) => <span key={p.key}>{i ? ', ' : ''}<Link to="/pieces" className="mono">{p.serial}</Link></span>)}
+          </p>
+        )}
         <dl className="kv pt-totals">
           <dt>Subtotal</dt><dd>{aud(order.subtotalAUD)}</dd>
           {order.discountAUD > 0 && <><dt>Discount{order.promotionCode ? ` (${order.promotionCode})` : ''}</dt><dd>-{aud(order.discountAUD)}</dd></>}
