@@ -209,7 +209,8 @@ async function listCustomers(backfill = true) {
   return customers.docs.map(d => {
     const v = d.data();
     return { ...v, id: d.id, emails: (v.emails || []).map(e => ({ ...e, sentAt: millis(e.sentAt) })), unsubscribed: v.unsubscribed ? { ...v.unsubscribed, at: millis(v.unsubscribed.at) } : null, firstOrderAt: millis(v.firstOrderAt), lastOrderAt: millis(v.lastOrderAt), createdAt: millis(v.createdAt), updatedAt: millis(v.updatedAt),
-      account: v.account ? { status: v.account.status, invitedAt: millis(v.account.invitedAt), since: millis(v.account.since) } : null };
+      account: v.account ? { status: v.account.status, invitedAt: millis(v.account.invitedAt), since: millis(v.account.since),
+        invite: v.account.invite ? { ...v.account.invite, sentAt: millis(v.account.invite.sentAt), lastSentAt: millis(v.account.invite.lastSentAt), expiresAt: millis(v.account.invite.expiresAt), claimedAt: millis(v.account.invite.claimedAt) } : null } : null };
   });
 }
 

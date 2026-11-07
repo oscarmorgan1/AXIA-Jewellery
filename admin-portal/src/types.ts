@@ -288,7 +288,15 @@ export interface CustomerRecord {
   /** Set when they used the unsubscribe link in an email (at in millis). */
   unsubscribed?: { at: number | null; via: string } | null;
   /** Their customer portal (/portal) account: invited by email after an order, or active once claimed (millis). */
-  account?: { status: 'invited' | 'active'; invitedAt: number | null; since: number | null } | null;
+  account?: {
+    status: 'invited' | 'active'; invitedAt: number | null; since: number | null;
+    /** What the invite was for and how it ended (server/account.js markInvited, settleInvites). */
+    invite?: {
+      kind: 'order' | 'transfer'; orderId: string | null; orderNumber: string; from?: string;
+      sentAt: number | null; lastSentAt?: number | null; expiresAt: number | null; count?: number;
+      claimedAt?: number | null; via?: 'invite' | 'sign-in';
+    } | null;
+  } | null;
   /** Messages and replies sent to them from the portal (sentAt in millis). */
   emails?: (Omit<OrderEmail, 'sentAt'> & { sentAt: number | null })[];
 }

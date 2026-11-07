@@ -146,6 +146,19 @@ export default function CustomerDetail() {
                     : acc?.status === 'invited' ? `Invite emailed ${acc.invitedAt ? fmtDate(new Date(acc.invitedAt)) : ''}, not claimed yet. Links work for 30 days.`
                     : 'No invite sent. Orders before accounts launched don’t get one automatically.'}
                 </p>
+                {acc?.invite && (() => {
+                  const inv = acc.invite;
+                  const d = (t?: number | null) => (t ? fmtDate(new Date(t)) : '–');
+                  return (
+                    <dl className="kv kv--left" style={{ marginTop: 10 }}>
+                      <dt>Invited for</dt><dd>{inv.kind === 'transfer' ? `A piece transfer${inv.from ? ` from ${inv.from}` : ''}` : inv.orderNumber ? <Link to={`/orders/${encodeURIComponent(inv.orderId || '')}`}>Order #{inv.orderNumber}</Link> : 'Their order'}</dd>
+                      <dt>Invite sent</dt><dd>{d(inv.sentAt)}{(inv.count || 1) > 1 ? ` (${inv.count} emails${inv.lastSentAt ? `, last ${d(inv.lastSentAt)}` : ''})` : ''}</dd>
+                      {inv.claimedAt
+                        ? <><dt>Claimed</dt><dd>{d(inv.claimedAt)}{inv.via === 'sign-in' ? ', by signing in with Google' : ', from the invite link'}</dd></>
+                        : <><dt>Link works until</dt><dd>{d(inv.expiresAt)}</dd></>}
+                    </dl>
+                  );
+                })()}
                 {acc?.status !== 'active' && (
                   <button className="btn btn--sm" style={{ marginTop: 12 }} disabled={inviting} onClick={resendInvite}>
                     <KeyRound size={15} /> {inviting ? 'Sending…' : acc?.status === 'invited' ? 'Resend invite' : 'Send invite'}
