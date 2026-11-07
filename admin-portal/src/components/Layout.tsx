@@ -1,7 +1,7 @@
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  ArrowUpRight, Bell, Globe, BadgePercent, Menu, X, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Gem, Factory, Clapperboard, Receipt, Search, Settings as SettingsIcon, Undo2, TicketPercent, Timer, Users,
+  ArrowUpRight, Bell, ChevronDown, UserRound, Globe, BadgePercent, Menu, X, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Gem, Factory, Clapperboard, Receipt, Search, Settings as SettingsIcon, Undo2, TicketPercent, Timer, Users,
 } from 'lucide-react';
 import { useAuth } from '../auth';
 import { siteUrl } from '../firebase';
@@ -10,6 +10,8 @@ import Logo from './Logo';
 import LogOff from './LogOff';
 import { useTheme } from '../lib/theme';
 import CommandPalette from './CommandPalette';
+import AccountDrawer, { Avatar } from './AccountDrawer';
+import { useToast } from './Toast';
 import { SkeletonPage } from './Skeleton';
 
 const TITLES: [RegExp, string][] = [
@@ -34,6 +36,8 @@ export default function Layout() {
   const { data: returns } = useReturns();
   const [palette, setPalette] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [account, setAccount] = useState(false);
+  const toast = useToast();
 
   // mobile menu: close on navigation and Esc, and stop the page scrolling behind it
   useEffect(() => { setMenu(false); }, [loc.pathname]);
@@ -120,16 +124,62 @@ export default function Layout() {
           <NavLink to="/inbox" className="icon-btn" aria-label="Inbox">
             <Bell size={18} />{unread > 0 && <span className="dot">{unread}</span>}
           </NavLink>
-          <div className="user-chip">
-            <span className="avatar">{name.slice(0, 1).toUpperCase()}</span>
-            <div><span>{name}</span><small>Admin</small></div>
-          </div>
+          <AccountMenu name={name} email={user?.email ?? ''} photo={user?.photoURL} onManage={() => setAccount(true)} onLogOff={() => setLeaving(true)} />
         </header>
         <div className="page" key={loc.pathname}><Suspense fallback={<SkeletonPage />}><Outlet /></Suspense></div>
       </div>
 
       <CommandPalette open={palette} onClose={() => setPalette(false)} products={products} collections={collections} signups={signups} orders={orders} messages={messages} />
+      {account && <AccountDrawer onClose={() => setAccount(false)} onSaved={m => { setAccount(false); toast.show(m); }} />}
+      {toast.node}
       {leaving && <LogOff onDone={finishLogOff} onCancel={cancelLogOff} />}
+    </div>
+  );
+}
+
+/** The avatar in the top bar opens this: who's signed in, "Manage your account" and Log off. */
+function AccountMenu({ name, email, photo, onManage, onLogOff }: {
+  name: string; email: string; photo?: string | null; onManage: () => void; onLogOff: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => { if (!wrap.current?.contains(e.target as Node)) setOpen(false); };
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); wrap.current?.querySelector('button')?.focus(); } };
+    addEventListener('pointerdown', away);
+    addEventListener('keydown', key);
+    wrap.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    return () => { removeEventListener('pointerdown', away); removeEventListener('keydown', key); };
+  }, [open]);
+
+  const keys = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    const items = [...e.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+    const at = items.indexOf(document.activeElement as HTMLElement);
+    items[(at + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length]?.focus();
+  };
+  const pickItem = (fn: () => void) => () => { setOpen(false); fn(); };
+
+  return (
+    <div className="menu user-menu" ref={wrap}>
+      <button className="user-chip" aria-haspopup="menu" aria-expanded={open} aria-label={`Account: ${name}`} onClick={() => setOpen(v => !v)}>
+        <Avatar name={name} photo={photo} />
+        <div><span>{name}</span><small>Admin</small></div>
+        <ChevronDown size={14} className="user-chip__caret" />
+      </button>
+      {open && (
+        <div className="menu__list" role="menu" aria-label="Account" onKeyDown={keys}>
+          <div className="user-menu__who">
+            <Avatar name={name} photo={photo} size={40} />
+            <div><b>{name}</b><small>{email}</small></div>
+          </div>
+          <div className="menu__rule" role="separator" />
+          <button role="menuitem" onClick={pickItem(onManage)}><UserRound size={16} /><span>Manage your account<small>Display name, photo and sign-in</small></span></button>
+          <button role="menuitem" onClick={pickItem(onLogOff)}><LogOut size={16} /><span>Log off</span></button>
+        </div>
+      )}
     </div>
   );
 }
