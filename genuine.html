@@ -10,94 +10,77 @@
 <link rel="stylesheet" href="assets/css/axia.css?v=20261106a">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111315'/%3E%3Cg fill='%23F4F1EA'%3E%3Cpolygon points='16,5 6,27 9.5,27'/%3E%3Cpolygon points='16,5 22.5,27 26,27'/%3E%3Crect x='9' y='20.4' width='14' height='1.7'/%3E%3C/g%3E%3C/svg%3E">
 <style>
-  /* Genuine: light page in the product page's language. The dark authenticity card is the object on an ivory stage. */
+  /* Genuine: quiet, centred search on bone. The answer takes the whole screen. */
   .menu-btn{display:none}@media(max-width:860px){.menu-btn{display:grid}}
-  .crumb{display:flex;gap:.5rem;font-size:var(--t-label);color:var(--ink-tertiary);padding-block:var(--s-5) var(--s-4)}
-  .crumb a:hover{color:var(--ink)}.crumb .sep{opacity:.5}
 
-  .gen{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:clamp(2rem,4vw,4.5rem);align-items:start;padding-bottom:clamp(var(--s-8),7vw,var(--s-9))}
+  .gen{min-height:calc(100svh - var(--chrome-h) - 40px);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
+    padding-block:clamp(var(--s-8),10vh,var(--s-10))}
+  .gen__in{width:min(100%,34rem)}
+  .gen .kicker{display:block;font-size:var(--t-label);color:var(--ice-ink);margin-bottom:var(--s-4)}
+  .gen h1{font-family:var(--font-display);font-weight:700;font-size:var(--t-64);text-transform:uppercase;line-height:1;overflow-wrap:break-word;min-width:0}
+  .gen .lead{color:var(--ink-secondary);font-size:var(--t-body-s);line-height:1.6;max-width:40ch;margin:var(--s-4) auto 0}
 
-  /* the stage: same footprint and radius as the product viewer */
-  .gen-stage{position:sticky;top:calc(var(--chrome-h) + 12px);aspect-ratio:4 / 5;border-radius:var(--r-2);overflow:hidden;display:grid;place-items:center;
-    background:radial-gradient(120% 90% at 30% 18%,var(--white) 0%,var(--bone-2) 55%,var(--bone-3) 100%);border:1px solid var(--line)}
-  .gen-stage::before{content:"";position:absolute;inset:0;background:radial-gradient(42% 36% at 62% 40%,var(--ice-soft),transparent 70%);pointer-events:none}
-  .gen-stage::after{content:"";position:absolute;left:18%;right:18%;bottom:24%;height:38px;background:radial-gradient(closest-side,var(--line-strong),transparent 78%);filter:blur(10px);pointer-events:none}
-  .gen-stage__cap{position:absolute;left:var(--s-5);right:var(--s-5);bottom:var(--s-5);display:flex;justify-content:space-between;gap:var(--s-4);font-size:var(--t-label);color:var(--ink-tertiary);z-index:2}
-
-  .gcard{position:relative;z-index:1;width:min(78%,440px);aspect-ratio:85.6 / 54;border-radius:14px;overflow:hidden;color:var(--bone);
-    background:linear-gradient(145deg,var(--deep-29) 0%,var(--deep-08) 58%,var(--deep-18) 100%);
-    border:1px solid var(--line-dark-strong);
-    box-shadow:0 1px 0 var(--ice-rim) inset,0 40px 70px -28px var(--line-strong),0 18px 30px -18px var(--black);
-    transform:rotate(-6deg);transition:transform var(--dur-3) var(--ease)}
-  .gen-stage:hover .gcard{transform:rotate(-3deg) translateY(-6px)}
-  .gcard::before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,var(--ice-haze) 46%,transparent 60%);pointer-events:none}
-  .gcard__in{position:absolute;inset:0;padding:7% 7.5%;display:flex;flex-direction:column;justify-content:space-between}
-  .gcard__top{display:flex;justify-content:space-between;align-items:flex-start}
-  .gcard .wm-img{display:block;height:clamp(14px,3.4vw,22px);aspect-ratio:2000 / 404;background-color:currentColor;
-    -webkit-mask:url("assets/img/axia-logo.png?v=20260801i") center/contain no-repeat;mask:url("assets/img/axia-logo.png?v=20260801i") center/contain no-repeat}
-  .gcard__nfc{width:clamp(20px,4.4vw,28px);height:auto;color:var(--ice)}
-  .gcard__chip{width:15%;aspect-ratio:1.3;border-radius:4px;background:linear-gradient(135deg,var(--metal-a),var(--metal-b) 45%,var(--metal-c));opacity:.85}
-  .gcard__t{font-size:clamp(.66rem,1.6vw,.82rem);color:var(--on-dark-2)}
-  .gcard__sn{font-family:var(--font-display);font-weight:600;font-size:clamp(1rem,2.8vw,1.45rem);letter-spacing:.08em;font-variant-numeric:tabular-nums;margin-top:.15em;color:var(--bone)}
-  @media (prefers-reduced-motion:reduce){.gcard,.gen-stage:hover .gcard{transition:none;transform:rotate(-6deg)}}
-
-  /* info column, mirrors the product page's .info */
-  .gen-info{min-width:0;padding-top:var(--s-2)}
-  .gen-info .kicker{display:block;font-size:var(--t-label);color:var(--ice-ink);margin-bottom:var(--s-3)}
-  .gen-info h1{font-family:var(--font-display);font-weight:700;font-size:var(--t-64);text-transform:uppercase;line-height:1;overflow-wrap:break-word;min-width:0}
-  .gen-info .lead{color:var(--ink-secondary);font-size:var(--t-body-s);line-height:1.55;max-width:46ch;margin-top:var(--s-4)}
-
-  .gen-form{margin-top:var(--s-6)}
-  .gen-form label{display:flex;justify-content:space-between;align-items:baseline;font-size:var(--t-label);color:var(--ink-secondary);margin-bottom:var(--s-3)}
-  .gen-field{display:flex;flex-direction:column;gap:var(--s-3)}
-  .gen-field input{width:100%;min-width:0;font-family:var(--font-display);font-weight:600;font-size:var(--t-20);font-variant-numeric:tabular-nums;letter-spacing:.08em;text-transform:uppercase;
-    color:var(--ink);background:var(--white);border:1px solid var(--field-edge);border-radius:var(--r-1);padding:.85em 1em;
-    transition:border-color var(--dur-2) var(--ease),box-shadow var(--dur-2) var(--ease)}
+  .gen-form{margin-top:var(--s-7);text-align:left}
+  .gen-form label{display:block;font-size:var(--t-label);color:var(--ink-secondary);margin-bottom:var(--s-3)}
+  .gen-field{display:flex;align-items:stretch;border-bottom:1px solid var(--ink);transition:border-color var(--dur-2) var(--ease)}
+  .gen-field:focus-within{border-color:var(--ice-ink)}
+  .gen-field input{flex:1;min-width:0;font-family:var(--font-display);font-weight:600;font-size:var(--t-24);font-variant-numeric:tabular-nums;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink);background:transparent;border:0;border-radius:0;padding:.55em 0}
   .gen-field input::placeholder{font-family:var(--font-sans);font-weight:400;font-size:var(--t-body);color:var(--ink-tertiary);letter-spacing:0;text-transform:none}
-  .gen-field input:hover{border-color:var(--ink-secondary)}
-  .gen-field input:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-color:var(--ink)}
-  .gen-field .btn{width:100%}
+  .gen-field input:focus-visible{outline:2px solid var(--focus);outline-offset:4px}
+  .gen-go{flex:none;display:inline-flex;align-items:center;gap:.6em;padding:0 0 0 var(--s-4);background:none;border:0;font-family:var(--font-sans);font-size:var(--t-label);font-weight:600;color:var(--ink);cursor:pointer;transition:color var(--dur-2) var(--ease)}
+  .gen-go svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;transition:transform var(--dur-2) var(--ease)}
+  .gen-go:hover{color:var(--ice-ink)}.gen-go:hover svg{transform:translateX(3px)}
+  .gen-go:focus-visible{outline:2px solid var(--focus);outline-offset:4px}
   .gen-msg{min-height:1.5em;margin-top:var(--s-3);font-size:var(--t-body-s);color:var(--ink-secondary)}
   .gen-msg.err{color:var(--magenta-ink)}
-  .gen-msg:empty{min-height:0;margin:0}
 
-  /* the record: only what the piece is and when it was purchased */
-  .gen-rec{margin-top:var(--s-5);border:1px solid var(--line-strong);border-radius:var(--r-2);background:var(--white);padding:var(--s-5);box-shadow:var(--shadow-1)}
-  .gen-rec__h{display:flex;justify-content:space-between;align-items:center;gap:var(--s-3);padding-bottom:var(--s-4);border-bottom:1px solid var(--line)}
-  .gen-rec__ok{display:inline-flex;align-items:center;gap:.5em;font-size:var(--t-label);font-weight:600;color:var(--ice-ink)}
-  .gen-rec__ok svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6}
-  .gen-rec__sn{font-family:var(--font-display);font-weight:600;font-size:var(--t-body-s);letter-spacing:.08em;font-variant-numeric:tabular-nums;color:var(--ink-secondary)}
-  .gen-rec__name{font-family:var(--font-display);font-weight:700;font-size:var(--t-32);text-transform:uppercase;line-height:1.02;margin-top:var(--s-4);overflow-wrap:break-word}
-  .gen-rec dl{margin:var(--s-4) 0 0}
-  .gen-rec dl div{display:flex;justify-content:space-between;gap:1rem;padding:.7rem 0;border-top:1px solid var(--line);font-size:var(--t-body-s)}
-  .gen-rec dt{color:var(--ink-secondary);font-size:var(--t-label)}
-  .gen-rec dd{margin:0;text-align:right}
+  .gen-foot{margin-top:var(--s-8);padding-top:var(--s-5);border-top:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:center;gap:var(--s-2) var(--s-5);font-size:var(--t-body-s);color:var(--ink-tertiary)}
+  .gen-foot a{color:var(--ink);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line-strong)}
+  .gen-foot a:hover{text-decoration-color:var(--ink)}
+  .gen-foot a:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
-  /* assurances, same row as the product page */
-  .assure{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-3);margin-top:var(--s-6);padding-top:var(--s-5);border-top:1px solid var(--line)}
-  .assure div{text-align:center}.assure svg{width:20px;height:20px;stroke:var(--ink);fill:none;stroke-width:1.3;margin:0 auto var(--s-2)}
-  .assure p{font-size:.62rem;color:var(--ink-secondary);line-height:1.5}
+  /* full-screen check: loader, then the record */
+  .gx{position:fixed;inset:0;z-index:10000;background:radial-gradient(90% 70% at 50% 30%,var(--white),var(--bone) 60%,var(--bone-2));color:var(--ink);
+    display:grid;place-items:center;padding:var(--s-6) var(--gutter,1.25rem);opacity:0;visibility:hidden;transition:opacity var(--dur-3) var(--ease),visibility var(--dur-3)}
+  .gx.on{opacity:1;visibility:visible;transition:opacity var(--dur-3) var(--ease),visibility 0s}
+  .gx__close{position:absolute;top:clamp(1rem,3vw,2rem);right:clamp(1rem,3vw,2rem);width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line-strong);border-radius:50%;background:none;color:var(--ink);cursor:pointer;transition:border-color var(--dur-2) var(--ease)}
+  .gx__close:hover{border-color:var(--ink)}
+  .gx__close:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .gx__close svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6}
+  .gx__mark{position:absolute;top:clamp(1.4rem,3.4vw,2.4rem);left:50%;transform:translateX(-50%);height:18px;aspect-ratio:2000 / 404;background-color:var(--ink);
+    -webkit-mask:url("assets/img/axia-logo.png?v=20260801i") center/contain no-repeat;mask:url("assets/img/axia-logo.png?v=20260801i") center/contain no-repeat}
+  .gx__body{width:min(100%,40rem);text-align:center}
+  .gx__state{display:none}
+  .gx[data-state="loading"] .gx__state--loading,.gx[data-state="found"] .gx__state--found,.gx[data-state="none"] .gx__state--none{display:block}
 
-  /* how it works, as the product page's open facts list */
-  .gen-how{margin-top:var(--s-6);border-top:1px solid var(--line)}
-  .gen-how h2{font-size:var(--t-label);font-weight:500;color:var(--ink);padding:var(--s-4) 0 var(--s-2)}
-  .gen-steps{list-style:none;padding:0;margin:0;counter-reset:st}
-  .gen-steps li{counter-increment:st;display:grid;grid-template-columns:2rem minmax(0,1fr);gap:0 var(--s-3);padding:var(--s-4) 0;border-bottom:1px solid var(--line)}
-  .gen-steps li::before{content:counter(st);grid-row:span 2;font-family:var(--font-display);font-weight:600;font-size:var(--t-20);line-height:1.2;color:var(--ice-ink)}
-  .gen-steps h3{font-size:var(--t-body-s);font-weight:600;color:var(--ink)}
-  .gen-steps p{font-size:var(--t-body-s);color:var(--ink-secondary);line-height:1.6;margin-top:2px}
+  .gx__sn{font-family:var(--font-display);font-weight:600;font-size:var(--t-body-s);letter-spacing:.14em;font-variant-numeric:tabular-nums;color:var(--ink-tertiary)}
+  .gx__bar{position:relative;width:min(240px,60vw);height:1px;margin:var(--s-5) auto;background:var(--line);overflow:hidden}
+  .gx__bar::after{content:"";position:absolute;inset:0;width:40%;background:var(--ink);transform:translateX(-100%);animation:gxSweep 1.1s var(--ease) infinite}
+  @keyframes gxSweep{to{transform:translateX(250%)}}
+  .gx__wait{font-size:var(--t-body-s);color:var(--ink-secondary)}
 
-  .gen-help{display:flex;flex-wrap:wrap;gap:var(--s-3) var(--s-5);align-items:baseline;justify-content:space-between;margin-top:var(--s-5);font-size:var(--t-body-s);color:var(--ink-secondary)}
-  .gen-help p{max-width:40ch}
-  .gen-help .link-u{color:var(--ink)}
+  .gx__ok{display:inline-flex;align-items:center;gap:.5em;font-size:var(--t-label);font-weight:600;color:var(--ice-ink)}
+  .gx__ok svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6}
+  .gx__name{font-family:var(--font-display);font-weight:700;font-size:clamp(2.2rem,6.4vw,4.4rem);text-transform:uppercase;line-height:.98;margin:var(--s-5) 0 var(--s-6);overflow-wrap:break-word;text-wrap:balance}
+  .gx__facts{display:flex;justify-content:center;gap:clamp(2rem,6vw,4.5rem);padding-top:var(--s-5);border-top:1px solid var(--line);margin:0}
+  .gx__facts div{display:flex;flex-direction:column;gap:.35rem}
+  .gx__facts dt{font-size:var(--t-label);color:var(--ink-tertiary)}
+  .gx__facts dd{margin:0;font-size:var(--t-body);color:var(--ink);font-variant-numeric:tabular-nums}
+  .gx__none{font-family:var(--font-display);font-weight:700;font-size:var(--t-44);text-transform:uppercase;line-height:1;margin:var(--s-4) 0}
+  .gx__p{color:var(--ink-secondary);font-size:var(--t-body-s);max-width:38ch;margin:0 auto}
+  .gx__acts{margin-top:var(--s-7);display:flex;justify-content:center;flex-wrap:wrap;gap:var(--s-3)}
+  .gx__acts .btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
-  @media(max-width:860px){
-    .gen{grid-template-columns:minmax(0,1fr);gap:var(--s-6)}
-    .gen-stage{position:relative;top:0;aspect-ratio:5 / 4}
-    .gcard{width:min(74%,360px)}
-    .gen-stage::after{bottom:16%}
-    .gen-stage__cap{display:none}
+  .gx .gx__in{transition:opacity var(--dur-3) var(--ease),transform var(--dur-3) var(--ease)}
+  .gx[data-state="found"] .gx__state--found .gx__in,.gx[data-state="none"] .gx__state--none .gx__in{animation:gxIn .6s var(--ease) both}
+  @keyframes gxIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){
+    .gx,.gx .gx__in{transition:none}
+    .gx__bar::after{animation:none;width:100%;transform:none;opacity:.5}
+    .gx[data-state] .gx__in{animation:none}
   }
+  @media(max-width:520px){.gen-go span{display:none}.gx__facts{flex-direction:column;gap:var(--s-4)}}
 </style>
 
 </head>
@@ -116,71 +99,55 @@
 <div class="announce" aria-label="Store highlights"><div class="announce__track"><span>Passes a diamond tester</span><span class="dot">/</span><span>Hand-set and made to order</span><span class="dot">/</span><span>Free custom engraving</span><span class="dot">/</span><span>Lifetime warranty on defects</span><span class="dot">/</span><span>Ships in an AXIA box</span><span class="dot">/</span><span>Worldwide shipping</span><span class="dot">/</span><span>30-day exchanges</span><span class="dot">/</span><span>Passes a diamond tester</span><span class="dot">/</span><span>Hand-set and made to order</span><span class="dot">/</span><span>Free custom engraving</span><span class="dot">/</span><span>Lifetime warranty on defects</span><span class="dot">/</span><span>Ships in an AXIA box</span><span class="dot">/</span><span>Worldwide shipping</span><span class="dot">/</span><span>30-day exchanges</span><span class="dot">/</span></div></div>
 
 <main class="container">
-  <div class="crumb"><a href="store">Home</a><span class="sep">/</span><a href="support">Support</a><span class="sep">/</span><span>Authenticity</span></div>
-
   <section class="gen" aria-labelledby="genTitle">
-    <div class="gen-stage" aria-hidden="true">
-      <div class="gcard">
-        <div class="gcard__in">
-          <div class="gcard__top">
-            <span class="wm-img"></span>
-            <svg class="gcard__nfc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 8.5a5 5 0 0 1 0 7"/><path d="M9.5 6a9 9 0 0 1 0 12"/><path d="M13 3.5a13 13 0 0 1 0 17"/></svg>
-          </div>
-          <span class="gcard__chip"></span>
-          <div>
-            <div class="gcard__t">Authenticity card</div>
-            <div class="gcard__sn" id="genCardSn">AX 0000 0000</div>
-          </div>
-        </div>
-      </div>
-      <div class="gen-stage__cap"><span>In every AXIA box</span><span>Tap to verify</span></div>
-    </div>
-
-    <div class="gen-info">
+    <div class="gen__in">
       <span class="kicker">Authenticity</span>
       <h1 id="genTitle">One of one</h1>
-      <p class="lead">Every AXIA piece is hand-set to order and carries its own serial number. Enter the one on your authenticity card to see your piece's record.</p>
+      <p class="lead">Every AXIA piece carries its own serial number. Enter the one on your authenticity card to see your piece's record.</p>
 
       <form class="gen-form" id="genForm" action="genuine" method="get" role="search" novalidate>
         <label for="genSerial">Serial number</label>
         <div class="gen-field">
           <input id="genSerial" name="serial" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40" placeholder="Printed on your card" aria-describedby="genMsg">
-          <button class="btn btn--primary" type="submit">Verify my piece</button>
+          <button class="gen-go" type="submit" aria-label="Verify serial"><span aria-hidden="true">Verify</span><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
         </div>
         <p class="gen-msg" id="genMsg" role="status" aria-live="polite"></p>
       </form>
 
-      <div class="gen-rec" id="genRec" hidden aria-live="polite">
-        <div class="gen-rec__h">
-          <span class="gen-rec__ok"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6L12 3Z"/><path d="m8.8 12.2 2.3 2.3 4.3-4.6"/></svg>Genuine AXIA</span>
-          <span class="gen-rec__sn" id="genRecSn"></span>
-        </div>
-        <h2 class="gen-rec__name" id="genRecName"></h2>
-        <dl><div><dt>Purchased</dt><dd id="genRecDate"></dd></div></dl>
-      </div>
-
-      <div class="assure">
-        <div><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 8.5a5 5 0 0 1 0 7"/><path d="M9.5 6a9 9 0 0 1 0 12"/><path d="M13 3.5a13 13 0 0 1 0 17"/></svg><p>Tap the card<br>to verify</p></div>
-        <div><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6L12 3Z"/></svg><p>Lifetime<br>warranty</p></div>
-        <div><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 8h16v12H4z"/><path d="M4 8l2-4h12l2 4"/><path d="M10 12h4"/></svg><p>Card ships in<br>every AXIA box</p></div>
-      </div>
-
-      <section class="gen-how" aria-labelledby="genHow">
-        <h2 id="genHow">How it works</h2>
-        <ol class="gen-steps">
-          <li><h3>Find your card</h3><p>It comes in the AXIA box with your piece, with the serial printed on it.</p></li>
-          <li><h3>Tap or type</h3><p>Hold the card to the back of your phone, or type the serial above.</p></li>
-          <li><h3>Keep it with the piece</h3><p>If you sell or gift the piece, pass the card on with it.</p></li>
-        </ol>
-      </section>
-
-      <div class="gen-help">
-        <p>Lost your card, or the serial doesn't look right? Send us your order number.</p>
-        <a class="link-u" href="support#contact">Contact support</a>
+      <div class="gen-foot">
+        <span>Tap your card to your phone to fill this in.</span>
+        <a href="support#contact">Lost your card?</a>
       </div>
     </div>
   </section>
 </main>
+
+<div class="gx" id="gx" role="dialog" aria-modal="true" aria-labelledby="gxTitle" aria-hidden="true" data-state="loading">
+  <span class="gx__mark" aria-hidden="true"></span>
+  <button class="gx__close" type="button" data-gx-close aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  <div class="gx__body" aria-live="polite">
+    <div class="gx__state gx__state--loading">
+      <div class="gx__sn" data-gx-sn></div>
+      <div class="gx__bar" aria-hidden="true"></div>
+      <p class="gx__wait" id="gxTitle">Checking the record</p>
+    </div>
+    <div class="gx__state gx__state--found"><div class="gx__in">
+      <span class="gx__ok"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6L12 3Z"/><path d="m8.8 12.2 2.3 2.3 4.3-4.6"/></svg>Genuine AXIA</span>
+      <h2 class="gx__name" id="gxName"></h2>
+      <dl class="gx__facts">
+        <div><dt>Serial</dt><dd data-gx-sn></dd></div>
+        <div><dt>Purchased</dt><dd id="gxDate"></dd></div>
+      </dl>
+      <div class="gx__acts"><button class="btn btn--ghost" type="button" data-gx-close>Check another serial</button></div>
+    </div></div>
+    <div class="gx__state gx__state--none"><div class="gx__in">
+      <div class="gx__sn" data-gx-sn></div>
+      <h2 class="gx__none" id="gxNoneT"></h2>
+      <p class="gx__p" id="gxNoneP"></p>
+      <div class="gx__acts"><button class="btn btn--primary" type="button" data-gx-close>Try again</button><a class="btn btn--ghost" href="support#contact">Contact support</a></div>
+    </div></div>
+  </div>
+</div>
 
 <footer class="foot">
   <div class="container">
@@ -222,42 +189,72 @@
 <script type="text/axia-deferred">
 (function(){
   const form=document.getElementById('genForm'); if(!form) return;
-  const input=document.getElementById('genSerial'), msg=document.getElementById('genMsg'), btn=form.querySelector('button[type=submit]');
-  const rec=document.getElementById('genRec'), recSn=document.getElementById('genRecSn'), recName=document.getElementById('genRecName'), recDate=document.getElementById('genRecDate');
-  const cardSn=document.getElementById('genCardSn');
+  const input=document.getElementById('genSerial'), msg=document.getElementById('genMsg');
+  const gx=document.getElementById('gx'), gxName=document.getElementById('gxName'), gxDate=document.getElementById('gxDate');
+  const gxNoneT=document.getElementById('gxNoneT'), gxNoneP=document.getElementById('gxNoneP');
   const clean=v=>String(v||'').trim().toUpperCase().replace(/\s+/g,' ').slice(0,40);
   const fmtDate=d=>{ const t=d instanceof Date?d:new Date(d); return isNaN(t)?'':t.toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'}); };
+  const wait=ms=>new Promise(r=>setTimeout(r,ms));
+  let lastFocus=null, runId=0;
 
   /* Serial lookup. The registry backend is being built separately; until it lands this
-     resolves to null. It must resolve to { name, purchasedAt } for a known serial (the
-     only two fields the page shows), or null when the serial isn't on record. */
+     resolves to undefined ("coming soon"). It must resolve to { name, purchasedAt } for a
+     known serial (the only two fields the page shows), or null when the serial isn't on record. */
   async function lookup(serial){
     if(typeof window.axiaGenuineLookup==='function') return window.axiaGenuineLookup(serial);
     return undefined;
   }
 
-  function showRecord(serial,r){
-    recSn.textContent=serial; recName.textContent=r.name||'AXIA piece'; recDate.textContent=fmtDate(r.purchasedAt)||'On record';
-    rec.hidden=false;
+  function setState(state){ gx.dataset.state=state; }
+  function open(serial){
+    lastFocus=document.activeElement;
+    gx.querySelectorAll('[data-gx-sn]').forEach(el=>el.textContent=serial);
+    setState('loading');
+    gx.setAttribute('aria-hidden','false'); gx.classList.add('on');
+    document.documentElement.style.overflow='hidden';
+    requestAnimationFrame(()=>gx.querySelector('.gx__close').focus({preventScroll:true}));
   }
+  function close(){
+    runId++;
+    gx.classList.remove('on'); gx.setAttribute('aria-hidden','true');
+    document.documentElement.style.overflow='';
+    (lastFocus&&lastFocus.focus?lastFocus:input).focus({preventScroll:true});
+    input.select();
+  }
+  function none(title,text){ gxNoneT.textContent=title; gxNoneP.textContent=text; setState('none'); focusAct(); }
+  function focusAct(){ const b=gx.querySelector('.gx__state--'+gx.dataset.state+' .gx__acts .btn'); if(b) b.focus({preventScroll:true}); }
 
   async function run(serial){
-    rec.hidden=true; msg.classList.remove('err'); msg.textContent='';
+    msg.classList.remove('err'); msg.textContent='';
     if(!serial){ msg.classList.add('err'); msg.textContent='Enter the serial number from your card.'; input.focus(); return; }
-    input.value=serial; cardSn.textContent=serial;
-    btn.disabled=true; msg.textContent='Checking the record…';
-    try{
-      const r=await lookup(serial);
-      msg.textContent='';
-      if(r===undefined){ msg.textContent='Piece records are coming soon. Keep your card safe with your piece.'; }
-      else if(r){ showRecord(serial,r); }
-      else { msg.classList.add('err'); msg.textContent="We couldn't find that serial. Check it against your card, or contact support."; }
-    }catch(e){ msg.classList.add('err'); msg.textContent="We couldn't check that just now. Try again in a moment."; }
-    finally{ btn.disabled=false; }
+    input.value=serial;
+    const id=++runId;
+    open(serial);
+    let r, failed=false;
+    /* hold the loader long enough to read as a check, not a flicker */
+    try{ [r]=await Promise.all([lookup(serial),wait(1400)]); }catch(e){ failed=true; await wait(600); }
+    if(id!==runId) return;
+    if(failed) return none('Try again',"We couldn't check that just now. Give it a moment and try again.");
+    if(r===undefined) return none('Coming soon','Piece records are on their way. Keep your card safe with your piece.');
+    if(!r) return none('Not found',"That serial isn't on record. Check it against your card, or send us your order number and we'll help.");
+    gxName.textContent=r.name||'AXIA piece';
+    gxDate.textContent=fmtDate(r.purchasedAt)||'On record';
+    setState('found'); focusAct();
   }
 
   form.addEventListener('submit',e=>{ e.preventDefault(); run(clean(input.value)); });
-  /* an NFC tap opens /genuine?serial=... and looks it up straight away */
+  gx.addEventListener('click',e=>{ if(e.target.closest('[data-gx-close]')) close(); });
+  addEventListener('keydown',e=>{
+    if(!gx.classList.contains('on')) return;
+    if(e.key==='Escape'){ close(); return; }
+    if(e.key==='Tab'){ /* keep focus inside the overlay */
+      const f=[...gx.querySelectorAll('button,a[href]')].filter(el=>el.offsetParent!==null);
+      if(!f.length) return; const a=f[0], z=f[f.length-1];
+      if(e.shiftKey&&document.activeElement===a){ e.preventDefault(); z.focus(); }
+      else if(!e.shiftKey&&document.activeElement===z){ e.preventDefault(); a.focus(); }
+    }
+  });
+  /* an NFC tap opens /genuine?serial=... and checks it straight away */
   const pre=clean(new URLSearchParams(location.search).get('serial'));
   if(pre){ input.value=pre; run(pre); }
 })();
