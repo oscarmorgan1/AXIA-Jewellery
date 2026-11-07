@@ -1,6 +1,6 @@
 /* /genuine serial lookup, used by the page's search (window.axiaGenuineLookup).
    Asks the server (server/genuine.js), which returns only the product name and
-   the purchase date for a serial in the registry. Resolves to
+   the customer's purchase date for a sold serial in the registry. Resolves to
    { name, purchasedAt } for a known serial, null for an unknown one, and throws
    when the check couldn't be made (network, rate limit), so the page can say so. */
 (function(){

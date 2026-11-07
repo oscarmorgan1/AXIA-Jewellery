@@ -3,8 +3,10 @@
 // Piece records (Firestore `pieces/{key}`) are admins only in firestore.rules:
 // they hold the supplier, notes and the order the piece went out in. This is
 // the only public way in, and it answers with two fields and nothing else:
-// what the product is, and when the piece was purchased. Unknown serials get
-// a plain 404, and each visitor is rate limited so serials can't be guessed in bulk.
+// what the product is, and the date the customer bought it (their order's date,
+// in Sydney time). A piece that isn't assigned to a paid order, or whose order
+// was cancelled or refunded, isn't anyone's yet, so it gets the same plain 404
+// as an unknown serial. Each visitor is rate limited so serials can't be guessed in bulk.
 import express from 'express';
 import { db } from './services.js';
 import { rateLimit, clientIp } from './limit.js';
@@ -12,14 +14,20 @@ import { rateLimit, clientIp } from './limit.js';
 /** Same as serialKey() in admin-portal/src/lib/pieces.ts: capitals, letters and digits only. */
 export const serialKey = serial => String(serial || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 40);
 
-const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const NOT_SOLD = ['pending', 'cancelled', 'refunded'];
+const sydneyDate = d => d.toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' });
 const tooMany = rateLimit({ windowMs: 10 * 60 * 1000, max: 30 });
 
-/** The public view of a piece record. Anything not named here never leaves the server. */
-export function publicPiece(piece) {
+/**
+ * The public view of a piece: its product name and the customer's purchase date,
+ * or null when the piece hasn't been sold. Nothing else from either record leaves the server.
+ */
+export function publicPiece(piece, order) {
+  if (!piece || !order || NOT_SOLD.includes(order.status || 'pending')) return null;
+  const placed = order.createdAt && typeof order.createdAt.toDate === 'function' ? order.createdAt.toDate() : null;
   return {
     name: typeof piece.productName === 'string' ? piece.productName : '',
-    purchasedOn: DATE.test(piece.purchasedOn || '') ? piece.purchasedOn : null,
+    purchasedOn: placed ? sydneyDate(placed) : null,
   };
 }
 
@@ -32,8 +40,12 @@ export function genuineRoutes() {
     if (tooMany(clientIp(req))) return res.status(429).json({ error: 'Too many checks from here. Please try again later.' });
     try {
       const snap = await db.collection('pieces').doc(key).get();
-      if (!snap.exists) return res.status(404).json({ error: 'Not found' });
-      res.json(publicPiece(snap.data()));
+      const piece = snap.exists ? snap.data() : null;
+      const orderId = piece && typeof piece.orderId === 'string' && piece.orderId ? piece.orderId : '';
+      const order = orderId ? await db.collection('orders').doc(orderId).get() : null;
+      const out = publicPiece(piece, order && order.exists ? order.data() : null);
+      if (!out) return res.status(404).json({ error: 'Not found' });
+      res.json(out);
     } catch (err) {
       console.error('genuine: lookup failed', err);
       res.status(500).json({ error: 'Server error' });

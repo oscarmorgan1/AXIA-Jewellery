@@ -14,7 +14,7 @@ rules_version = '2';
 //   pieces/{key}         PRIVATE piece registry (serial, supplier, order): admins only.
 //                        The public /genuine check never reads it from the browser: it
 //                        goes through the server (server/genuine.js), which returns only
-//                        the product name and purchase date for one serial at a time.
+//                        the product name and the customer's purchase date for one sold serial.
 //   suppliers/{id}       PRIVATE manufacturers and suppliers: admins only
 //
 // "Admin" means a signed-in user whose ID token carries the custom claim

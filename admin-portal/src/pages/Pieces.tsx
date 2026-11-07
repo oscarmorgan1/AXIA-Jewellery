@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
 import { usePieces, useSuppliers } from '../lib/data';
@@ -10,7 +10,7 @@ import type { Piece } from '../types';
 
 type Filter = 'all' | PieceState;
 
-/** Every physical piece: its serial, product, supplier purchase date, and the order it went out in. */
+/** Every physical piece: its serial, product, supplier order date, and the order it went out in. */
 export default function Pieces() {
   const { data: pieces, loading, error } = usePieces();
   const { data: suppliers, byId: supplierById } = useSuppliers();
@@ -18,6 +18,14 @@ export default function Pieces() {
   const [filter, setFilter] = useState<Filter>((params.get('state') as Filter) || 'all');
   const [supplier, setSupplier] = useState(params.get('supplier') || '');
   const [editing, setEditing] = useState<Piece | 'new' | null>(null);
+  // /pieces?open=KEY (from the header search) opens that piece once the registry has loaded.
+  const openKey = params.get('open');
+  useEffect(() => {
+    if (!openKey || loading) return;
+    const p = pieces.find(x => x.key === openKey);
+    if (p) setEditing(p);
+    setParams(prev => { const n = new URLSearchParams(prev); n.delete('open'); return n; }, { replace: true });
+  }, [openKey, loading, pieces, setParams]);
   const toast = useToast();
   const q = params.get('q') || '';
 
@@ -39,7 +47,7 @@ export default function Pieces() {
         <span className="spacer" />
         <button className="btn btn--primary" onClick={() => setEditing('new')}><Plus size={16} /> Add piece</button>
       </div>
-      <p className="card__sub" style={{ marginTop: -8 }}>Each physical piece and its serial, from ordering with the maker to shipping. A serial searched on /genuine shows only the product and the purchase date.</p>
+      <p className="card__sub" style={{ marginTop: -8 }}>Each physical piece and its serial, from ordering with the maker to shipping. On /genuine a serial shows only the product and the customer’s purchase date, and only once it’s in a paid order.</p>
       <div className="card">
         <div className="card__head">
           <div className="segmented">

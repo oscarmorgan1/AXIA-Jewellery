@@ -73,7 +73,6 @@ function PieceFields({ draft, set, existing, lockSerial }: {
       </label>
       <label className="field">Ordered from supplier
         <input className="input" type="date" value={draft.purchasedOn} max={today()} onChange={e => set({ purchasedOn: e.target.value })} />
-        <small className="muted">The purchase date /genuine shows.</small>
       </label>
       <div className="field">
         <label htmlFor="pieceReceived">Received</label>
@@ -87,7 +86,7 @@ function PieceFields({ draft, set, existing, lockSerial }: {
       <label className="field full">Notes
         <textarea className="textarea" value={draft.notes} placeholder="Private, only seen here" onChange={e => set({ notes: e.target.value })} />
       </label>
-      <p className="card__sub full">Anyone who searches this serial on /genuine sees only the product and the purchase date.</p>
+      <p className="card__sub full">Once it’s in a paid order, anyone who searches this serial on /genuine sees only the product and the date the customer bought it.</p>
     </div>
   );
 }
