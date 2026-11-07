@@ -136,7 +136,9 @@ export function useSignups() {
 
 export function useMessages() {
   const s = useLiveCollection<Message>('messages', (id, d) => ({ ...(d as Message), id }));
-  return { ...s, data: [...s.data].sort(byNewest) };
+  // A follow-up from the portal brings its conversation back to the top.
+  const at = (m: Message) => (m.lastAt || m.createdAt)?.toDate().getTime() ?? 0;
+  return { ...s, data: [...s.data].sort((a, b) => at(b) - at(a)) };
 }
 
 export function usePieces() {

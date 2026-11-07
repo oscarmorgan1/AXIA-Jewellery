@@ -177,6 +177,14 @@ export interface Message {
   /** Replies sent from the portal, with their Resend IDs. */
   replies?: OrderEmail[];
   createdAt?: Ts;
+  /** Sent from the customer portal (/portal): their account, and their follow-ups. */
+  source?: 'portal';
+  uid?: string;
+  subject?: string;
+  orderId?: string | null;
+  customerReplies?: { body: string; at?: Ts }[];
+  /** Last message either way; the Inbox sorts by it. */
+  lastAt?: Ts;
 }
 
 /** site/countdown: the launch countdown shown across the storefront. Public. */

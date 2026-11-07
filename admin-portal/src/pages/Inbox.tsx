@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, CornerUpLeft, Inbox as InboxIcon, Mail, Receipt, RotateCcw, Trash2, User } from 'lucide-react';
 import { deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { adminApi } from '../lib/api';
 import { db } from '../firebase';
 import { useMessages, useOrders } from '../lib/data';
 import { findOrderRefs, orderNo } from '../lib/orders';
@@ -14,6 +15,18 @@ import type { Message } from '../types';
 import { SkeletonRows } from '../components/Skeleton';
 
 type Filter = 'new' | 'done' | 'all';
+
+/** Their first message, their follow-ups from the portal and your replies, oldest first. */
+function conversation(m: Message) {
+  const ms = (t?: { toDate(): Date }) => t?.toDate().getTime() ?? 0;
+  return [
+    { out: false, body: m.message, at: m.createdAt },
+    ...(m.customerReplies || []).map(r => ({ out: false, body: r.body, at: r.at })),
+    ...(m.replies || []).map(r => ({ out: true, body: r.body || '', at: r.sentAt, by: r.by, resendId: r.resendId })),
+  ].sort((a, b) => ms(a.at) - ms(b.at)) as { out: boolean; body: string; at?: { toDate(): Date }; by?: string; resendId?: string | null }[];
+}
+/** The newest thing they wrote. */
+const latest = (m: Message) => conversation(m).filter(x => !x.out).pop()?.body || m.message;
 
 export default function Inbox() {
   const { data: messages, loading, error } = useMessages();
@@ -39,7 +52,8 @@ export default function Inbox() {
   }
   async function remove(m: Message) {
     if (!confirm(`Delete this message from ${m.name}?`)) return;
-    try { await deleteDoc(doc(db, 'messages', m.id)); } catch (e) { return toast.show(`Couldn’t save: ${(e as Error).message}`); }
+    // Portal conversations also have the customer's copy to take down, which only the server can.
+    try { await (m.uid ? adminApi(`/messages/${encodeURIComponent(m.id)}/delete`, {}) : deleteDoc(doc(db, 'messages', m.id))); } catch (e) { return toast.show(`Couldn’t save: ${(e as Error).message}`); }
     setOpenId(null);
     toast.show('Message deleted');
   }
@@ -47,7 +61,7 @@ export default function Inbox() {
   return (
     <>
       <div className="page-head">
-        <div><h1>Inbox</h1><p className="lede" style={{ margin: 0 }}>Messages from the contact form on the Support page.</p></div>
+        <div><h1>Inbox</h1><p className="lede" style={{ margin: 0 }}>Messages from the contact form on the Support page and from customer accounts.</p></div>
         <span className="spacer" />
         <div className="segmented">
           {([['new', 'New'], ['done', 'Done'], ['all', 'All']] as [Filter, string][]).map(([k, l]) => (
@@ -65,11 +79,14 @@ export default function Inbox() {
               <span className={`feed__icon ${m.status === 'done' ? '' : 'stat__icon--magenta'}`}>{m.status === 'done' ? <Check size={18} /> : <Mail size={18} />}</span>
               <div className="feed__body">
                 <b>{m.name} <span className="chip chip--muted chip--plain" style={{ marginLeft: 6 }}>{m.topic}</span>
+                  {m.uid && <span className="chip chip--ice chip--plain" style={{ marginLeft: 6 }}>Portal</span>}
                   {refsFor(m).slice(0, 1).map(o => <span key={o.id} className="chip chip--ice chip--plain" style={{ marginLeft: 6 }}>#{orderNo(o)}</span>)}
-                  {(m.replies || []).length > 0 && <span className="chip chip--good chip--plain" style={{ marginLeft: 6 }}>Replied</span>}</b>
-                <small>{m.message.slice(0, 120)}</small>
+                  {(m.replies || []).length > 0 && (conversation(m).pop()?.out
+                    ? <span className="chip chip--good chip--plain" style={{ marginLeft: 6 }}>Replied</span>
+                    : <span className="chip chip--warn chip--plain" style={{ marginLeft: 6 }}>They replied</span>)}</b>
+                <small>{latest(m).slice(0, 120)}</small>
               </div>
-              <small style={{ color: 'var(--faint)', whiteSpace: 'nowrap' }}>{m.createdAt?.toDate().toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</small>
+              <small style={{ color: 'var(--faint)', whiteSpace: 'nowrap' }}>{(m.lastAt || m.createdAt)?.toDate().toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</small>
             </button>
           ))}
         </div>
@@ -88,7 +105,7 @@ export default function Inbox() {
           </>}>
           <dl className="kv">
             <dt>From</dt><dd>{open.email}</dd>
-            <dt>Topic</dt><dd>{open.topic}</dd>
+            <dt>Topic</dt><dd>{open.topic}{open.uid ? ' · sent from their account' : ''}</dd>
             <dt>Order number given</dt><dd>{open.order || '–'}</dd>
             <dt>Received</dt><dd>{open.createdAt?.toDate().toLocaleString('en-AU') ?? '–'}</dd>
           </dl>
@@ -110,11 +127,12 @@ export default function Inbox() {
           {hasCustomer && <Link to={`/customers/${encodeURIComponent(open.email.toLowerCase())}`} className="btn btn--sm" style={{ alignSelf: 'flex-start' }}><User size={14} /> View customer</Link>}
           <div className="field">Conversation
             <div className="thread">
-              <div className="thread__msg"><span className="thread__meta">{open.name} · {open.createdAt?.toDate().toLocaleString('en-AU') ?? ''}</span>{open.message}</div>
-              {(open.replies || []).map((r, i) => (
+              {conversation(open).map((x, i) => x.out ? (
                 <div key={i} className="thread__msg thread__msg--out">
-                  <span className="thread__meta">You ({r.by}) · {r.sentAt?.toDate().toLocaleString('en-AU') ?? ''} · Resend <code>{r.resendId || 'not sent'}</code></span>{r.body}
+                  <span className="thread__meta">You ({x.by}) · {x.at?.toDate().toLocaleString('en-AU') ?? ''} · Resend <code>{x.resendId || 'not sent'}</code></span>{x.body}
                 </div>
+              ) : (
+                <div key={i} className="thread__msg"><span className="thread__meta">{open.name} · {x.at?.toDate().toLocaleString('en-AU') ?? ''}</span>{x.body}</div>
               ))}
             </div>
           </div>
@@ -122,7 +140,8 @@ export default function Inbox() {
       )}
       {open && replying && (
         <ComposeEmail
-          target={{ to: open.email, name: open.name, subject: `Re: your AXIA ${open.topic.toLowerCase()} enquiry`, inquiryId: open.id, quote: open.message,
+          target={{ to: open.email, name: open.name, inquiryId: open.id, quote: latest(open), portal: !!open.uid,
+            subject: open.uid ? `Re: ${open.subject || open.topic}` : `Re: your AXIA ${open.topic.toLowerCase()} enquiry`,
             ...(mentioned.length === 1 ? { orderId: mentioned[0].id, orderNumber: orderNo(mentioned[0]) } : {}) }}
           onClose={() => setReplying(false)}
           onSent={msg => { setReplying(false); toast.show(msg); }} />

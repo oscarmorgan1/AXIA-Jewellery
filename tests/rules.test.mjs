@@ -28,6 +28,8 @@ beforeEach(async () => {
     await setDoc(doc(db, 'pieces/AX123'), { serial: 'AX-123', orderId: 'o1' });
     await setDoc(doc(db, 'customers/ana@example.com'), { email: 'ana@example.com', notes: 'private' });
     await setDoc(doc(db, 'accountInvites/abc'), { email: 'ana@example.com' });
+    await setDoc(doc(db, 'accounts/ana/threads/m1'), { subject: 'Sizing', messages: [] });
+    await setDoc(doc(db, 'messages/m1'), { uid: 'ana', email: 'ana@example.com', message: 'Hi' });
   });
 });
 
@@ -53,6 +55,13 @@ test('nobody writes accounts from a browser, not even the owner', async () => {
   await assertFails(setDoc(doc(customer('ana'), 'accounts/ana/orders/o2'), { status: 'fulfilled' }));
   await assertFails(setDoc(doc(customer('eve'), 'accounts/eve'), { email: 'eve@example.com' }));
   await assertFails(updateDoc(doc(admin(), 'accounts/ana'), { name: 'x' }));
+});
+
+test('support: a customer reads their own conversations, never the Inbox or someone else’s', async () => {
+  await assertSucceeds(getDocs(collection(customer('ana'), 'accounts/ana/threads')));
+  await assertFails(getDocs(collection(customer('ben'), 'accounts/ana/threads')));
+  await assertFails(getDoc(doc(customer('ana'), 'messages/m1')));
+  await assertFails(setDoc(doc(customer('ana'), 'accounts/ana/threads/m2'), { subject: 'x', messages: [] }));
 });
 
 test('a customer can’t reach orders, pieces, customers or invites', async () => {

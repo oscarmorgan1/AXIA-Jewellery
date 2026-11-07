@@ -39,3 +39,20 @@ test('customerPiece shows the serial and purchase date, never the supplier side'
   );
   assert.deepEqual(out, { serial: 'AXIA1', productId: 'p', productName: 'Cuban', variant: '10mm', image: 'assets/img/x.jpg', purchasedOn: '2026-01-02', orderId: 'o1', orderNumber: 'AX1', shippedOn: '2026-01-05' });
 });
+
+test('customerThread shows their messages and the team’s replies in order, without who replied', async () => {
+  const { customerThread } = await import('../server/sync.js');
+  const out = customerThread({
+    uid: 'u1', email: 'a@b.c', topic: 'Sizing', subject: 'Sizing', order: '', message: 'What size?', createdAt: ts(1000),
+    customerReplies: [{ body: 'Also, engraving?', at: ts(3000) }],
+    replies: [{ type: 'reply', body: 'A 20 inch suits most.', by: 'admin@axia', resendId: 're_1', status: 'sent', sentAt: ts(2000) }],
+    customerReadAt: ts(1500),
+  });
+  assert.deepEqual(out.messages.map(m => [m.from, m.at]), [['you', 1000], ['axia', 2000], ['you', 3000]]);
+  assert.equal(out.state, 'open');
+  assert.equal(out.unread, true);
+  assert.equal(out.lastAt, 3000);
+  const json = JSON.stringify(out);
+  for (const secret of ['admin@axia', 're_1', 'a@b.c']) assert.ok(!json.includes(secret), `leaked ${secret}`);
+  assert.equal(customerThread({ message: 'x', createdAt: ts(1), replies: [{ body: 'y', sentAt: ts(2) }], customerReadAt: ts(5) }).unread, false);
+});

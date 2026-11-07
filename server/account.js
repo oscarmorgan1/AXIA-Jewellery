@@ -22,6 +22,9 @@
 //   POST /api/account/cart/get        signed in: their saved bag
 //   POST /api/account/cart            signed in: saves the bag (accounts/{uid}/saved/cart)
 //   POST /api/account/orders/:id/receipt  signed in: the Stripe receipt link for one of their orders
+//   POST /api/account/messages        signed in: starts a support conversation (lands in the admin Inbox)
+//   POST /api/account/messages/:id/reply  signed in: adds to one of their conversations
+//   POST /api/account/messages/:id/read   signed in: marks the team's replies as read
 import express from 'express';
 import { createHash, randomBytes } from 'node:crypto';
 import { getAuth } from 'firebase-admin/auth';
@@ -31,11 +34,13 @@ import { customerId } from './orders.js';
 import { setSubscribed } from './unsubscribe.js';
 import { accountInviteEmail, passwordResetEmail, sendEmail, brandUrl } from './email.js';
 import { rateLimit, clientIp } from './limit.js';
-import { syncCustomerOrders, stripeReceipt } from './sync.js';
+import { syncCustomerOrders, stripeReceipt, syncThread } from './sync.js';
+import { alertTeam } from './forms.js';
 
 export const INVITE_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MIN_PASSWORD = 8;
+export const SUPPORT_TOPICS = ['My order', 'Sizing', 'Care and repairs', 'Something else'];
 
 class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
 
@@ -254,7 +259,7 @@ export function accountRoutes() {
     return { ok: true };
   }));
 
-  router.use(['/api/account/session', '/api/account/profile', '/api/account/marketing', '/api/account/cart', '/api/account/orders'], express.json({ limit: '64kb' }), requireCustomer);
+  router.use(['/api/account/session', '/api/account/profile', '/api/account/marketing', '/api/account/cart', '/api/account/orders', '/api/account/messages'], express.json({ limit: '64kb' }), requireCustomer);
 
   router.post('/api/account/session', handle(async req => {
     await ensureAccount(req.customer.uid, req.customer.email, { name: req.customer.name });
@@ -314,6 +319,70 @@ export function accountRoutes() {
     const at = Math.min(Number(b.at) || Date.now(), Date.now() + 5 * 60 * 1000);
     await cartRef(req.customer.uid).set({ lines, at, updatedAt: FieldValue.serverTimestamp() });
     return { ok: true, at };
+  }));
+
+  // Support. A conversation is a messages/{id} doc like the contact form's (so it
+  // shows in the admin Inbox), plus the sender's uid. The customer's copy is
+  // accounts/{uid}/threads/{id} (server/sync.js).
+  const tooManyMessages = rateLimit({ windowMs: 10 * 60 * 1000, max: 8 });
+  const MAX_REPLIES = 100;
+  const body = b => (typeof b === 'string' ? b.trim().slice(0, 5000) : '');
+  const theirThread = async (uid, id) => {
+    const ref = db.collection('messages').doc(str(id, 100));
+    const snap = id ? await ref.get() : null;
+    if (!snap || !snap.exists || snap.get('uid') !== uid) throw new HttpError(404, 'Conversation not found');
+    return { ref, m: snap.data() };
+  };
+  const alert = (m, id, key) => alertTeam(m, id, key).catch(err => console.error('account: support alert failed', id, err));
+
+  router.post('/api/account/messages', handle(async req => {
+    const { uid, email } = req.customer;
+    if (tooManyMessages(uid)) throw new HttpError(429, 'That’s a lot of messages at once. Please wait a few minutes, or email support@axiajewellery.com.');
+    const b = req.body || {};
+    const message = body(b.body);
+    const topic = SUPPORT_TOPICS.includes(b.topic) ? b.topic : 'Something else';
+    if (message.length < 4) throw new HttpError(400, 'Please add a short message.');
+    const account = await ensureAccount(uid, email, { name: req.customer.name });
+    // An order they name must be one of theirs.
+    let orderId = null; let orderNumber = '';
+    if (b.orderId) {
+      const mine = await db.collection('accounts').doc(uid).collection('orders').doc(str(b.orderId, 300)).get();
+      if (!mine.exists) throw new HttpError(404, 'Order not found');
+      orderId = mine.id; orderNumber = mine.get('orderNumber') || mine.id.slice(-6).toUpperCase();
+    }
+    const doc = {
+      name: account.name || req.customer.name || email, email, topic, order: orderNumber, orderId,
+      subject: !orderNumber ? topic : topic === 'My order' ? `Order #${orderNumber}` : `${topic} · order #${orderNumber}`,
+      message, status: 'new', source: 'portal', uid, customerReplies: [],
+      createdAt: FieldValue.serverTimestamp(), lastAt: FieldValue.serverTimestamp(),
+    };
+    const ref = await db.collection('messages').add(doc);
+    await syncThread(ref.id);
+    alert(doc, ref.id);
+    return { id: ref.id };
+  }));
+
+  router.post('/api/account/messages/:id/reply', handle(async req => {
+    const { uid } = req.customer;
+    if (tooManyMessages(uid)) throw new HttpError(429, 'That’s a lot of messages at once. Please wait a few minutes, or email support@axiajewellery.com.');
+    const text = body((req.body || {}).body);
+    if (text.length < 2) throw new HttpError(400, 'Write a message.');
+    const { ref, m } = await theirThread(uid, req.params.id);
+    const n = (m.customerReplies || []).length;
+    if (n >= MAX_REPLIES) throw new HttpError(400, 'This conversation is full. Please start a new one.');
+    const now = Timestamp.now();
+    // Back to "new" in the Inbox, and read up to now (they're looking at it).
+    await ref.update({ customerReplies: FieldValue.arrayUnion({ body: text, at: now }), status: 'new', lastAt: now, customerReadAt: now });
+    await syncThread(ref.id);
+    alert({ ...m, message: text, reply: true }, ref.id, `inquiry-alert/${ref.id}/${n + 1}`);
+    return { ok: true };
+  }));
+
+  router.post('/api/account/messages/:id/read', handle(async req => {
+    const { ref } = await theirThread(req.customer.uid, req.params.id);
+    await ref.update({ customerReadAt: Timestamp.now() });
+    await syncThread(ref.id);
+    return { ok: true };
   }));
 
   return router;
