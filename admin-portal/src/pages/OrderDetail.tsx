@@ -176,7 +176,7 @@ function StatusDrawer({ order, pieces, initial, onClose, onDone, onAssign }: { o
                   </li>
                 ))}
               </ul>
-              {missing > 0 && <div className="notice notice--warn">{missing} {missing === 1 ? 'piece has' : 'pieces have'} no serial assigned. Assign {missing === 1 ? 'it' : 'them'} so /genuine can find {missing === 1 ? 'it' : 'them'}.</div>}
+              {missing > 0 && <div className="notice notice--warn">{missing} {missing === 1 ? 'piece has' : 'pieces have'} no serial assigned.</div>}
               <label className="check"><input type="checkbox" checked={packed} onChange={e => setPacked(e.target.checked)} />
                 {missing ? 'Ship anyway: I’ve checked the box against the packing slip' : 'I’ve checked these serials against the packing slip'}</label>
               <small className="muted">Each assigned piece gets today as its shipped date.</small>
