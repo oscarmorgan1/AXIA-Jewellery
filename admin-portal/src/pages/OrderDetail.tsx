@@ -252,6 +252,7 @@ export default function OrderDetail() {
         <Link to="/orders" className="icon-btn" aria-label="Back"><ArrowLeft size={18} /></Link>
         <h1>Order #{orderNo(order)}</h1>
         {statusChip(order.status)}
+        {engraved.length > 0 && <span className="chip chip--ice" title={engraved.map(i => `${i.name}: ${i.engraving}`).join('\n')}><PenLine size={12} /> Custom engraving</span>}
         {stage && <span className={`chip ${stage.chip} chip--plain`}><Gem size={12} /> {stage.text}</span>}
         {test && <span className="chip chip--muted">Test</span>}
         <span className="spacer" />
@@ -261,13 +262,6 @@ export default function OrderDetail() {
       </div>
       <p className="card__sub" style={{ marginTop: -8 }}>Placed {when(order.createdAt)} · {itemCount(order)} items · {aud(order.totalAUD, 2)}</p>
 
-      {engraved.length > 0 && (
-        <div className="engrave-alert"><PenLine size={18} />
-          <div><b>Custom engraving on this order</b>
-            {engraved.map((i, n) => <div key={n}>{i.name}: <span className="engrave-text">{i.engraving}</span></div>)}
-          </div>
-        </div>
-      )}
 
       <div className="editor">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>

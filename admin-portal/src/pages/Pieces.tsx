@@ -10,7 +10,7 @@ import type { Piece } from '../types';
 
 type Filter = 'all' | PieceState;
 
-/** Every physical piece: its serial, product, supplier purchase date, and the order it went out in. */
+/** Every physical piece: its serial, product, supplier order date, and the order it went out in. */
 export default function Pieces() {
   const { data: pieces, loading, error } = usePieces();
   const { data: suppliers, byId: supplierById } = useSuppliers();
@@ -39,7 +39,7 @@ export default function Pieces() {
         <span className="spacer" />
         <button className="btn btn--primary" onClick={() => setEditing('new')}><Plus size={16} /> Add piece</button>
       </div>
-      <p className="card__sub" style={{ marginTop: -8 }}>Each physical piece and its serial, from ordering with the maker to shipping. A serial searched on /genuine shows only the product and the purchase date.</p>
+      <p className="card__sub" style={{ marginTop: -8 }}>Each physical piece and its serial, from ordering with the maker to shipping. On /genuine a serial shows only the product and the customer’s purchase date, and only once it’s in a paid order.</p>
       <div className="card">
         <div className="card__head">
           <div className="segmented">
