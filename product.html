@@ -188,7 +188,17 @@
   .rvc__prod-a{flex:none;color:var(--on-dark-3)}
   .rvc__prod--blank{visibility:hidden}
   .rvc__slide:not(.is-active) .rvc__prod{pointer-events:none}
-  .rvc__card video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .rvc__card video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:opacity var(--dur-2) var(--ease-out)}
+  /* while a clip loads, its poster stays on the card (the video fades in on its first frame) with a spinner on top,
+     so swiping to a clip that hasn't loaded yet never flashes black */
+  .rvc__card{background-size:cover;background-position:center}
+  .rvc__card.is-loading video{opacity:0}
+  .rvc__spin{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;
+    border:2px solid color-mix(in srgb, var(--bone) 25%, transparent);border-top-color:var(--bone);opacity:0;pointer-events:none;
+    transition:opacity var(--dur-2) var(--ease-out);animation:rvc-spin .8s linear infinite}
+  .rvc__slide.is-active .rvc__card:is(.is-loading,.is-waiting) .rvc__spin{opacity:1;transition-delay:.15s}
+  @keyframes rvc-spin{to{transform:rotate(360deg)}}
+  @media(prefers-reduced-motion:reduce){.rvc__spin{animation-duration:2.4s}}
   .rvc__mute{position:absolute;right:12px;bottom:12px;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
     background:color-mix(in srgb, var(--obsidian) 55%, transparent);backdrop-filter:blur(6px);color:var(--bone);--focus:var(--ice)}
   .rvc__slide:not(.is-active) .rvc__mute{pointer-events:none}
@@ -707,15 +717,21 @@
     const ICON_ON='<svg class="on" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
     let sound=false, active=-1, inView=false;
     // the piece each clip is linked to (Admin > Reviews), shown as a small card under it
-    const linked=v=>{ const x=v.productId&&P.find(y=>y.id===v.productId); return x&&!x.hidden?x:null; };
+    const linked=v=>(v.productId&&P.find(y=>y.id===v.productId))||null;
     const anyLinked=list.some(linked);
     if(list.length===1) wrap.classList.add('rvc--one');
     const cards=list.map((v,i)=>{
       const c=document.createElement('div'); c.className='rvc__slide'; c.setAttribute('role','group'); c.setAttribute('aria-roledescription','slide'); c.setAttribute('aria-label','Review video '+(i+1)+' of '+list.length);
       const box=document.createElement('div'); box.className='rvc__card'; c.appendChild(box);
       const vid=document.createElement('video'); vid.muted=true; vid.loop=true; vid.playsInline=true; vid.setAttribute('playsinline',''); vid.preload='none';
-      if(v.poster) vid.poster=v.poster;
+      if(v.poster){ vid.poster=v.poster; box.style.backgroundImage='url("'+String(v.poster).replace(/["\\]/g,'')+'")'; }
       box.appendChild(vid);
+      const spin=document.createElement('span'); spin.className='rvc__spin'; spin.setAttribute('aria-hidden','true'); box.appendChild(spin);
+      // hide the video (showing the poster behind it) from when its file is set until its first frame is ready
+      vid.addEventListener('loadeddata',()=>box.classList.remove('is-loading'));
+      vid.addEventListener('waiting',()=>box.classList.add('is-waiting'));
+      ['playing','pause','canplay'].forEach(ev=>vid.addEventListener(ev,()=>box.classList.remove('is-waiting')));
+      vid.addEventListener('error',()=>box.classList.remove('is-loading','is-waiting'));
       if(v.audio!==false){ const b=document.createElement('button'); b.type='button'; b.className='rvc__mute'; b.setAttribute('aria-label','Sound'); b.setAttribute('aria-pressed','false'); b.innerHTML=ICON_OFF+ICON_ON; box.appendChild(b); }
       const x=linked(v);
       if(x){
@@ -726,17 +742,20 @@
         a.querySelector('.rvc__prod-n').textContent=x.name+(x.width?', '+x.width:'');
         c.appendChild(a);
       } else if(anyLinked){ const gap=document.createElement('span'); gap.className='rvc__prod rvc__prod--blank'; gap.setAttribute('aria-hidden','true'); c.appendChild(gap); }
-      track.appendChild(c); return {c,vid,src:v.src};
+      track.appendChild(c); return {c,box,vid,src:v.src};
     });
     const syncMute=()=>$$('.rvc__mute',track).forEach(b=>b.setAttribute('aria-pressed',String(sound)));
     // play the clip; if the browser blocks it with sound, fall back to muted
-    const play=k=>{ const x=cards[k]; if(!x) return; if(!x.vid.src) x.vid.src=x.src; x.vid.muted=!sound; const go=x.vid.play(); if(go&&go.catch) go.catch(()=>{ if(!x.vid.muted){ x.vid.muted=true; sound=false; syncMute(); x.vid.play().catch(()=>{}); } }); };
+    const load=(x,how)=>{ if(x.vid.src) return; if(x.vid.readyState<2) x.box.classList.add('is-loading'); x.vid.preload=how; x.vid.src=x.src; };
+    const play=k=>{ const x=cards[k]; if(!x) return; load(x,'auto'); x.vid.muted=!sound; const go=x.vid.play(); if(go&&go.catch) go.catch(()=>{ if(!x.vid.muted){ x.vid.muted=true; sound=false; syncMute(); x.vid.play().catch(()=>{}); } }); };
     function activate(k){
       if(k===active) return; active=k;
       cards.forEach((x,i)=>{ x.c.classList.toggle('is-active',i===k); if(i!==k&&!x.vid.paused) x.vid.pause(); });
       $('#rvcCount').textContent=(k+1)+' / '+cards.length;
       $('#rvcPrev').disabled=k===0; $('#rvcNext').disabled=k===cards.length-1;
       if(inView&&!still) play(k);
+      // get the clips either side ready, so swiping to them starts straight away
+      if(inView) [k-1,k+1].forEach(j=>{ const x=cards[j]; if(x) load(x,'auto'); });
     }
     const centre=(k,now)=>{ const x=cards[k]; if(!x) return; track.scrollTo({left:x.c.offsetLeft-(track.clientWidth-x.c.offsetWidth)/2,behavior:(still||now)?'auto':'smooth'}); };
     let raf=0;
@@ -755,7 +774,8 @@
     $('#rvcPrev').addEventListener('click',()=>centre(active-1));
     $('#rvcNext').addEventListener('click',()=>centre(active+1));
     if('IntersectionObserver' in window){
-      new IntersectionObserver(es=>{ inView=es[0].isIntersecting; const x=cards[active]; if(!x) return; if(inView&&!still) play(active); else if(!inView) x.vid.pause(); },{threshold:.35}).observe(track);
+      new IntersectionObserver(es=>{ inView=es[0].isIntersecting; const x=cards[active]; if(!x) return; if(inView&&!still) play(active); else if(!inView) x.vid.pause();
+        if(inView) [active-1,active+1].forEach(j=>{ const y=cards[j]; if(y) load(y,'auto'); }); },{threshold:.35}).observe(track);
     } else inView=true;
     // start on the middle clip, so there are clips either side of it
     const start=Math.floor((cards.length-1)/2);
