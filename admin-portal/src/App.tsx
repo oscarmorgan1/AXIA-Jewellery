@@ -23,6 +23,8 @@ const Website = lazy(() => import('./pages/Website'));
 const Pieces = lazy(() => import('./pages/Pieces'));
 const Suppliers = lazy(() => import('./pages/Suppliers'));
 const Reviews = lazy(() => import('./pages/Reviews'));
+const Returns = lazy(() => import('./pages/Returns'));
+const ReturnDetail = lazy(() => import('./pages/ReturnDetail'));
 
 /**
  * Signed in, but not an admin: a customer. Checks once more for a freshly granted
@@ -63,6 +65,8 @@ export default function App() {
         <Route path="margins" element={<Margins />} />
         <Route path="orders" element={<Orders />} />
         <Route path="orders/:id" element={<OrderDetail />} />
+        <Route path="returns" element={<Returns />} />
+        <Route path="returns/:id" element={<ReturnDetail />} />
         <Route path="promos" element={<Promos />} />
         <Route path="website" element={<Website />} />
         <Route path="settings" element={<Settings />} />

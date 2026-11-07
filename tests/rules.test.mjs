@@ -32,6 +32,8 @@ beforeEach(async () => {
     await setDoc(doc(db, 'messages/m1'), { uid: 'ana', email: 'ana@example.com', message: 'Hi' });
     await setDoc(doc(db, 'pieceTransfers/t1'), { key: 'AX123', fromUid: 'ana', toEmail: 'ben@example.com', status: 'pending' });
     await setDoc(doc(db, 'accounts/ben/incoming/t1'), { serial: 'AX-123', fromName: 'Ana' });
+    await setDoc(doc(db, 'returns/r1'), { orderId: 'o1', customerEmail: 'ana@example.com', status: 'requested', notes: 'internal' });
+    await setDoc(doc(db, 'accounts/ana/returns/r1'), { number: 'R-AX1001-1', status: 'requested' });
   });
 });
 
@@ -73,6 +75,20 @@ test('transfers: only the server reads pieceTransfers; the recipient reads their
   await assertFails(getDoc(doc(customer('ana'), 'accounts/ben/incoming/t1')));
   await assertFails(setDoc(doc(customer('ben'), 'accounts/ben/incoming/t2'), { serial: 'x' }));
   await assertFails(updateDoc(doc(customer('ana'), 'pieces/AX123'), { ownerUid: 'ana' }));
+});
+
+test('returns: admins read them, nobody writes them from a browser, the buyer reads only their copy', async () => {
+  await assertSucceeds(getDoc(doc(admin(), 'returns/r1')));
+  await assertSucceeds(getDocs(collection(admin(), 'returns')));
+  await assertFails(setDoc(doc(admin(), 'returns/r2'), { orderId: 'o1', status: 'requested' }));
+  await assertFails(updateDoc(doc(admin(), 'returns/r1'), { status: 'refunded' }));
+  await assertFails(getDoc(doc(customer('ana'), 'returns/r1')));
+  await assertFails(getDocs(collection(customer('ana'), 'returns')));
+  await assertFails(setDoc(doc(customer('ana'), 'returns/r3'), { orderId: 'o1' }));
+  await assertSucceeds(getDoc(doc(customer('ana'), 'accounts/ana/returns/r1')));
+  await assertFails(getDoc(doc(customer('ben'), 'accounts/ana/returns/r1')));
+  await assertFails(setDoc(doc(customer('ana'), 'accounts/ana/returns/r1'), { status: 'refunded' }));
+  await assertFails(getDoc(doc(customer('ana', { admin: true, auth_time: 5 }), 'returns/r1')));
 });
 
 test('a customer can’t reach orders, pieces, customers or invites', async () => {

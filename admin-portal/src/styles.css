@@ -732,3 +732,33 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--text-md);
 /* Piece owner history (PieceDrawer) */
 .owners { margin: 4px 0 2px; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-weight: 400; color: var(--ink); }
 .owners a { color: var(--accent); }
+
+/* ---------- returns (admin and the customer portal) ---------- */
+.rtrack { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--steps, 5), minmax(0, 1fr)); gap: 6px; }
+.rtrack li { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.rtrack__bar { height: 4px; border-radius: 2px; background: var(--line-strong); }
+.rtrack li.done .rtrack__bar { background: var(--ice-ink); }
+:root[data-theme="dark"] .rtrack li.done .rtrack__bar { background: var(--ice); }
+.rtrack b { font-size: var(--text-sm); font-weight: 500; color: var(--muted); }
+.rtrack li.done b { color: var(--ink); }
+.rtrack li.now b { font-weight: 700; }
+.rtrack small { color: var(--muted); font-size: var(--text-xs); min-height: 1em; }
+.rtrack--ended li.done .rtrack__bar { background: var(--faint); }
+@media (max-width: 600px) {
+  .rtrack { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .rtrack li { display: grid; grid-template-columns: 4px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 6px 0; }
+  .rtrack__bar { height: 100%; min-height: 22px; }
+}
+.return-pick { display: flex; flex-direction: column; border: 1px solid var(--line-strong); border-radius: var(--radius); overflow: hidden; }
+.return-pick label { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 16px; font-size: var(--text-md); color: var(--ink); cursor: pointer; }
+.return-pick label + label { border-top: 1px solid var(--line); }
+.return-pick label.off { opacity: .55; cursor: not-allowed; }
+.return-pick input { width: 16px; height: 16px; accent-color: var(--obsidian); }
+.return-pick span { display: flex; flex-direction: column; min-width: 0; }
+.return-pick small { color: var(--muted); font-size: 12.5px; }
+.return-card { display: flex; flex-direction: column; gap: 14px; }
+.return-card__head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.return-card__head .spacer { flex: 1; }
+.return-next { display: flex; flex-wrap: wrap; gap: 8px; }
+.piece-tag--return { border-color: var(--ice-ink); }
+.piece-tag--return small { color: var(--ice-ink); }

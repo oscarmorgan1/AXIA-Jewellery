@@ -17,8 +17,12 @@ import { sydneyDay } from './forms.js';
 import { emailEntry, historyEntry, push, upsertCustomer, customerId } from './orders.js';
 import { sendAccountInvite } from './account.js';
 import { syncOrder, syncPiece, stripeReceipt, syncThread } from './sync.js';
+import { adminReturnRoutes } from './returns.js';
 
-/** Statuses an admin can set. `refunded` only comes from Stripe, with the money. */
+/**
+ * Statuses an admin can set. `refunded` only comes from Stripe, with the money;
+ * `in_return` only from a return (server/returns.js).
+ */
 export const ADMIN_STATUSES = ['paid', 'in_progress', 'shipped', 'fulfilled', 'cancelled'];
 
 class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
@@ -55,6 +59,9 @@ async function changeStatus(req) {
 
   const status = str(req.body.status, 40);
   if (!ADMIN_STATUSES.includes(status)) throw new HttpError(400, 'Unknown status');
+  if (order.status === 'in_return') throw new HttpError(409, 'This order has a return open. Move it on from the return instead.');
+  // A shipped order is cancelled by bringing it back: that's a return.
+  if (status === 'cancelled' && ['shipped', 'fulfilled'].includes(order.status)) throw new HttpError(409, 'This order has shipped. Start a return to cancel it.');
   const notify = req.body.notify !== false && !!STATUS_EMAILS[status];
   const tracking = status === 'shipped' ? {
     carrier: str(req.body.tracking && req.body.tracking.carrier, 60),
@@ -336,6 +343,7 @@ export function adminRoutes() {
     slot: str(req.body.slot, 20), path: req.body.path, productId: str(req.body.productId, 100), by: req.admin.email || req.admin.uid,
   })));
   router.post('/api/admin/media/reset', handle(req => resetVideo(str(req.body.slot, 20))));
+  router.use(adminReturnRoutes(handle));
   router.get('/api/admin/promos', handle(listPromos));
   router.post('/api/admin/promos', handle(createPromo));
   router.post('/api/admin/promos/:id/active', handle(setPromoActive));

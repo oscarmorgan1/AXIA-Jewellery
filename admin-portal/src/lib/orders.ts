@@ -2,7 +2,7 @@ import type { Order, OrderItem } from '../types';
 
 export const STATUS_LABEL: Record<string, string> = {
   pending: 'Awaiting payment', paid: 'New', in_progress: 'In progress', shipped: 'Shipped',
-  fulfilled: 'Fulfilled', refunded: 'Refunded', cancelled: 'Cancelled',
+  fulfilled: 'Fulfilled', in_return: 'In return', refunded: 'Refunded', cancelled: 'Cancelled',
 };
 
 /** What an admin can move an order to, and the email each one sends. */
@@ -11,11 +11,11 @@ export const STATUS_OPTIONS: { key: string; label: string; email: string | null;
   { key: 'in_progress', label: 'In progress', email: '“Your piece is being made”', hint: 'Being made.' },
   { key: 'shipped', label: 'Shipped', email: '“Your order is on its way”, with tracking', hint: 'Sent to the customer.' },
   { key: 'fulfilled', label: 'Fulfilled', email: '“Delivered. Wear it well.”', hint: 'Delivered.' },
-  { key: 'cancelled', label: 'Cancelled', email: '“Your order has been cancelled”', hint: 'Refund the payment in Stripe separately.' },
+  { key: 'cancelled', label: 'Cancelled', email: '“Your order has been cancelled”', hint: 'Refund the payment in Stripe separately. Once shipped, cancelling starts a return.' },
 ];
 
 export function statusClass(s?: string) {
-  return s === 'fulfilled' || s === 'shipped' ? 'chip--good' : s === 'refunded' || s === 'cancelled' ? 'chip--bad' : s === 'in_progress' ? 'chip--ice' : 'chip--warn';
+  return s === 'fulfilled' || s === 'shipped' ? 'chip--good' : s === 'refunded' || s === 'cancelled' ? 'chip--bad' : s === 'in_progress' || s === 'in_return' ? 'chip--ice' : 'chip--warn';
 }
 
 /** Orders that count as sales (paid and not cancelled or refunded). */

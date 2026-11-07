@@ -18,6 +18,11 @@
 // message sent from the portal carries the sender's `uid`. syncThread() writes
 // their side of it to accounts/{uid}/threads/{id}: what they wrote and what the
 // team replied, never who on the team replied or the Resend ids.
+//
+// And returns: returns/{id} (server/returns.js) is admin-read-only, and
+// syncReturn() writes the buyer's copy to accounts/{uid}/returns/{id}: the
+// pieces, the step it's at, the return label and the refund, never internal
+// notes, who did what or Stripe ids.
 import { FieldValue } from 'firebase-admin/firestore';
 import { db, stripe } from './services.js';
 import { customerId } from './orders.js';
@@ -161,6 +166,8 @@ export async function syncCustomerOrders(uid, email) {
   ]);
   const ids = new Set([...byField.docs.map(d => d.id), ...((cust.exists && cust.get('orderIds')) || [])]);
   await Promise.all([...ids].map(o => syncOrder(o, { uid })));
+  const returns = await db.collection('returns').where('customerEmail', '==', id).select().get();
+  await Promise.all(returns.docs.map(d => syncReturn(d.id, { uid })));
   return ids.size;
 }
 
@@ -224,6 +231,55 @@ export async function syncThread(messageId) {
     return true;
   } catch (err) {
     console.error('sync: thread copy failed', messageId, err);
+    return false;
+  }
+}
+
+const httpsOnly = u => (/^https:\/\//.test(u || '') ? u : '');
+
+/** The buyer's side of a return. Internal notes, who did what and Stripe ids stay private. */
+export function customerReturn(r, { returnTo = '' } = {}) {
+  const label = r.label && (r.label.number || r.label.url)
+    ? { carrier: r.label.carrier || '', number: r.label.number || '', url: httpsOnly(r.label.url) }
+    : null;
+  return {
+    number: r.number || '',
+    orderId: r.orderId || null,
+    orderNumber: r.orderNumber || '',
+    status: r.status || 'requested',
+    reason: r.reason || '',
+    note: r.customerNote || '',
+    full: !!r.full,
+    items: (r.items || []).map(i => ({ key: i.key || null, serial: i.serial || '', productName: i.productName || '', variant: i.variant || '' })),
+    label,
+    refund: r.refund ? { amountAUD: Number(r.refund.amountAUD) || 0, at: ms(r.refund.at) } : null,
+    // Each step and when. A note is shown only if it went to them by email.
+    timeline: (r.history || []).map(h => ({ status: h.status, at: ms(h.at), ...(h.emailed && h.note ? { note: h.note } : {}) })),
+    createdAt: ms(r.createdAt),
+    // Where the parcel goes, for the return slip they print.
+    returnTo: r.status === 'label_created' ? returnTo : '',
+  };
+}
+
+/** The address returns go to (internal/returns, edited under Returns in admin). */
+export async function returnAddress() {
+  const snap = await db.collection('internal').doc('returns').get();
+  return (snap.exists && typeof snap.get('address') === 'string' && snap.get('address').trim()) || '';
+}
+
+/** Writes the buyer's copy of one return, if they have an account. Never throws. */
+export async function syncReturn(id, { uid } = {}) {
+  try {
+    const snap = await db.collection('returns').doc(id).get();
+    if (!snap.exists) return false;
+    const r = snap.data();
+    const owner = uid || await uidFor(r.customerEmail);
+    if (!owner) return false;
+    await db.collection('accounts').doc(owner).collection('returns').doc(id)
+      .set({ ...customerReturn(r, { returnTo: await returnAddress() }), syncedAt: FieldValue.serverTimestamp() });
+    return true;
+  } catch (err) {
+    console.error('sync: return copy failed', id, err);
     return false;
   }
 }

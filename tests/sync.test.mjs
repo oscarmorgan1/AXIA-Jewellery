@@ -79,3 +79,26 @@ test('a transfer offer shows the sender’s name and note, never their email', a
   const json = JSON.stringify(out);
   for (const secret of ['mia@x.com', 'u1', 'Maker Co', 'private']) assert.ok(!json.includes(secret), `leaked ${secret}`);
 });
+
+test('a return’s portal copy shows the steps, label and refund, never notes, staff or Stripe ids', async () => {
+  const { customerReturn } = await import('../server/sync.js');
+  const out = customerReturn({
+    number: 'R-AX1-1', orderId: 'o1', orderNumber: 'AX1', status: 'label_created', reason: 'It doesn’t fit', customerNote: 'Too long',
+    notes: 'internal: check clasp', createdBy: 'admin@axia', customer: { email: 'a@b.c' },
+    items: [{ line: 0, key: 'AXIA1', serial: 'AXIA1', productName: 'Cuban', variant: '8mm · 20in' }],
+    label: { carrier: 'AusPost', number: 'RT1', url: 'javascript:alert(1)' },
+    refund: { amountAUD: 120, via: 'stripe', stripeRefundId: 're_secret', at: ts(9), by: 'admin@axia' },
+    history: [
+      { status: 'requested', at: ts(1), by: 'a@b.c' },
+      { status: 'label_created', at: ts(2), by: 'admin@axia', note: 'emailed note', emailed: true },
+      { status: 'label_created', at: ts(3), by: 'admin@axia', note: 'internal step note', emailed: false },
+    ],
+    emails: [{ type: 'return:requested' }], createdAt: ts(1),
+  }, { returnTo: 'AXIA Returns' });
+  assert.equal(out.status, 'label_created'); assert.equal(out.note, 'Too long'); assert.equal(out.returnTo, 'AXIA Returns');
+  assert.deepEqual(out.label, { carrier: 'AusPost', number: 'RT1', url: '' });
+  assert.deepEqual(out.refund, { amountAUD: 120, at: 9 });
+  assert.equal(out.timeline[1].note, 'emailed note');
+  const json = JSON.stringify(out);
+  for (const secret of ['internal', 'admin@axia', 're_secret', 'a@b.c', 'javascript:', 'return:requested']) assert.ok(!json.includes(secret), `leaked ${secret}`);
+});

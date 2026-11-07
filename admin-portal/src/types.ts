@@ -113,11 +113,51 @@ export interface Order {
   promotionCode?: string;
   promotionCodeId?: string;
   totalAUD?: number;
-  status?: 'pending' | 'paid' | 'in_progress' | 'shipped' | 'fulfilled' | 'refunded' | 'cancelled' | string;
+  status?: 'pending' | 'paid' | 'in_progress' | 'shipped' | 'fulfilled' | 'in_return' | 'refunded' | 'cancelled' | string;
   tracking?: Tracking;
+  /** The return open on it while `in_return` (returns/{id}), and every return it has had. */
+  returnId?: string | null;
+  returnIds?: string[];
+  /** Units per order line (index as a string) already returned in closed returns. */
+  returnedQty?: Record<string, number>;
+  /** Refunds recorded on its returns, in AUD (Stripe's own total is stripe.refundedAUD). */
+  returnsRefundedAUD?: number;
   emails?: OrderEmail[];
   statusHistory?: OrderHistory[];
-  stripe?: { sessionId?: string; paymentIntent?: string; livemode?: boolean; receiptUrl?: string; card?: { brand: string; last4: string } | null };
+  stripe?: { sessionId?: string; paymentIntent?: string; livemode?: boolean; receiptUrl?: string; card?: { brand: string; last4: string } | null; refundedAUD?: number };
+}
+
+export type ReturnStatus = 'requested' | 'label_created' | 'received' | 'refunded' | 'closed' | 'declined' | 'withdrawn';
+
+/** One unit coming back: an order line, and its registry piece when it has a serial. */
+export interface ReturnItem { line: number; key: string | null; serial: string; productId: string; productName: string; variant: string; engraving?: string }
+
+/** A return (Firestore `returns/{id}`): admins read, the server writes (server/returns.js). */
+export interface Return {
+  id: string;
+  number: string;
+  orderId: string;
+  orderNumber: string;
+  customer: { name: string; email: string };
+  customerEmail: string;
+  items: ReturnItem[];
+  /** Every unit of the order is coming back: closing it cancels the order. */
+  full: boolean;
+  reason: string;
+  /** What the customer wrote when they asked (portal). */
+  customerNote?: string;
+  /** Internal note from whoever opened it. */
+  notes?: string;
+  status: ReturnStatus;
+  source: 'portal' | 'admin';
+  orderStatusBefore?: string;
+  label?: Tracking | null;
+  refund?: { amountAUD: number; via: 'stripe' | 'manual'; stripeRefundId?: string; at?: Ts; by?: string } | null;
+  history?: { status: string; at?: Ts; by: string; note?: string; emailed?: boolean; updated?: boolean }[];
+  emails?: OrderEmail[];
+  createdAt?: Ts;
+  updatedAt?: Ts;
+  closedAt?: Ts;
 }
 
 /** Promo code (server API; stored in Firestore `promoCodes`, mirrored in Stripe). */
@@ -302,6 +342,11 @@ export interface Piece {
   owners?: { uid: string; email: string; via: 'order' | 'transfer'; transferId?: string; at?: Ts | null }[];
   /** A transfer waiting on the recipient. */
   transfer?: { id: string; toEmail: string; expiresAt?: Ts } | null;
+  /** The open return it's in (returns/{id}). */
+  returnId?: string | null;
+  /** Date it came back in a closed return, YYYY-MM-DD, and each return it's been in. */
+  returnedOn?: string | null;
+  returns?: { returnId: string; number: string; orderId: string; orderNumber: string; on: string }[];
   notes?: string;
   createdAt?: Ts;
   updatedAt?: Ts;

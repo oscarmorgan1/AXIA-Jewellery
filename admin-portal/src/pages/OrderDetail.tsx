@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Check, ChevronDown, ExternalLink, FileText, Gem, Gift, Mail, Package, PenLine, Plus, Receipt, Send, Truck } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Check, ChevronDown, ExternalLink, FileText, Gem, Gift, Mail, Package, PenLine, Plus, Receipt, Send, Truck, Undo2 } from 'lucide-react';
 import { siteUrl } from '../firebase';
-import { useOrders, usePieces } from '../lib/data';
+import { useOrders, usePieces, useReturns } from '../lib/data';
+import { RETURNABLE, RETURN_LABEL, RETURN_STEPS, isOpen, returnChip, stepAt, stepIndex } from '../lib/returns';
+import ReturnDrawer from '../components/ReturnDrawer';
+import ReturnTracker from '../components/ReturnTracker';
 import { isMaking, orderPieceStage, orderSlots, shortDate, stageLabel } from '../lib/pieces';
 import { AssignPieceDrawer, PieceDrawer } from '../components/PieceDrawer';
 import { adminApi } from '../lib/api';
@@ -12,7 +15,7 @@ import Drawer from '../components/Drawer';
 import { useToast } from '../components/Toast';
 import ComposeEmail from '../components/ComposeEmail';
 import { statusChip } from './Orders';
-import type { Order, Piece, Tracking } from '../types';
+import type { Order, Piece, Return, Tracking } from '../types';
 import { SkeletonPage } from '../components/Skeleton';
 import { openBlank, packingSlipHtml, taxInvoiceHtml, writeDocument } from '../lib/documents';
 
@@ -20,7 +23,7 @@ type Receipt = { url: string; card: { brand: string; last4: string } | null };
 const BLOCKED = 'Your browser blocked the new tab. Allow pop-ups for the admin portal and try again.';
 
 /** Paperwork and Stripe links for one order, behind a single Actions button. */
-function OrderActions({ order, pieces, stripeUrl, onMessage }: { order: Order; pieces: Piece[]; stripeUrl: string; onMessage: (m: string) => void }) {
+function OrderActions({ order, pieces, stripeUrl, onMessage, onReturn }: { order: Order; pieces: Piece[]; stripeUrl: string; onMessage: (m: string) => void; onReturn: () => void }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   const paid = !!order.stripe?.paymentIntent && order.status !== 'pending';
@@ -86,6 +89,7 @@ function OrderActions({ order, pieces, stripeUrl, onMessage }: { order: Order; p
         <div className="menu__list" role="menu" aria-label="Order actions" onKeyDown={keys}>
           <button role="menuitem" onClick={packingSlip}><Package size={16} /><span>Print packing slip<small>Items and address, no prices</small></span></button>
           <button role="menuitem" onClick={invoice} disabled={!paid}><FileText size={16} /><span>Print tax invoice<small>{paid ? 'GST invoice for the customer' : 'Once the order is paid'}</small></span></button>
+          <button role="menuitem" onClick={() => { setOpen(false); onReturn(); }} disabled={!RETURNABLE.includes(order.status || '')}><Undo2 size={16} /><span>Start a return<small>{RETURNABLE.includes(order.status || '') ? 'Pieces coming back, with a return slip' : order.status === 'in_return' ? 'A return is already open' : 'Once the order has shipped'}</small></span></button>
           <div className="menu__rule" role="separator" />
           <button role="menuitem" onClick={stripeReceipt} disabled={!paid}><Receipt size={16} /><span>Stripe receipt<small>{paid ? 'The receipt Stripe emailed' : 'No payment yet'}</small></span></button>
           {stripeUrl && <a role="menuitem" href={stripeUrl} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}><ExternalLink size={16} /><span>Open in Stripe<small>Payment, refunds and disputes</small></span></a>}
@@ -104,7 +108,7 @@ const EMAIL_LABEL: Record<string, string> = {
 };
 
 /** Pick a new status, then confirm exactly what (if anything) gets emailed before it's saved. */
-function StatusDrawer({ order, pieces, initial, onClose, onDone, onAssign }: { order: Order; pieces: Piece[]; initial?: string; onClose: () => void; onDone: (msg: string) => void; onAssign: (line: number) => void }) {
+function StatusDrawer({ order, pieces, initial, onClose, onDone, onAssign, onReturn }: { order: Order; pieces: Piece[]; initial?: string; onClose: () => void; onDone: (msg: string) => void; onAssign: (line: number) => void; onReturn: () => void }) {
   const current = order.status || 'pending';
   const [status, setStatus] = useState(initial || STATUS_OPTIONS.find(o => o.key !== current && o.key !== 'paid')?.key || 'in_progress');
   const [notify, setNotify] = useState(true);
@@ -123,6 +127,8 @@ function StatusDrawer({ order, pieces, initial, onClose, onDone, onAssign }: { o
   const withMaker = slots.reduce((a, s) => a + s.assigned.filter(isMaking).length, 0);
   const [packed, setPacked] = useState(false);
   const shipBlocked = status === 'shipped' && !packed;
+  // Once it has shipped, cancelling means bringing the pieces back: a return.
+  const viaReturn = status === 'cancelled' && RETURNABLE.includes(current);
 
   async function save() {
     setBusy(true); setError('');
@@ -146,7 +152,9 @@ function StatusDrawer({ order, pieces, initial, onClose, onDone, onAssign }: { o
     <>
       <button className="btn" onClick={onClose}>Cancel</button>
       <span className="spacer" style={{ flex: 1 }} />
-      <button className="btn btn--primary" onClick={() => setConfirming(true)} disabled={status === current || shipBlocked}>Review change</button>
+      {viaReturn
+        ? <button className="btn btn--primary" onClick={onReturn}><Undo2 size={16} /> Start a return</button>
+        : <button className="btn btn--primary" onClick={() => setConfirming(true)} disabled={status === current || shipBlocked}>Review change</button>}
     </>
   );
 
@@ -191,6 +199,8 @@ function StatusDrawer({ order, pieces, initial, onClose, onDone, onAssign }: { o
               <label className="field full">Tracking link<input className="input" placeholder="https://auspost.com.au/mypost/track/details/…" value={tracking.url} onChange={e => setTracking(t => ({ ...t, url: e.target.value }))} /></label>
             </div>
           )}
+          {viaReturn && <div className="notice notice--warn"><Undo2 size={15} /> This order has shipped, so cancelling it starts a return. The order shows <b>In return</b> while you track the label, the parcel coming back and the refund, then becomes Cancelled.</div>}
+          {!viaReturn && <>
           <label className="field">Note for the customer (optional)
             <textarea className="textarea" value={note} placeholder={opt.email ? 'Added to the email, e.g. “Thanks for your patience.”' : 'Kept on the order history'} onChange={e => setNote(e.target.value)} />
           </label>
@@ -199,6 +209,7 @@ function StatusDrawer({ order, pieces, initial, onClose, onDone, onAssign }: { o
               Email the customer {email ? `(${email})` : '(no email on this order)'}
             </label>
           ) : <div className="card__sub">No email is sent for this status.</div>}
+          </>}
         </>
       ) : (
         <div className="confirm">
@@ -221,6 +232,25 @@ function StatusDrawer({ order, pieces, initial, onClose, onDone, onAssign }: { o
   );
 }
 
+/** A return on this order: where it's at, and a link to manage it. */
+function ReturnCard({ ret }: { ret: Return }) {
+  const day = (d: Date | null) => (d ? d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '');
+  const steps = RETURN_STEPS.map(s => ({ label: s.key === 'closed' && !ret.full ? 'Closed' : s.label, when: day(stepAt(ret, s.key)) }));
+  return (
+    <div className="card return-card">
+      <div className="return-card__head">
+        <Undo2 size={16} />
+        <b>Return {ret.number}</b>
+        <span className={`chip ${returnChip(ret.status)}`}>{ret.status === 'closed' && ret.full ? 'Cancelled' : RETURN_LABEL[ret.status]}</span>
+        <small className="muted mono">{ret.items.map(i => i.serial).filter(Boolean).join(', ')}</small>
+        <span className="spacer" />
+        <Link className={`btn btn--sm${isOpen(ret) ? ' btn--primary' : ''}`} to={`/returns/${encodeURIComponent(ret.id)}`}>{isOpen(ret) ? 'Manage return' : 'View return'}</Link>
+      </div>
+      {(isOpen(ret) || ret.status === 'closed') && <ReturnTracker steps={steps} at={stepIndex(ret)} />}
+    </div>
+  );
+}
+
 export default function OrderDetail() {
   const { id = '' } = useParams();
   const { data, loading, error } = useOrders();
@@ -229,7 +259,10 @@ export default function OrderDetail() {
   const [assigning, setAssigning] = useState<number | null>(null);
   const [viewing, setViewing] = useState<Piece | null>(null);
   const [fromShip, setFromShip] = useState(false); // reopen the status drawer on Shipped after assigning
+  const [returning, setReturning] = useState(false);
   const { data: pieces } = usePieces();
+  const { data: returns } = useReturns();
+  const nav = useNavigate();
   const toast = useToast();
   const order = data.find(o => o.id === id);
 
@@ -245,6 +278,8 @@ export default function OrderDetail() {
   const engraved = (order.items || []).filter(i => i.engraving);
   const slots = orderSlots(order, pieces);
   const stage = ['paid', 'in_progress'].includes(order.status || '') ? stageLabel(orderPieceStage(order, pieces)) : null;
+  const orderReturns = returns.filter(r => r.orderId === order.id && r.status !== 'withdrawn');
+  const openReturn = orderReturns.find(isOpen);
 
   return (
     <>
@@ -256,15 +291,18 @@ export default function OrderDetail() {
         {stage && <span className={`chip ${stage.chip} chip--plain`}><Gem size={12} /> {stage.text}</span>}
         {test && <span className="chip chip--muted">Test</span>}
         <span className="spacer" />
-        <OrderActions order={order} pieces={pieces} stripeUrl={stripeUrl} onMessage={toast.show} />
+        <OrderActions order={order} pieces={pieces} stripeUrl={stripeUrl} onMessage={toast.show} onReturn={() => setReturning(true)} />
         {order.customer?.email && <button className="btn" onClick={() => setComposing(true)}><Send size={16} /> Message customer</button>}
-        {!['pending', 'refunded'].includes(order.status || 'pending') && <button className="btn btn--primary" onClick={() => setChanging(true)}>Change status</button>}
+        {order.status === 'in_return'
+          ? openReturn && <Link className="btn btn--primary" to={`/returns/${encodeURIComponent(openReturn.id)}`}><Undo2 size={16} /> Manage return</Link>
+          : !['pending', 'refunded'].includes(order.status || 'pending') && <button className="btn btn--primary" onClick={() => setChanging(true)}>Change status</button>}
       </div>
       <p className="card__sub" style={{ marginTop: -8 }}>Placed {when(order.createdAt)} · {itemCount(order)} items · {aud(order.totalAUD, 2)}</p>
 
 
       <div className="editor">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
+          {orderReturns.map(r => <ReturnCard key={r.id} ret={r} />)}
           <div className="card">
             <div className="card__head"><h2>Items</h2></div>
             <div className="order-items">
@@ -277,9 +315,9 @@ export default function OrderDetail() {
                     {i.engraving && <div className="engrave-line"><PenLine size={13} /> Engraving: <span className="engrave-text">{i.engraving}</span></div>}
                     <div className="piece-slots">
                       {slots[n]?.assigned.map(p => (
-                        <button key={p.key} className={`piece-tag${isMaking(p) ? ' piece-tag--making' : ''}`} onClick={() => setViewing(p)}
+                        <button key={p.key} className={`piece-tag${isMaking(p) ? ' piece-tag--making' : ''}${p.returnId ? ' piece-tag--return' : ''}`} onClick={() => setViewing(p)}
                           title={p.shippedOn ? `Shipped ${shortDate(p.shippedOn)}` : isMaking(p) ? `With the maker since ${shortDate(p.purchasedOn)}` : 'In hand, not shipped yet'}>
-                          <Gem size={12} /> <span className="mono">{p.serial}</span>{isMaking(p) ? <small>With maker</small> : null}{p.shippedOn ? <Check size={12} /> : null}
+                          <Gem size={12} /> <span className="mono">{p.serial}</span>{isMaking(p) ? <small>With maker</small> : null}{p.returnId ? <small>In return</small> : p.shippedOn ? <Check size={12} /> : null}
                         </button>
                       ))}
                       {!!slots[n]?.missing && <button className="piece-tag piece-tag--missing" onClick={() => setAssigning(n)}><Plus size={12} /> Assign piece{slots[n].missing > 1 ? ` (${slots[n].missing} left)` : ''}</button>}
@@ -384,7 +422,8 @@ export default function OrderDetail() {
 
       {composing && order.customer?.email && <ComposeEmail target={{ to: order.customer.email, name: order.customer.name, subject: `About your AXIA order #${orderNo(order)}`, orderId: order.id, orderNumber: orderNo(order) }}
         onClose={() => setComposing(false)} onSent={m => { setComposing(false); toast.show(m); }} />}
-      {changing && assigning === null && <StatusDrawer order={order} pieces={pieces} initial={fromShip ? 'shipped' : undefined} onClose={() => { setChanging(false); setFromShip(false); }} onDone={m => { setChanging(false); setFromShip(false); toast.show(m); }} onAssign={line => { setFromShip(true); setAssigning(line); }} />}
+      {changing && assigning === null && <StatusDrawer order={order} pieces={pieces} initial={fromShip ? 'shipped' : undefined} onClose={() => { setChanging(false); setFromShip(false); }} onDone={m => { setChanging(false); setFromShip(false); toast.show(m); }} onAssign={line => { setFromShip(true); setAssigning(line); }} onReturn={() => { setChanging(false); setReturning(true); }} />}
+      {returning && <ReturnDrawer order={order} pieces={pieces} onClose={() => setReturning(false)} onDone={(m, id) => { setReturning(false); toast.show(m); nav(`/returns/${encodeURIComponent(id)}`); }} />}
       {assigning !== null && <AssignPieceDrawer order={order} line={assigning} pieces={pieces} onClose={() => setAssigning(null)} onDone={m => { setAssigning(null); toast.show(m); }} />}
       {viewing && <PieceDrawer piece={pieces.find(p => p.key === viewing.key) || viewing} pieces={pieces} onClose={() => setViewing(null)} onDone={m => { setViewing(null); toast.show(m); }} />}
       {toast.node}

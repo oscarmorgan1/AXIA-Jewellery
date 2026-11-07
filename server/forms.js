@@ -22,12 +22,12 @@ const alertTo = () => (process.env.INQUIRY_ALERT_TO || '').split(',').map(s => s
  * Emails the team about a saved inquiry (or a new reply in a portal conversation,
  * with its own `key`). Never fails the form: the Inbox has it either way.
  */
-export async function alertTeam(doc, id, key = `inquiry-alert/${id}`) {
+export async function alertTeam(doc, id, key = `inquiry-alert/${id}`, mail = null) {
   const to = alertTo();
   const from = process.env.ORDER_EMAIL_FROM;
   if (!to.length) return;
   if (!resend || !from) return console.warn('message: RESEND_API_KEY or ORDER_EMAIL_FROM not set, no inquiry alert sent');
-  const { error } = await resend.emails.send({ from, to, replyTo: doc.email, ...inquiryAlertEmail(doc) }, { idempotencyKey: key });
+  const { error } = await resend.emails.send({ from, to, replyTo: doc.email, ...(mail || inquiryAlertEmail(doc)) }, { idempotencyKey: key });
   if (error) throw new Error(`Resend: ${error.message || JSON.stringify(error)}`);
 }
 

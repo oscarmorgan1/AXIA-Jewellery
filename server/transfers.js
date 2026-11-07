@@ -177,6 +177,7 @@ export function transferRoutes() {
       const piece = await tx.get(pieceRef);
       if (!key || !piece.exists || piece.get('portalUid') !== uid) throw new HttpError(404, 'Piece not found');
       if (piece.get('transfer.id')) throw new HttpError(409, 'This piece already has a transfer waiting. Cancel it first to send it to someone else.');
+      if (piece.get('returnId')) throw new HttpError(409, 'This piece has a return open, so it can’t be transferred.');
       if (!piece.get('shippedOn')) throw new HttpError(400, 'You can transfer a piece once it has been delivered to you.');
       const data = {
         key, serial: piece.get('serial') || key, productName: piece.get('productName') || 'AXIA piece',

@@ -61,6 +61,7 @@ Pages show web-sized WebP copies of the photos in `assets/img` (600px and 1200px
 | `orders/{id}` | admins | admins | Paid Stripe orders, keyed by Checkout session id. Written by the webhook and the admin API with the Admin SDK. Holds each line's engraving, the promo code used, `statusHistory`, and `emails` (every customer email with its Resend ID) |
 | `pieces/{key}` | admins | admins | The piece registry: one physical piece per serial (key = serial in capitals, letters and digits only), with its product, supplier, supplier order date, the order line it fills and its shipped date (set when the order is marked Shipped). The public `/genuine` check goes through `GET /api/genuine`, which returns only the product name and the customer's purchase date (the order's date), and only for a piece in a paid order that wasn't cancelled or refunded; anything else is a 404. Rate limited |
 | `suppliers/{id}` | admins | admins | Manufacturers and suppliers (name, contact, usual lead time, notes), picked when adding a piece. A piece also keeps the supplier's order number, the date it was ordered from them and `receivedOn` (null while it's still being made) |
+| `returns/{id}` | admins | server only (`/api/admin/returns`, `/api/account/returns`) | Returns of shipped pieces: the order, the units coming back (order line and registry serial), reason, step, return label, refund and history. See "Returns" below |
 | `customers/{email}` | nobody | nobody | One record per buyer, keyed by lower-cased email: latest name, phone and address, order ids, first and last order dates, and private notes. Created or updated by the webhook on every order; the portal reads it through `/api/admin/customers`, which also creates records for older orders |
 | `accounts/{uid}` (+ subfolders) | that signed-in customer, admins | server only (`/api/account/*`) | A customer's portal account at `/portal`: name, phone, address, `marketing.email`. Customer-safe copies of their orders, pieces and support conversations live here, so the private collections stay admin-only. Linked from `customers/{email}` (`uid`, `account.status`: invited or active) |
 | `accountInvites/{hash}` | nobody | nobody | "Claim your AXIA account" links, keyed by the SHA-256 of the emailed token: email, order, 30-day expiry, used date. Server only |
@@ -196,6 +197,17 @@ Promo codes are made under Promo codes in the portal. Each one becomes a Stripe 
 ### Going live with payments
 
 At cutover, add a live-mode webhook endpoint in Stripe with the same URL and events, then replace `stripe-secret-key` and `stripe-webhook-secret` with the live values (run the same `secrets:set` commands; they add a new version) and roll out again. Orders record whether they were test or live (`stripe.livemode`).
+
+### Returns
+
+A shipped order is cancelled by bringing it back. Picking Cancelled on a shipped or delivered order (or Actions, Start a return) opens a return instead: choose the pieces coming back by serial, the reason, and the return label if it's made. The order shows **In return** while the return is open, and Returns in the sidebar lists every return (with a count of new customer requests). Each return has a tracker: **Return started → Label created → Product received → Payment refunded → Cancelled**. Every step can email the customer, and you see what's sent before it goes.
+
+- **Label created:** carrier, tracking number and an optional link to the label. Return slip prints the packing slip for inside the parcel (return number, serials, the return address from Returns).
+- **Payment refunded:** refund the amount in Stripe from the portal (keyed by return, so it never refunds twice), or record a refund already made in the Stripe dashboard. The suggested amount is the whole order for a full return, or the returned lines less their share of any discount.
+- **Finish:** a return of everything on the order cancels it; a partial one puts the order back to the status it had. Returned pieces leave the order and go back into stock in the registry (their portal copy goes and /genuine stops answering for them), with the return kept on the piece (`returns`, `returnedOn`).
+- **Decline:** with a note that's emailed; the order goes back to where it was.
+
+Customers start a return from Pieces (Return, on a delivered piece from their own order). The server applies the published policy: change of mind within 30 days of delivery, engraved pieces only if faulty. The request alerts `INQUIRY_ALERT_TO`, and they follow it on the order page (`accounts/{uid}/returns/{id}`), print the return slip once the label is ready, or withdraw it while it's still a request. While a return is open its pieces can't be transferred, and Stripe's `charge.refunded` doesn't override the In return status (it records `stripe.refundedAUD`).
 
 ## Customer portal (/portal)
 

@@ -1,11 +1,11 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  ArrowUpRight, Bell, Globe, BadgePercent, Menu, X, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Gem, Factory, Clapperboard, Receipt, Search, Settings as SettingsIcon, TicketPercent, Timer, Users,
+  ArrowUpRight, Bell, Globe, BadgePercent, Menu, X, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Gem, Factory, Clapperboard, Receipt, Search, Settings as SettingsIcon, Undo2, TicketPercent, Timer, Users,
 } from 'lucide-react';
 import { useAuth } from '../auth';
 import { siteUrl } from '../firebase';
-import { useCollections, useMessages, useOrders, useProducts, useShop, useSignups } from '../lib/data';
+import { useCollections, useMessages, useOrders, useProducts, useReturns, useShop, useSignups } from '../lib/data';
 import Logo from './Logo';
 import LogOff from './LogOff';
 import { useTheme } from '../lib/theme';
@@ -15,7 +15,7 @@ import { SkeletonPage } from './Skeleton';
 const TITLES: [RegExp, string][] = [
   [/^\/$/, 'Dashboard'], [/^\/products\/new/, 'New product'], [/^\/products\//, 'Edit product'], [/^\/products/, 'Products'],
   [/^\/collections/, 'Collections'], [/^\/customers\//, 'Customer'], [/^\/customers/, 'Customers'], [/^\/inbox/, 'Inbox'], [/^\/margins/, 'Margins'],
-  [/^\/orders\//, 'Order'], [/^\/orders/, 'Orders'], [/^\/promos/, 'Promo codes'], [/^\/website/, 'Website'], [/^\/settings/, 'Settings'],
+  [/^\/orders\//, 'Order'], [/^\/orders/, 'Orders'], [/^\/returns\//, 'Return'], [/^\/returns/, 'Returns'], [/^\/promos/, 'Promo codes'], [/^\/website/, 'Website'], [/^\/settings/, 'Settings'],
 ];
 
 export default function Layout() {
@@ -31,6 +31,7 @@ export default function Layout() {
   const shop = useShop();
   const { data: messages } = useMessages();
   const { data: orders } = useOrders();
+  const { data: returns } = useReturns();
   const [palette, setPalette] = useState(false);
   const [menu, setMenu] = useState(false);
 
@@ -57,6 +58,7 @@ export default function Layout() {
   const customers = new Set([...signups.map(s => s.email.toLowerCase()), ...orders.map(o => (o.customer?.email || '').toLowerCase()).filter(Boolean)]).size;
   const openOrders = orders.filter(o => o.status === 'paid' || o.status === 'in_progress').length;
   const unread = messages.filter(m => m.status !== 'done').length;
+  const returnRequests = returns.filter(r => r.status === 'requested').length;
   const title = TITLES.find(([r]) => r.test(loc.pathname))?.[1] ?? '';
   // Each page's name in the browser tab, so open tabs and history are easy to tell apart.
   useEffect(() => { document.title = title ? `${title} · AXIA Admin` : 'AXIA Admin'; }, [title]);
@@ -81,6 +83,7 @@ export default function Layout() {
         <NavLink to="/customers" className={link}><Users size={19} /> Customers {customers > 0 && <span className="pill fade-in">{customers}</span>}</NavLink>
         <NavLink to="/inbox" className={link}><Inbox size={19} /> Inbox {unread > 0 && <span className="pill pill--hot fade-in">{unread}</span>}</NavLink>
         <NavLink to="/orders" className={link}><Receipt size={19} /> Orders {openOrders > 0 && <span className="pill pill--hot fade-in">{openOrders}</span>}</NavLink>
+        <NavLink to="/returns" className={link}><Undo2 size={19} /> Returns {returnRequests > 0 && <span className="pill pill--hot fade-in">{returnRequests}</span>}</NavLink>
         <NavLink to="/promos" className={link}><TicketPercent size={19} /> Promo codes</NavLink>
 
         <div className="sidebar__label">Catalogue</div>
