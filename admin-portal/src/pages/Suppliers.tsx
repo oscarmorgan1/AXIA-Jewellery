@@ -1,24 +1,27 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { addDoc, collection, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { usePieces, useSuppliers } from '../lib/data';
 import { isMaking } from '../lib/pieces';
 import Drawer from '../components/Drawer';
+import ConfirmDelete from '../components/ConfirmDelete';
+import { adminApi } from '../lib/api';
 import { useToast } from '../components/Toast';
 import { SkeletonRows } from '../components/Skeleton';
 import type { Supplier } from '../types';
 
 type Draft = { name: string; contact: string; email: string; phone: string; leadDays: string; notes: string };
 
-function SupplierDrawer({ supplier, onClose, onDone }: { supplier?: Supplier; onClose: () => void; onDone: (m: string) => void }) {
+function SupplierDrawer({ supplier, pieces = 0, onClose, onDone }: { supplier?: Supplier; pieces?: number; onClose: () => void; onDone: (m: string) => void }) {
   const [d, setD] = useState<Draft>({
     name: supplier?.name || '', contact: supplier?.contact || '', email: supplier?.email || '', phone: supplier?.phone || '',
     leadDays: supplier?.leadDays != null ? String(supplier.leadDays) : '', notes: supplier?.notes || '',
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [deleting, setDeleting] = useState(false);
   const set = (p: Partial<Draft>) => setD(x => ({ ...x, ...p }));
 
   async function save() {
@@ -38,6 +41,8 @@ function SupplierDrawer({ supplier, onClose, onDone }: { supplier?: Supplier; on
   return (
     <Drawer title={supplier ? supplier.name : 'Add a supplier'} onClose={onClose} footer={<>
       <button className="btn" onClick={onClose}>Cancel</button>
+      {supplier && <button className="btn btn--danger" onClick={() => setDeleting(true)} disabled={pieces > 0 || busy}
+        title={pieces > 0 ? `${pieces} registry ${pieces === 1 ? 'piece names' : 'pieces name'} this supplier` : undefined}><Trash2 size={15} /> Delete</button>}
       <span className="spacer" style={{ flex: 1 }} />
       <button className="btn btn--primary" onClick={save} disabled={busy}>{busy ? 'Saving…' : supplier ? 'Save' : 'Add supplier'}</button>
     </>}>
@@ -50,6 +55,18 @@ function SupplierDrawer({ supplier, onClose, onDone }: { supplier?: Supplier; on
         <label className="field">Phone / WhatsApp<input className="input" value={d.phone} onChange={e => set({ phone: e.target.value })} /></label>
         <label className="field full">Notes<textarea className="textarea" value={d.notes} placeholder="Payment terms, materials, anything worth remembering" onChange={e => set({ notes: e.target.value })} /></label>
       </div>
+      {supplier && pieces > 0 && (
+        <p className="card__sub" style={{ marginTop: 16 }}>
+          This supplier can’t be deleted while {pieces === 1 ? '1 piece' : `${pieces} pieces`} in the registry came from them.
+          {' '}<Link to={`/pieces?supplier=${encodeURIComponent(supplier.id)}`}>See those pieces</Link> and change their supplier first.
+        </p>
+      )}
+      {deleting && supplier && (
+        <ConfirmDelete title={`Delete ${supplier.name}?`} action="Delete supplier" onClose={() => setDeleting(false)}
+          onConfirm={async () => { await adminApi(`/suppliers/${encodeURIComponent(supplier.id)}/delete`, {}); onDone(`Deleted ${supplier.name}`); }}>
+          <p>Their contact details, lead time and notes are removed. No pieces name them, so nothing else changes. This can’t be undone.</p>
+        </ConfirmDelete>
+      )}
     </Drawer>
   );
 }
@@ -102,7 +119,7 @@ export default function Suppliers() {
           {loading && <SkeletonRows rows={4} cols={4} />}
         </div>
       </div>
-      {editing && <SupplierDrawer supplier={editing === 'new' ? undefined : editing} onClose={() => setEditing(null)} onDone={m => { setEditing(null); toast.show(m); }} />}
+      {editing && <SupplierDrawer supplier={editing === 'new' ? undefined : editing} pieces={editing === 'new' ? 0 : counts.get(editing.id)?.total || 0} onClose={() => setEditing(null)} onDone={m => { setEditing(null); toast.show(m); }} />}
       {toast.node}
     </>
   );

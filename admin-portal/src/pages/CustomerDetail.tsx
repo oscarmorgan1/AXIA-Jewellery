@@ -8,6 +8,7 @@ import { aud } from '../lib/format';
 import { usePeople } from '../lib/customers';
 import { useToast } from '../components/Toast';
 import ComposeEmail from '../components/ComposeEmail';
+import ConfirmDelete from '../components/ConfirmDelete';
 import { OrdersTable } from './Orders';
 import { SOURCE, fmtDate, initials } from './Customers';
 import { SkeletonPage } from '../components/Skeleton';
@@ -40,6 +41,7 @@ export default function CustomerDetail() {
 
   const sent = [...(p?.record?.emails || [])].filter(e => ['message', 'reply', 'welcome', 'account-invite'].includes(e.type)).reverse();
   const [inviting, setInviting] = useState(false);
+  const [erasing, setErasing] = useState(false);
 
   if (loading) return <SkeletonPage stats />;
   if (!p) return <div className="card empty"><b>Customer not found</b><Link className="btn" to="/customers">Back to customers</Link></div>;
@@ -197,11 +199,43 @@ export default function CustomerDetail() {
               <button className="btn btn--sm" style={{ marginTop: 10 }} onClick={saveNotes} disabled={saving || notes === p.notes}><Save size={14} /> {saving ? 'Saving…' : 'Save notes'}</button>
             </div>
           )}
-          {p.signups.length > 0 && (
-            <button className="btn btn--danger" onClick={removeSignups}><Trash2 size={15} /> Delete waitlist sign-ups</button>
-          )}
+          <div className="card">
+            <div className="card__head"><h2>Privacy</h2></div>
+            <p className="card__sub" style={{ marginTop: 0 }}>For a request to delete their data. Erasing removes everything tied to {p.email}.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+              {p.signups.length > 0 && <button className="btn btn--sm btn--danger" onClick={removeSignups}><Trash2 size={14} /> Delete waitlist sign-ups only</button>}
+              <button className="btn btn--sm btn--danger" onClick={() => setErasing(true)}><Trash2 size={14} /> Erase customer</button>
+            </div>
+          </div>
         </div>
       </div>
+      {erasing && (
+        <ConfirmDelete title={`Erase ${p.name || p.email}?`} action="Erase everything" phrase={p.email}
+          phraseLabel={<>Type their email <b>{p.email}</b> to confirm</>}
+          onClose={() => setErasing(false)}
+          onConfirm={async () => {
+            const r = await adminApi<{ orders: number; resend: { contacts: number; skipped?: string; errors?: string[] } }>(`/customers/${encodeURIComponent(p.id)}/erase`, { confirm: p.email });
+            const resendNote = r.resend.skipped ? ' Resend isn’t set up here, so check it by hand.' : r.resend.errors?.length ? ` Resend: ${r.resend.errors[0]}` : '';
+            alert(`Erased ${p.email}: ${r.orders} ${r.orders === 1 ? 'order' : 'orders'} and everything linked to them.${resendNote}`);
+            nav('/customers', { replace: true });
+          }}>
+          {p.sales.length > 0 && (
+            <div className="notice notice--error">
+              <b>They have {p.sales.length} paid {p.sales.length === 1 ? 'order' : 'orders'} ({aud(p.spentAUD, 2)}).</b> Australian tax law expects sales records to be kept for 5 years, and a deletion request doesn’t override that.
+              Print the tax invoices first if you need them. The payments themselves stay in Stripe.
+            </div>
+          )}
+          <p>This permanently deletes, for {p.email}:</p>
+          <ul>
+            <li>{p.orders.length ? `${p.orders.length} ${p.orders.length === 1 ? 'order' : 'orders'}` : 'any orders'}, with every reference to them (registry pieces are unassigned, not deleted)</li>
+            <li>their portal account and sign-in, saved bag, and their copies of orders, pieces and conversations</li>
+            <li>{p.messages.length ? `${p.messages.length} support ${p.messages.length === 1 ? 'message' : 'messages'}` : 'any support messages'} and {p.signups.length ? `${p.signups.length} waitlist ${p.signups.length === 1 ? 'sign-up' : 'sign-ups'}` : 'any waitlist sign-ups'}</li>
+            <li>piece transfers to or from them, and their name in pieces’ ownership history</li>
+            <li>their customer record, notes and email log, and their contact in Resend</li>
+          </ul>
+          <p className="muted">Not touched: Stripe (payments and the Stripe customer stay; delete the customer in the Stripe dashboard if you need to) and Resend’s log of emails already sent, which Resend keeps for a limited time and can’t be deleted through its API.</p>
+        </ConfirmDelete>
+      )}
       {composing && <ComposeEmail target={{ to: p.email, name: p.name }} onClose={() => setComposing(false)} onSent={m => { setComposing(false); toast.show(m); reload(); }} />}
       {toast.node}
     </>

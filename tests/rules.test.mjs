@@ -4,7 +4,7 @@
 import { after, before, beforeEach, test } from 'node:test';
 import fs from 'node:fs';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, getDocs, collection, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getDocs, collection, updateDoc, deleteDoc } from 'firebase/firestore';
 
 let env;
 const customer = (uid, extra = {}) => env.authenticatedContext(uid, { email: `${uid}@example.com`, email_verified: true, ...extra }).firestore();
@@ -109,4 +109,14 @@ test('a verified admin can read accounts', async () => {
 test('a customer token with a forged admin claim but no code is still refused', async () => {
   const db = customer('ana', { admin: true, auth_time: 5 });
   await assertFails(getDoc(doc(db, 'orders/o1')));
+});
+
+test('orders and suppliers are deleted through the server, not the browser', async () => {
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'suppliers/s1'), { name: 'Maker Co' }));
+  await assertSucceeds(updateDoc(doc(admin(), 'orders/o1'), { notes: 'x' }));
+  await assertFails(deleteDoc(doc(admin(), 'orders/o1')));
+  await assertSucceeds(updateDoc(doc(admin(), 'suppliers/s1'), { name: 'Maker Co.' }));
+  await assertFails(deleteDoc(doc(admin(), 'suppliers/s1')));
+  await assertFails(getDoc(doc(admin(), 'deletedOrders/o1')));
+  await assertFails(getDoc(doc(admin(), 'erasures/e1')));
 });

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Check, ChevronDown, ExternalLink, FileText, Gem, Gift, Mail, Package, PenLine, Plus, Receipt, Send, Truck, Undo2 } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, ExternalLink, FileText, Gem, Gift, Mail, Package, PenLine, Plus, Receipt, Send, Trash2, Truck, Undo2 } from 'lucide-react';
 import { siteUrl } from '../firebase';
 import { useOrders, usePieces, useReturns } from '../lib/data';
 import { OUTCOME_LABEL, RETURNABLE, isOpen, outcomeOf, returnChip, statusText, stepIndex, trackerSteps } from '../lib/returns';
@@ -12,6 +12,7 @@ import { adminApi } from '../lib/api';
 import { aud } from '../lib/format';
 import { STATUS_LABEL, STATUS_OPTIONS, itemCount, orderNo } from '../lib/orders';
 import Drawer from '../components/Drawer';
+import ConfirmDelete from '../components/ConfirmDelete';
 import { useToast } from '../components/Toast';
 import ComposeEmail from '../components/ComposeEmail';
 import { statusChip } from './Orders';
@@ -23,7 +24,7 @@ type Receipt = { url: string; card: { brand: string; last4: string } | null };
 const BLOCKED = 'Your browser blocked the new tab. Allow pop-ups for the admin portal and try again.';
 
 /** Paperwork and Stripe links for one order, behind a single Actions button. */
-function OrderActions({ order, pieces, stripeUrl, onMessage, onReturn }: { order: Order; pieces: Piece[]; stripeUrl: string; onMessage: (m: string) => void; onReturn: () => void }) {
+function OrderActions({ order, pieces, stripeUrl, onMessage, onReturn, onDelete }: { order: Order; pieces: Piece[]; stripeUrl: string; onMessage: (m: string) => void; onReturn: () => void; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   const paid = !!order.stripe?.paymentIntent && order.status !== 'pending';
@@ -93,6 +94,8 @@ function OrderActions({ order, pieces, stripeUrl, onMessage, onReturn }: { order
           <div className="menu__rule" role="separator" />
           <button role="menuitem" onClick={stripeReceipt} disabled={!paid}><Receipt size={16} /><span>Stripe receipt<small>{paid ? 'The receipt Stripe emailed' : 'No payment yet'}</small></span></button>
           {stripeUrl && <a role="menuitem" href={stripeUrl} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}><ExternalLink size={16} /><span>Open in Stripe<small>Payment, refunds and disputes</small></span></a>}
+          <div className="menu__rule" role="separator" />
+          <button role="menuitem" className="menu__danger" onClick={() => { setOpen(false); onDelete(); }}><Trash2 size={16} /><span>Delete order<small>For test orders. Removes it everywhere</small></span></button>
         </div>
       )}
     </div>
@@ -261,6 +264,7 @@ export default function OrderDetail() {
   const [viewing, setViewing] = useState<Piece | null>(null);
   const [fromShip, setFromShip] = useState(false); // reopen the status drawer on Shipped after assigning
   const [returning, setReturning] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const { data: pieces } = usePieces();
   const { data: returns } = useReturns();
   const nav = useNavigate();
@@ -292,7 +296,7 @@ export default function OrderDetail() {
         {stage && <span className={`chip ${stage.chip} chip--plain`}><Gem size={12} /> {stage.text}</span>}
         {test && <span className="chip chip--muted">Test</span>}
         <span className="spacer" />
-        <OrderActions order={order} pieces={pieces} stripeUrl={stripeUrl} onMessage={toast.show} onReturn={() => setReturning(true)} />
+        <OrderActions order={order} pieces={pieces} stripeUrl={stripeUrl} onMessage={toast.show} onReturn={() => setReturning(true)} onDelete={() => setDeleting(true)} />
         {order.customer?.email && <button className="btn" onClick={() => setComposing(true)}><Send size={16} /> Message customer</button>}
         {order.status === 'in_return'
           ? openReturn && <Link className="btn btn--primary" to={`/returns/${encodeURIComponent(openReturn.id)}`}><Undo2 size={16} /> Manage return</Link>
@@ -428,6 +432,36 @@ export default function OrderDetail() {
       {returning && <ReturnDrawer order={order} pieces={pieces} onClose={() => setReturning(false)} onDone={(m, id) => { setReturning(false); toast.show(m); nav(`/returns/${encodeURIComponent(id)}`); }} />}
       {assigning !== null && <AssignPieceDrawer order={order} line={assigning} pieces={pieces} onClose={() => setAssigning(null)} onDone={m => { setAssigning(null); toast.show(m); }} />}
       {viewing && <PieceDrawer piece={pieces.find(p => p.key === viewing.key) || viewing} pieces={pieces} onClose={() => setViewing(null)} onDone={m => { setViewing(null); toast.show(m); }} />}
+      {deleting && (() => {
+        const assigned = pieces.filter(x => x.orderId === order.id).length;
+        const real = !test && !['pending', 'cancelled', 'refunded'].includes(order.status || 'pending');
+        return (
+          <ConfirmDelete title={`Delete order #${orderNo(order)}?`} action="Delete order for good" phrase={orderNo(order)}
+            phraseLabel={<>Type the order number <b>{orderNo(order)}</b> to confirm</>}
+            onClose={() => setDeleting(false)}
+            onConfirm={async () => {
+              await adminApi(`/orders/${encodeURIComponent(order.id)}/delete`, { confirm: orderNo(order) });
+              nav('/orders', { replace: true });
+            }}>
+            {real ? (
+              <div className="notice notice--error">
+                <b>This is a real, paid order ({aud(order.totalAUD, 2)}).</b> Deleting it doesn’t refund {order.customer?.name || 'the customer'}, and it drops out of your sales, GST records and the dashboard.
+                Refund it in Stripe first if you need to, and print the tax invoice if you need to keep it.
+              </div>
+            ) : (
+              <div className="notice notice--warn">{test ? 'A Stripe test order.' : `This order is ${STATUS_LABEL[order.status || 'pending'] || order.status}.`} Deleting it removes it everywhere and can’t be undone.</div>
+            )}
+            <p>Deleting it also:</p>
+            <ul>
+              <li>takes it out of {order.customer?.name || 'the customer'}’s portal account, if they have one</li>
+              <li>{assigned ? `unassigns ${assigned === 1 ? 'the 1 piece' : `the ${assigned} pieces`} from it (they stay in the registry, unsold, with no owner or ship date)` : 'frees any registry pieces assigned to it'}</li>
+              <li>removes it from their customer record and email history, and deletes the record if this was their only order</li>
+              <li>unlinks support conversations about it, and cancels unused account invites made for it</li>
+            </ul>
+            <p className="muted">Stripe is left as it is: the payment stays in your Stripe dashboard. If Stripe re-sends this order, it won’t come back.</p>
+          </ConfirmDelete>
+        );
+      })()}
       {toast.node}
     </>
   );

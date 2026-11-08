@@ -1,6 +1,7 @@
 // /api/admin/*  Actions the admin portal can't do with Firestore alone, because
 // they need the Stripe or Resend keys: changing an order's status (and emailing
-// the customer) and managing promo codes in Stripe.
+// the customer), managing promo codes in Stripe, and deletes that have to clean
+// up references everywhere (server/deletes.js).
 //
 // Every request must carry the signed-in admin's Firebase ID token
 // (Authorization: Bearer <token>) with the `admin: true` custom claim, from a
@@ -18,6 +19,7 @@ import { emailEntry, historyEntry, push, upsertCustomer, customerId } from './or
 import { sendAccountInvite } from './account.js';
 import { syncOrder, syncPiece, stripeReceipt, syncThread } from './sync.js';
 import { adminReturnRoutes } from './returns.js';
+import { deletePromo, deleteSupplier, deleteOrder, eraseCustomer } from './deletes.js';
 
 /**
  * Statuses an admin can set. `refunded` only comes from Stripe, with the money;
@@ -308,6 +310,11 @@ export function adminRoutes() {
   const router = express.Router();
   router.use('/api/admin', express.json({ limit: '32kb' }), requireAdmin);
   router.post('/api/admin/orders/:id/status', handle(changeStatus));
+  // Deletes (server/deletes.js). Orders and customers need the order number or email typed back.
+  router.post('/api/admin/orders/:id/delete', handle(req => deleteOrder(str(req.params.id, 300), { confirm: str(req.body.confirm, 40), by: req.admin.email || req.admin.uid })));
+  router.post('/api/admin/customers/:id/erase', handle(req => eraseCustomer(str(req.params.id, 200), { confirm: str(req.body.confirm, 200), by: req.admin.email || req.admin.uid })));
+  router.post('/api/admin/suppliers/:id/delete', handle(req => deleteSupplier(str(req.params.id, 100))));
+  router.post('/api/admin/promos/:id/delete', handle(req => deletePromo(str(req.params.id, 100))));
   router.get('/api/admin/orders/:id/receipt', handle(orderReceipt));
   router.get('/api/admin/customers', handle(() => listCustomers()));
   router.post('/api/admin/customers/:id/notes', handle(saveCustomerNotes));
