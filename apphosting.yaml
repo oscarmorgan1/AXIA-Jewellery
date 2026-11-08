@@ -67,7 +67,8 @@ env:
     secret: appcheck-site-key
     availability: [BUILD]
 
-  # Uncomment if the key above is a reCAPTCHA Enterprise key (default: v3).
-  # - variable: VITE_APPCHECK_PROVIDER
-  #   value: "enterprise"
-  #   availability: [BUILD]
+  # The key is a reCAPTCHA Enterprise key (Google Cloud > Fraud Defense).
+  # Set to "v3" for a classic reCAPTCHA v3 key.
+  - variable: VITE_APPCHECK_PROVIDER
+    value: "enterprise"
+    availability: [BUILD]
