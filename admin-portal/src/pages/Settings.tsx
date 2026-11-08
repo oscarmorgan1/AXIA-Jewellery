@@ -148,7 +148,7 @@ const STATUS_ROWS = ['AXIA homepage', 'AXIA shop', 'Customer portal', 'Stripe', 
  * Resend and Firebase with its own keys, so none of them reach the browser. Checked on opening
  * Settings and on Refresh.
  */
-function SystemStatusCard() {
+function useSystemStatus() {
   const [checks, setChecks] = useState<Check[] | null>(null);
   const [checkedAt, setCheckedAt] = useState<number | null>(null);
   const [error, setError] = useState('');
@@ -171,24 +171,37 @@ function SystemStatusCard() {
 
   const worst = checks ? (checks.some(c => c.state === 'down') ? 'down' : checks.some(c => c.state === 'warn') ? 'warn' : 'ok') : error ? 'down' : null;
   const downCount = checks ? checks.filter(c => c.state === 'down').length : 0;
-  const summary = worst === 'ok' ? 'All systems working' : worst === 'warn' ? 'Working, with something to check'
+  const summary = worst === 'ok' ? 'All systems go' : worst === 'warn' ? 'Working, with something to check'
     : !checks ? 'Server not answering' : `${downCount} ${downCount === 1 ? 'service' : 'services'} down`;
+  return { checks, checkedAt, error, busy, refresh, worst, summary };
+}
+type SystemStatus = ReturnType<typeof useSystemStatus>;
+
+/** Overall result, top right of the Settings page. Clicking it checks again. */
+function StatusSummary({ status: { worst, summary, checkedAt, busy, refresh } }: { status: SystemStatus }) {
+  return (
+    <button type="button" className={`status-summary status-summary--${worst || 'wait'}`} aria-live="polite" onClick={refresh} disabled={busy}
+      title="Check again">
+      <Activity size={16} />
+      <b>{worst && !busy ? summary : 'Checking…'}</b>
+      {checkedAt && <span className="status-summary__at">· {new Date(checkedAt).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })}</span>}
+    </button>
+  );
+}
+
+function SystemStatusCard({ status: { checks, checkedAt, error, busy, refresh } }: { status: SystemStatus }) {
   const groups = checks ? [...new Set(checks.map(c => c.group))] : [];
 
   return (
     <div className="card status-card">
       <div className="card__head">
-        <div><h2>System status</h2><div className="card__sub">Checked from the server, so API keys never reach this browser.</div></div>
+        <h2>System status</h2>
         <span className="spacer" />
         <button type="button" className="btn btn--sm" onClick={refresh} disabled={busy} aria-label="Refresh system status">
           <RefreshCw size={14} className={busy ? 'spin' : ''} /> {busy ? 'Checking…' : 'Refresh'}
         </button>
       </div>
-      <div className={`status-summary status-summary--${worst || 'wait'}`} aria-live="polite">
-        <Activity size={16} />
-        <b>{worst ? summary : 'Checking…'}</b>
-        {checkedAt && <span className="muted">· checked {new Date(checkedAt).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', second: '2-digit' })}</span>}
-      </div>
+      {checkedAt && <div className="card__sub" style={{ marginTop: -6, marginBottom: 6 }}>Last checked {new Date(checkedAt).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', second: '2-digit' })}</div>}
       {error && <div className="notice notice--error">{error}</div>}
       {!checks && !error && (
         <ul className="status-list">{STATUS_ROWS.map(n => (
@@ -219,6 +232,7 @@ export default function Settings() {
   const { data } = useAssumptions();
   const toast = useToast();
   const larp = useLarpMode();
+  const status = useSystemStatus();
   const [form, setForm] = useState<Record<string, string>>({});
   const [plan, setPlan] = useState<{ units?: Record<string, number>; total_units?: number; note?: string } | null>(null);
 
@@ -242,9 +256,9 @@ export default function Settings() {
 
   return (
     <>
-      <div className="page-head"><h1>Settings</h1></div>
+      <div className="page-head"><h1>Settings</h1><span className="spacer" /><StatusSummary status={status} /></div>
       <div className="grid-2">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
+        <div className="settings-col">
         <form className="card" onSubmit={save}>
           <div className="card__head"><div><h2>Cost assumptions</h2><div className="card__sub">Used to work out contribution, break-even ROAS and max ad spend.</div></div></div>
           <div className="form-grid">
@@ -256,10 +270,10 @@ export default function Settings() {
           </div>
           <div style={{ marginTop: 18 }}><button className="btn btn--primary">Save assumptions</button></div>
         </form>
-        <SystemStatusCard />
+        <SystemStatusCard status={status} />
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div className="settings-col">
           <div className="card">
             <div className="card__head"><h2>Environment</h2></div>
             <dl className="kv">

@@ -833,11 +833,14 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--text-md);
 .piece-tag--return small { color: var(--ice-ink); }
 
 /* Settings > System status */
-.status-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--soft); font-size: var(--text-sm); margin-bottom: 12px; }
+.settings-col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.settings-col > :last-child { flex: 1; }
+.status-summary { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--soft); color: var(--muted); font: inherit; font-size: var(--text-sm); cursor: pointer; }
+.status-summary:disabled { cursor: progress; }
+.status-summary__at { font-weight: 400; opacity: .8; }
 .status-summary--ok { background: var(--good-soft); color: var(--good); }
 .status-summary--warn { background: var(--warn-soft); color: var(--warn); }
 .status-summary--down { background: var(--bad-soft); color: var(--bad); }
-.status-summary .muted { font-weight: 400; }
 .status-group { font-size: var(--text-xs); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 14px 0 4px; }
 .status-list { list-style: none; margin: 0; padding: 0; }
 .status-list li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
