@@ -138,6 +138,7 @@ Set these once in App Hosting (Cloud Secret Manager). **Create all three before 
 npx firebase apphosting:secrets:set stripe-secret-key --project axia-jewellery      # sk_test_... (sk_live_... at cutover)
 npx firebase apphosting:secrets:set stripe-webhook-secret --project axia-jewellery  # whsec_... from the webhook endpoint below
 npx firebase apphosting:secrets:set resend-api-key --project axia-jewellery         # re_...
+npx firebase apphosting:secrets:set resend-webhook-secret --project axia-jewellery  # whsec_... from Resend > Webhooks (Marketing results)
 ```
 
 If you created a secret without granting access: `npx firebase apphosting:secrets:grantaccess <name> --backend <backend-id> --project axia-jewellery`.
