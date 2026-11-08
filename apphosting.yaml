@@ -30,6 +30,12 @@ env:
     secret: resend-api-key
     availability: [RUNTIME]
 
+  # Signing secret of the Resend webhook (whsec_...) that reports deliveries,
+  # opens and clicks for Admin > Marketing. Endpoint: /api/resend/webhook
+  - variable: RESEND_WEBHOOK_SECRET
+    secret: resend-webhook-secret
+    availability: [RUNTIME]
+
   # Sender for order confirmations. The domain must be verified in Resend.
   - variable: ORDER_EMAIL_FROM
     value: "AXIA <orders@axiajewellery.com>"
