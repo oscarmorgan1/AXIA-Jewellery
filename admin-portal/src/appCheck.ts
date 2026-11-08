@@ -5,7 +5,8 @@ import { initializeAppCheck, ReCaptchaEnterpriseProvider, ReCaptchaV3Provider } 
 // this site (reCAPTCHA scores the browser) and not from a script using our
 // public API key. The server's Admin SDK calls are not affected.
 //
-// Build-time settings (apphosting.yaml, or admin-portal/.env.local locally):
+// Build-time settings (apphosting.yaml, where the site key is the secret
+// appcheck-site-key; locally, admin-portal/.env.local):
 //   VITE_APPCHECK_SITE_KEY      reCAPTCHA site key registered in Firebase > App Check.
 //                               Not set: App Check stays off (nothing changes).
 //   VITE_APPCHECK_PROVIDER      "enterprise" for a reCAPTCHA Enterprise key,

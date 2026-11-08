@@ -58,12 +58,16 @@ env:
     value: "https://axiajewellery.com"
     availability: [RUNTIME]
 
-  # Firebase App Check (see admin-portal/src/appCheck.ts). Public values, read
-  # by `npm run build`, so BUILD availability. Until the site key is set, App
-  # Check stays off. Uncomment and fill in with the key from Firebase > App Check:
-  # - variable: VITE_APPCHECK_SITE_KEY
-  #   value: "<reCAPTCHA site key>"
-  #   availability: [BUILD]
-  # - variable: VITE_APPCHECK_PROVIDER   # "enterprise" or "v3"
-  #   value: "v3"
+  # Firebase App Check reCAPTCHA site key (see admin-portal/src/appCheck.ts).
+  # Read by `npm run build`, so BUILD availability. It ends up in the public
+  # JavaScript like any site key; it's a secret only so it can be rotated with
+  # one command and a new rollout, without a code change:
+  #   npx firebase apphosting:secrets:set appcheck-site-key --project axia-jewellery
+  - variable: VITE_APPCHECK_SITE_KEY
+    secret: appcheck-site-key
+    availability: [BUILD]
+
+  # Uncomment if the key above is a reCAPTCHA Enterprise key (default: v3).
+  # - variable: VITE_APPCHECK_PROVIDER
+  #   value: "enterprise"
   #   availability: [BUILD]
