@@ -4,6 +4,7 @@ import Logo from '../src/components/Logo';
 import Login from './pages/Login';
 import Claim from './pages/Claim';
 import Reset from './pages/Reset';
+import Signup from './pages/Signup';
 import { AddressPage, DetailsPage, EmailsPage, SecurityPage } from './pages/Account';
 import Bag from './pages/Bag';
 import Orders from './pages/Orders';
@@ -26,7 +27,7 @@ export default function App() {
   if (loc.pathname.startsWith('/reset')) return <Reset />;
 
   if (loading) return <Loading />;
-  if (!user) return <Login />;
+  if (!user) return loc.pathname.startsWith('/signup') ? <Signup /> : <Login />;
   if (error) {
     return (
       <div className="loading-screen">
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="/address" element={<AddressPage />} />
         <Route path="/emails" element={<EmailsPage />} />
         <Route path="/security" element={<SecurityPage />} />
+        <Route path="/signup" element={<Navigate to="/orders" replace />} />
         <Route path="*" element={<Navigate to="/orders" replace />} />
       </Routes>
     </Layout>

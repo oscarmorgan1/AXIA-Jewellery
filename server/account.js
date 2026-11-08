@@ -87,11 +87,11 @@ export async function sendAccountInvite({ email, name, orderId, orderNumber, sit
  * the link in a piece transfer offer: the claim page says what's waiting and
  * opens Pieces afterwards.
  */
-export async function createInvite({ email, name, orderId, orderNumber, transfer }) {
+export async function createInvite({ email, name, orderId, orderNumber, transfer, signup }) {
   const token = randomBytes(32).toString('base64url');
   await db.collection('accountInvites').doc(hashToken(token)).set({
     email, name: str(name, 100), orderId: orderId || null, orderNumber: orderNumber || '',
-    ...(transfer ? { transfer } : {}),
+    ...(transfer ? { transfer } : {}), ...(signup ? { signup: true } : {}),
     createdAt: FieldValue.serverTimestamp(), expiresAt: Timestamp.fromMillis(Date.now() + INVITE_DAYS * DAY_MS), usedAt: null,
   });
   const url = `${brandUrl()}/portal/claim?t=${token}`;
@@ -134,12 +134,12 @@ export async function settleInvites(uid, email, { via, used } = {}) {
   const inv = (used && docs.find(d => d.ref.id === used.id)) || docs.find(d => d.usedAt) || docs[0];
   via ||= docs.some(d => d.usedAt) ? 'invite' : 'sign-in';
   const invite = {
-    kind: inv.transfer ? 'transfer' : 'order',
+    kind: inv.transfer ? 'transfer' : inv.signup ? 'signup' : 'order',
     orderId: inv.orderId || null, orderNumber: inv.orderNumber || '',
     ...(inv.transfer ? { from: inv.transfer.fromName || '' } : {}),
     sentAt: (docs[docs.length - 1] && docs[docs.length - 1].createdAt) || null, // the first one
     lastSentAt: inv.createdAt || null, expiresAt: inv.expiresAt || null, count: docs.length,
-    claimedAt: Timestamp.now(), via, // 'invite': set a password from the link; 'sign-in': Google or another way in
+    claimedAt: Timestamp.now(), via, // 'invite': set a password from the link; 'google': Google from the link; 'sign-in': another way in
   };
   const batch = db.batch();
   batch.set(db.collection('accounts').doc(uid), { invite }, { merge: true });
@@ -257,7 +257,8 @@ export function accountRoutes() {
   router.post('/api/account/invite', json, limited(tooManyChecks, slowDown), handle(async req => {
     const { inv, state } = await readInvite(req.body && req.body.token);
     return { state, email: inv.email, name: inv.name || '', orderNumber: inv.orderNumber || '',
-      ...(inv.transfer ? { transfer: { productName: inv.transfer.productName || '', fromName: inv.transfer.fromName || '' } } : {}) };
+      ...(inv.transfer ? { transfer: { productName: inv.transfer.productName || '', fromName: inv.transfer.fromName || '' } } : {}),
+      ...(inv.signup ? { signup: true } : {}) };
   }));
 
   router.post('/api/account/invite/renew', json, limited(tooManyEmails, slowDown), handle(async req => {
@@ -269,7 +270,10 @@ export function accountRoutes() {
     await ref.update({ renewedAt: FieldValue.serverTimestamp(), replacedAt: FieldValue.serverTimestamp() });
     // A transfer link renews as the transfer offer (if it's still open), any other as the claim email.
     if (inv.transfer && inv.transfer.id) await resendTransferOffer(inv.transfer.id);
-    else await sendAccountInvite({ email: inv.email, name: inv.name, orderId: inv.orderId, orderNumber: inv.orderNumber, siteUrl: process.env.PUBLIC_SITE_URL || brandUrl() });
+    else if (inv.signup) {
+      const url = await createInvite({ email: inv.email, name: inv.name, signup: true });
+      await sendEmail({ to: inv.email, ...accountInviteEmail({ name: inv.name, url, days: INVITE_DAYS, siteUrl: process.env.PUBLIC_SITE_URL || brandUrl(), signup: true }) });
+    } else await sendAccountInvite({ email: inv.email, name: inv.name, orderId: inv.orderId, orderNumber: inv.orderNumber, siteUrl: process.env.PUBLIC_SITE_URL || brandUrl() });
     return { state: 'sent' };
   }));
 
@@ -305,6 +309,39 @@ export function accountRoutes() {
     await setSubscribed(inv.email, b.marketing === true, 'portal');
     await settleInvites(user.uid, inv.email, { via: 'invite', used: ref });
     return { ok: true, email: inv.email, next: inv.transfer ? '/pieces' : '/orders' };
+  }));
+
+  // Claiming with Google instead of a password: they've signed in with the Google
+  // account for the invited address, so the invite is theirs.
+  router.post('/api/account/claim/google', json, limited(tooManyClaims, slowDown), requireCustomer, handle(async req => {
+    const b = req.body || {};
+    const { ref, inv, state } = await readInvite(b.token);
+    if (inv.email !== req.customer.email) throw new HttpError(403, `This invite is for ${inv.email}. Choose that Google account, or set a password instead.`);
+    if (state === 'expired') throw new HttpError(410, 'This link has expired.');
+    const { uid, email } = req.customer;
+    const fresh = !(await db.collection('accounts').doc(uid).get()).exists;
+    await ensureAccount(uid, email, { name: str(b.name, 100) || inv.name || req.customer.name, claiming: true });
+    await markActive(email, uid);
+    // Only a new account takes the choice from this page; an existing one keeps theirs.
+    if (fresh && typeof b.marketing === 'boolean') await setSubscribed(email, b.marketing, 'portal');
+    await settleInvites(uid, email, { via: 'google', used: ref });
+    return { ok: true, next: inv.transfer ? '/pieces' : '/orders' };
+  }));
+
+  // Sign up without an order: we email a link to /portal/claim (so the address is
+  // proven), where they set a password. Same answer whether or not the email
+  // already has an account, so this can't be used to find customers.
+  router.post('/api/account/signup', json, limited(tooManyEmails, slowDown), handle(async req => {
+    const b = req.body || {};
+    const email = customerId(str(b.email, 200));
+    const name = str(b.name, 100);
+    if (!/^[^@\s/]+@[^@\s/]+\.[^@\s/]+$/.test(email)) throw new HttpError(400, 'Enter a valid email address.');
+    if (!(await findUser(email))) {
+      const url = await createInvite({ email, name, signup: true });
+      const sent = await sendEmail({ to: email, ...accountInviteEmail({ name, url, days: INVITE_DAYS, siteUrl: process.env.PUBLIC_SITE_URL || brandUrl(), signup: true }) });
+      if (!sent && resend) console.error('account: sign-up email not sent', email);
+    }
+    return { ok: true };
   }));
 
   router.post('/api/account/password-reset', json, limited(tooManyEmails, slowDown), handle(async req => {
