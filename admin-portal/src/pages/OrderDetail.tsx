@@ -115,7 +115,7 @@ function StatusDrawer({ order, pieces, initial, onClose, onDone, onAssign, onRet
   const current = order.status || 'pending';
   const [status, setStatus] = useState(initial || STATUS_OPTIONS.find(o => o.key !== current && o.key !== 'paid')?.key || 'in_progress');
   const [notify, setNotify] = useState(true);
-  const [tracking, setTracking] = useState<Tracking>({ carrier: order.tracking?.carrier || 'Australia Post', number: order.tracking?.number || '', url: order.tracking?.url || '' });
+  const [tracking, setTracking] = useState<Tracking>({ carrier: order.tracking?.carrier || (/hand delivered/i.test(order.shipping?.method || '') ? 'Hand delivered by CEO' : 'Australia Post'), number: order.tracking?.number || '', url: order.tracking?.url || '' });
   const [note, setNote] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);

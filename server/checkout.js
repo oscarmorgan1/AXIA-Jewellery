@@ -7,6 +7,7 @@ import { stripe, getProduct, isShopOpen, getSiteMode } from './services.js';
 export const SHIPPING = [
   { id: 'standard', name: 'Standard shipping', amountAUD: 0, min: 3, max: 6 },
   { id: 'express', name: 'Express shipping', amountAUD: 25, min: 1, max: 2 },
+  { id: 'ceo', name: 'Hand Delivered by CEO', amountAUD: 1000, min: 1, max: 5 },
 ];
 
 const SESSION_ID = /^cs_(test|live)_[A-Za-z0-9]{10,200}$/;
