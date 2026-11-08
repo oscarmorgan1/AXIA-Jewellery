@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  ArrowUpRight, Bell, ChevronDown, UserRound, Globe, BadgePercent, Menu, X, FolderHeart, Inbox, LayoutGrid, LogOut, Moon, Package, Gem, Factory, Clapperboard, Receipt, Search, Settings as SettingsIcon, Undo2, TicketPercent, Timer, Users,
+  ArrowUpRight, Bell, ChevronDown, UserRound, Globe, BadgePercent, Menu, X, FolderHeart, Inbox, LayoutGrid, LogOut, Megaphone, Moon, Package, Gem, Factory, Clapperboard, Receipt, Search, Settings as SettingsIcon, Undo2, TicketPercent, Timer, Users,
 } from 'lucide-react';
 import { useAuth } from '../auth';
 import { siteUrl } from '../firebase';
@@ -17,7 +17,7 @@ import { SkeletonPage } from './Skeleton';
 const TITLES: [RegExp, string][] = [
   [/^\/$/, 'Dashboard'], [/^\/products\/new/, 'New product'], [/^\/products\//, 'Edit product'], [/^\/products/, 'Products'],
   [/^\/collections/, 'Collections'], [/^\/customers\//, 'Customer'], [/^\/customers/, 'Customers'], [/^\/inbox/, 'Inbox'], [/^\/margins/, 'Margins'],
-  [/^\/orders\//, 'Order'], [/^\/orders/, 'Orders'], [/^\/returns\//, 'Return'], [/^\/returns/, 'Returns'], [/^\/promos/, 'Promo codes'], [/^\/website/, 'Website'], [/^\/settings/, 'Settings'],
+  [/^\/orders\//, 'Order'], [/^\/orders/, 'Orders'], [/^\/returns\//, 'Return'], [/^\/returns/, 'Returns'], [/^\/promos/, 'Promo codes'], [/^\/marketing\//, 'Email'], [/^\/marketing/, 'Marketing'], [/^\/website/, 'Website'], [/^\/settings/, 'Settings'],
 ];
 
 export default function Layout() {
@@ -89,6 +89,7 @@ export default function Layout() {
         <NavLink to="/orders" className={link}><Receipt size={19} /> Orders {openOrders > 0 && <span className="pill pill--hot fade-in">{openOrders}</span>}</NavLink>
         <NavLink to="/returns" className={link}><Undo2 size={19} /> Returns {returnRequests > 0 && <span className="pill pill--hot fade-in">{returnRequests}</span>}</NavLink>
         <NavLink to="/promos" className={link}><TicketPercent size={19} /> Promo codes</NavLink>
+        <NavLink to="/marketing" className={link}><Megaphone size={19} /> Marketing</NavLink>
 
         <div className="sidebar__label">Catalogue</div>
         <NavLink to="/products" className={link}><Package size={19} /> Products {!productsLoading && <span className="pill fade-in">{liveProducts}</span>}</NavLink>

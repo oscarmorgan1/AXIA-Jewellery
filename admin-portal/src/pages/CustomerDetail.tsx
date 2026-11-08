@@ -39,7 +39,7 @@ export default function CustomerDetail() {
     return [...m.values()].sort((a, b) => b.qty - a.qty);
   }, [p]);
 
-  const sent = [...(p?.record?.emails || [])].filter(e => ['message', 'reply', 'welcome', 'account-invite'].includes(e.type)).reverse();
+  const sent = [...(p?.record?.emails || [])].filter(e => ['message', 'reply', 'welcome', 'account-invite', 'marketing'].includes(e.type)).reverse();
   const [inviting, setInviting] = useState(false);
   const [erasing, setErasing] = useState(false);
 
@@ -116,7 +116,7 @@ export default function CustomerDetail() {
                 {sent.map((e, i) => (
                   <div className="feed__item" key={'s' + i} style={{ alignItems: 'flex-start' }}>
                     <span className="feed__icon stat__icon--dark"><Send size={16} /></span>
-                    <div className="feed__body"><b>{e.type === 'welcome' ? 'Welcome email' : e.type === 'account-invite' ? 'Account invite' : `You ${e.type === 'reply' ? 'replied' : 'wrote'}`}: {e.subject}</b>
+                    <div className="feed__body"><b>{e.type === 'welcome' ? 'Welcome email' : e.type === 'marketing' ? 'Marketing email' : e.type === 'account-invite' ? 'Account invite' : `You ${e.type === 'reply' ? 'replied' : 'wrote'}`}: {e.subject}</b>
                       <small style={{ whiteSpace: 'pre-wrap', display: 'block' }}>{(e.body || '').slice(0, 240)}</small>
                       <small style={{ display: 'block' }}>{e.sentAt ? new Date(e.sentAt).toLocaleString('en-AU') : ''}{e.by ? ` · ${e.by}` : ''} · Resend <code>{e.resendId || 'not sent'}</code></small></div>
                   </div>

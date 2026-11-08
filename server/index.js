@@ -15,6 +15,7 @@ import { genuineRoutes } from './genuine.js';
 import { accountRoutes } from './account.js';
 import { transferRoutes, sweepExpiredTransfers } from './transfers.js';
 import { returnRoutes } from './returns.js';
+import { resendWebhookRoutes } from './marketing.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const app = express();
@@ -41,6 +42,7 @@ app.use((req, res, next) => {
 });
 
 app.use(webhookRoutes()); // before any JSON parsing: Stripe signs the raw body
+app.use(resendWebhookRoutes()); // the same for Resend's delivery, open and click events
 app.use(checkoutRoutes());
 app.use(twoFactorRoutes());
 app.use(adminRoutes());
