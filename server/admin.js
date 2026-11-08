@@ -20,6 +20,7 @@ import { sendAccountInvite } from './account.js';
 import { syncOrder, syncPiece, stripeReceipt, syncThread } from './sync.js';
 import { adminReturnRoutes } from './returns.js';
 import { deletePromo, deleteSupplier, deleteOrder, eraseCustomer } from './deletes.js';
+import { systemStatus } from './status.js';
 
 /**
  * Statuses an admin can set. `refunded` only comes from Stripe, with the money;
@@ -177,6 +178,94 @@ async function setPromoActive(req) {
   return { active };
 }
 
+/**
+ * Edits a promo code. Name, type and affiliate change in place (and in the Stripe
+ * metadata). Stripe can't change a promotion code's text, discount, use limit or
+ * end date, so changing any of those switches the old Stripe code off and makes a
+ * new one, kept under the same record here: `stripe.previousPromotionCodeIds` and
+ * `previousCodes` let orders on the old one still count towards this code, and
+ * `redeemedBefore` carries the old uses over so the limit stays a total.
+ */
+export async function editPromo(req) {
+  if (!stripe) throw new HttpError(503, 'Stripe is not configured');
+  const ref = db.collection('promoCodes').doc(str(req.params.id, 100));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpError(404, 'Code not found');
+  const p = snap.data();
+
+  const code = str(req.body.code, 30).toUpperCase();
+  if (!CODE.test(code)) throw new HttpError(400, 'Codes are 3 to 30 letters, numbers, - or _');
+  const percentOff = Number(req.body.percentOff);
+  if (!(percentOff > 0 && percentOff <= 100)) throw new HttpError(400, 'Discount must be between 1 and 100%');
+  const kind = req.body.kind === 'affiliate' ? 'affiliate' : 'standard';
+  const affiliate = kind === 'affiliate' ? { name: str(req.body.affiliateName, 80), email: str(req.body.affiliateEmail, 120) } : null;
+  if (affiliate && !affiliate.name) throw new HttpError(400, 'Add the affiliate’s name');
+  const maxRedemptions = Number(req.body.maxRedemptions) > 0 ? Math.floor(Number(req.body.maxRedemptions)) : null;
+  const expires = req.body.expiresAt ? Date.parse(req.body.expiresAt) : NaN;
+  const oldExpires = p.expiresAt ? p.expiresAt.toMillis() : null;
+  const expiresAt = expires > 0 ? expires : null;
+
+  const codeChanged = code !== p.code;
+  const replace = codeChanged || percentOff !== p.percentOff || maxRedemptions !== (p.maxRedemptions || null) || expiresAt !== oldExpires;
+  if (!replace && kind === p.kind && JSON.stringify(affiliate) === JSON.stringify(p.affiliate || null)) return { id: ref.id, changed: false };
+
+  if (codeChanged) {
+    const clash = await db.collection('promoCodes').where('code', '==', code).limit(1).get();
+    if (!clash.empty && clash.docs[0].id !== ref.id) throw new HttpError(409, `${code} already exists`);
+  }
+
+  const metadata = { kind, affiliate: affiliate ? affiliate.name : '' };
+  const oldId = p.stripe.promotionCodeId;
+  const update = {
+    code, kind, percentOff, affiliate, maxRedemptions, expiresAt: expiresAt ? Timestamp.fromMillis(expiresAt) : null,
+    updatedAt: FieldValue.serverTimestamp(),
+    edits: FieldValue.arrayUnion({ at: Timestamp.now(), by: req.admin.email || req.admin.uid, from: { code: p.code, percentOff: p.percentOff, maxRedemptions: p.maxRedemptions || null, expiresAt: p.expiresAt || null }, newStripeCode: replace }),
+  };
+
+  if (!replace) {
+    await stripe.promotionCodes.update(oldId, { metadata });
+    await ref.update(update);
+    return { id: ref.id, changed: true, replaced: false };
+  }
+
+  if (expiresAt && expiresAt <= Date.now()) throw new HttpError(400, 'The end date must be in the future');
+  const old = await stripe.promotionCodes.retrieve(oldId);
+  const redeemed = (p.redeemedBefore || 0) + (old.times_redeemed || 0);
+  if (maxRedemptions && maxRedemptions <= redeemed) {
+    throw new HttpError(400, `${p.code} has already been used ${redeemed} ${redeemed === 1 ? 'time' : 'times'}, so the limit has to be more than that`);
+  }
+
+  // The text has to be free in Stripe first, so the old code goes off before the new one is made.
+  const wasActive = !!old.active;
+  if (wasActive) await stripe.promotionCodes.update(oldId, { active: false });
+  let promo, couponId = p.stripe.couponId;
+  try {
+    if (percentOff !== p.percentOff) {
+      couponId = (await stripe.coupons.create({ percent_off: percentOff, duration: 'once', name: `${code} (${percentOff}% off)`, metadata })).id;
+    }
+    promo = await stripe.promotionCodes.create({
+      promotion: { type: 'coupon', coupon: couponId },
+      code, metadata, active: p.active !== false,
+      ...(maxRedemptions ? { max_redemptions: maxRedemptions - redeemed } : {}),
+      ...(expiresAt ? { expires_at: Math.floor(expiresAt / 1000) } : {}),
+    });
+  } catch (err) {
+    if (wasActive) await stripe.promotionCodes.update(oldId, { active: true }).catch(() => {});
+    throw err;
+  }
+  await stripe.promotionCodes.update(oldId, { metadata: { ...metadata, replacedBy: promo.id } }).catch(() => {});
+  await ref.update({
+    ...update,
+    redeemedBefore: redeemed,
+    'stripe.couponId': couponId,
+    'stripe.promotionCodeId': promo.id,
+    'stripe.livemode': !!promo.livemode,
+    'stripe.previousPromotionCodeIds': FieldValue.arrayUnion(oldId),
+    ...(codeChanged ? { previousCodes: FieldValue.arrayUnion(p.code) } : {}),
+  });
+  return { id: ref.id, changed: true, replaced: true };
+}
+
 async function listPromos() {
   const snap = await db.collection('promoCodes').orderBy('createdAt', 'desc').get();
   return snap.docs.map(d => {
@@ -186,6 +275,7 @@ async function listPromos() {
       createdAt: v.createdAt ? v.createdAt.toMillis() : null,
       expiresAt: v.expiresAt ? v.expiresAt.toMillis() : null,
       updatedAt: v.updatedAt ? v.updatedAt.toMillis() : null,
+      edits: undefined,
     };
   });
 }
@@ -355,5 +445,7 @@ export function adminRoutes() {
   router.get('/api/admin/promos', handle(listPromos));
   router.post('/api/admin/promos', handle(createPromo));
   router.post('/api/admin/promos/:id/active', handle(setPromoActive));
+  router.post('/api/admin/promos/:id/edit', handle(editPromo));
+  router.get('/api/admin/status', handle(systemStatus));
   return router;
 }

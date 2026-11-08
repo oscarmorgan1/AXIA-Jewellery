@@ -30,7 +30,7 @@ beforeEach(async () => {
   const w = (path, data) => db.doc(path).set(data);
   await Promise.all([
     w('orders/o1', { orderNumber: 'AX1001', status: 'shipped', customerId: 'ana@example.com', customer: { email: 'ana@example.com', name: 'Ana' }, createdAt: at(1000), stripe: { livemode: false }, promotionCodeId: 'promo_used' }),
-    w('orders/o2', { orderNumber: 'AX1002', status: 'paid', customerId: 'ana@example.com', customer: { email: 'ana@example.com', name: 'Ana' }, createdAt: at(2000) }),
+    w('orders/o2', { orderNumber: 'AX1002', status: 'paid', customerId: 'ana@example.com', customer: { email: 'ana@example.com', name: 'Ana' }, createdAt: at(2000), promotionCodeId: 'promo_old' }), // an edited code's earlier Stripe code
     w('orders/o3', { orderNumber: 'AX1003', status: 'paid', customerId: 'ben@example.com', customer: { email: 'ben@example.com', name: 'Ben' }, createdAt: at(3000) }),
     w('customers/ana@example.com', { email: 'ana@example.com', uid, orderIds: ['o1', 'o2'], firstOrderAt: at(1000), lastOrderAt: at(2000), emails: [{ type: 'status:shipped', orderId: 'o1' }, { type: 'message' }], notes: '' }),
     w('customers/ben@example.com', { email: 'ben@example.com', orderIds: ['o3'], firstOrderAt: at(3000), lastOrderAt: at(3000), emails: [], notes: '' }),
@@ -54,6 +54,9 @@ beforeEach(async () => {
     w('suppliers/sup2', { name: 'Unused Co' }),
     w('promoCodes/promo_used', { code: 'USED10', stripe: {} }),
     w('promoCodes/promo_new', { code: 'NEW10', stripe: {} }),
+    w('promoCodes/promo_edit', { code: 'RENAMED', previousCodes: ['OLDNAME'], stripe: { promotionCodeId: 'promo_now', previousPromotionCodeIds: ['promo_old'] } }),
+    w('returns/r1', { orderId: 'o1', number: 'R-AX1001-1' }),
+    w(`accounts/${uid}/returns/r1`, { number: 'R-AX1001-1' }),
   ]);
 });
 
@@ -65,6 +68,9 @@ test('deleting an order needs its number typed back', async () => {
 test('deleting an order removes every reference and frees its pieces', async () => {
   const r = await deleteOrder('o1', { confirm: '#ax1001', by: 'admin' });
   assert.equal(r.pieces, 1);
+  assert.equal(r.returns, 1);
+  assert.ok(!(await exists('returns/r1')));
+  assert.ok(!(await exists(`accounts/${uid}/returns/r1`)));
   assert.ok(!(await exists('orders/o1')));
   assert.ok(!(await exists(`accounts/${uid}/orders/o1`)));
   assert.ok(await exists(`accounts/${uid}/orders/o2`));
@@ -119,6 +125,7 @@ test('suppliers and promo codes in use can’t be deleted', async () => {
   await deleteSupplier('sup2');
   assert.ok(!(await exists('suppliers/sup2')));
   await assert.rejects(deletePromo('promo_used'), /AX1001/);
+  await assert.rejects(deletePromo('promo_edit'), /AX1002/); // used under its earlier Stripe code
   await deletePromo('promo_new');
   assert.ok(!(await exists('promoCodes/promo_new')));
 });

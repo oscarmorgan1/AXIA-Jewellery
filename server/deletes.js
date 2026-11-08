@@ -46,11 +46,14 @@ const uniqueDocs = docs => [...new Map(docs.map(d => [d.ref.path, d])).values()]
 
 // ---- Promo codes ----------------------------------------------------------
 
-/** Orders that used a promo code, paid or not. */
-async function promoOrders(id, code) {
+/**
+ * Orders that used a promo code, paid or not: by any Stripe code it has had
+ * (editing can replace it, server/admin.js editPromo) or any text it has had.
+ */
+async function promoOrders(ids, codes) {
   const [byId, byCode] = await Promise.all([
-    db.collection('orders').where('promotionCodeId', '==', id).select('orderNumber').limit(5).get(),
-    code ? db.collection('orders').where('promotionCode', '==', code).select('orderNumber').limit(5).get() : null,
+    db.collection('orders').where('promotionCodeId', 'in', ids.slice(0, 30)).select('orderNumber').limit(5).get(),
+    codes.length ? db.collection('orders').where('promotionCode', 'in', codes.slice(0, 30)).select('orderNumber').limit(5).get() : null,
   ]);
   return uniqueDocs([...byId.docs, ...((byCode && byCode.docs) || [])]);
 }
@@ -60,7 +63,8 @@ export async function deletePromo(id) {
   const snap = await ref.get();
   if (!snap.exists) throw new HttpError(404, 'Code not found');
   const p = snap.data();
-  const used = await promoOrders(id, p.code);
+  const stripeIds = [...new Set([id, p.stripe && p.stripe.promotionCodeId, ...((p.stripe && p.stripe.previousPromotionCodeIds) || [])].filter(Boolean))];
+  const used = await promoOrders(stripeIds, [...new Set([p.code, ...(p.previousCodes || [])].filter(Boolean))]);
   if (used.length) {
     const nos = used.slice(0, 3).map(d => `#${orderNo(d.id, d.data())}`).join(', ');
     throw new HttpError(409, `${p.code} can’t be deleted: it’s on ${used.length >= 5 ? '5 or more orders' : plural(used.length, 'order')} (${nos}). Turn it off instead, so its sales stay counted.`);
@@ -70,8 +74,9 @@ export async function deletePromo(id) {
     if (!stripe) throw new HttpError(503, 'Stripe is not configured, so the code can’t be turned off there');
     try {
       const live = await stripe.promotionCodes.retrieve(promoId);
-      if (live.times_redeemed > 0) {
-        throw new HttpError(409, `${p.code} can’t be deleted: Stripe says it has been used ${plural(live.times_redeemed, 'time')}. Turn it off instead.`);
+      const times = (live.times_redeemed || 0) + (p.redeemedBefore || 0);
+      if (times > 0) {
+        throw new HttpError(409, `${p.code} can’t be deleted: Stripe says it has been used ${plural(times, 'time')}. Turn it off instead.`);
       }
       // Promotion codes can't be deleted in Stripe; turned off, it stops working at checkout.
       if (live.active) await stripe.promotionCodes.update(promoId, { active: false });
