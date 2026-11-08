@@ -1,12 +1,13 @@
 /* ============================================================
-   AXIA, PRODUCT CATALOGUE (offline fallback + seed source)
+   AXIA, PUBLIC PRODUCT CATALOGUE (offline fallback)
    The live catalogue is the Firestore "products" collection, edited in
-   the admin portal (/admin) and loaded by assets/js/catalogue.js.
-   This file is only used if Firestore can't be reached, and to seed a
-   fresh database. Refresh it with `npm run export:products -- --prod`.
-   PUBLIC DATA ONLY: customer-facing AUD retail prices.
-   Factory/manufacturer costs are deliberately NOT included here
-   (private business data, must never appear on the website).
+   the admin portal (/admin). Browsers get it from GET /api/catalogue;
+   this file is only used if that can't be reached.
+   Written by `npm run export:products`: do not edit by hand.
+   PUBLIC VIEW ONLY (server/public-catalogue.js): live pieces with their
+   retail prices, Coming soon pieces as teasers with no prices or
+   description. The full catalogue (the seed source) is
+   scripts/data/catalogue.json, which is never served.
    ============================================================ */
 window.AXIA_PRODUCTS = [
   {
@@ -82,6 +83,7 @@ window.AXIA_PRODUCTS = [
     "compareAtAUD": 848
   },
   {
+    "hidden": true,
     "id": "tennis-set",
     "name": "The Tennis Set",
     "width": null,
@@ -98,52 +100,23 @@ window.AXIA_PRODUCTS = [
       "tennis"
     ],
     "art": "tennis",
-    "desc": "The 4mm tennis chain and its matching bracelet. The same clean line on your neck and your wrist.",
-    "bundle": [
-      "Classic Tennis Chain, 4mm · 20\"",
-      "Classic Tennis Bracelet, 4mm · your size"
-    ],
-    "bundleOf": [
-      "tennis-chain",
-      "tennis-bracelet"
-    ],
     "images": [
       "assets/img/products/tennis-chain-4mm/1.jpg",
       "assets/img/products/tennis-bracelet-4mm/1.jpg"
     ],
+    "singlePrice": false,
     "defaultLength": "8\"",
+    "desc": "",
     "variants": [
       {
         "length": "6\"",
-        "priceAUD": 599
-      },
-      {
-        "length": "7\"",
-        "priceAUD": 599
-      },
-      {
-        "length": "7.5\"",
-        "priceAUD": 599
-      },
-      {
-        "length": "8\"",
-        "priceAUD": 599
-      },
-      {
-        "length": "8.5\"",
-        "priceAUD": 599
-      },
-      {
-        "length": "9\"",
-        "priceAUD": 599
+        "priceAUD": 0
       }
     ],
-    "compareAtAUD": 738,
-    "fromPriceAUD": 599,
-    "singlePrice": false,
-    "hidden": true
+    "fromPriceAUD": 0
   },
   {
+    "hidden": true,
     "id": "prong-set",
     "name": "The Moonrock Set",
     "width": null,
@@ -160,40 +133,23 @@ window.AXIA_PRODUCTS = [
       "cuban"
     ],
     "art": "cuban",
-    "desc": "The 10mm Moonrock chain and its matching bracelet. Prong-set stones, wrist to neck.",
-    "bundle": [
-      "Moonrock Cuban Chain, 10mm · 20\"",
-      "Moonrock Cuban Bracelet, 10mm · your size"
-    ],
-    "bundleOf": [
-      "single-row-prong-cuban-chain-10mm",
-      "prong-cuban-bracelet-10mm"
-    ],
     "images": [
       "assets/img/products/prong-cuban-bracelet-10mm/silver/1.jpg",
       "assets/img/products/single-row-prong-cuban-chain-10mm/1.jpg"
     ],
+    "singlePrice": false,
     "defaultLength": "7.5\"",
+    "desc": "",
     "variants": [
       {
         "length": "7\"",
-        "priceAUD": 2149
-      },
-      {
-        "length": "7.5\"",
-        "priceAUD": 2149
-      },
-      {
-        "length": "8\"",
-        "priceAUD": 2149
+        "priceAUD": 0
       }
     ],
-    "compareAtAUD": 2548,
-    "fromPriceAUD": 2149,
-    "singlePrice": false,
-    "hidden": true
+    "fromPriceAUD": 0
   },
   {
+    "hidden": true,
     "id": "classic-cuban-set",
     "name": "The Classic Cuban Set",
     "width": null,
@@ -210,54 +166,24 @@ window.AXIA_PRODUCTS = [
       "cuban"
     ],
     "art": "cuban",
-    "desc": "The 12mm Classic Cuban chain and its matching bracelet, worn as a set.",
-    "bundle": [
-      "Iced Cuban Chain, 12mm · 20\"",
-      "Iced Cuban Bracelet, 12mm · your size"
-    ],
-    "bundleOf": [
-      "two-row-flat-cuban-chain-12mm",
-      "two-row-flat-cuban-bracelet-12mm"
-    ],
     "images": [
       "assets/img/products/two-row-flat-cuban-bracelet-12mm/1.jpg",
       "assets/img/products/two-row-flat-cuban-chain-12mm/silver/1.jpg"
     ],
+    "singlePrice": false,
     "defaultLength": "8\"",
+    "desc": "",
     "variants": [
       {
         "length": "6.5\"",
-        "priceAUD": 2499
-      },
-      {
-        "length": "7\"",
-        "priceAUD": 2499
-      },
-      {
-        "length": "7.5\"",
-        "priceAUD": 2499
-      },
-      {
-        "length": "8\"",
-        "priceAUD": 2499
-      },
-      {
-        "length": "8.5\"",
-        "priceAUD": 2499
-      },
-      {
-        "length": "9\"",
-        "priceAUD": 2499
+        "priceAUD": 0
       }
     ],
-    "compareAtAUD": 2998,
-    "fromPriceAUD": 2499,
-    "singlePrice": false,
-    "hidden": true
+    "fromPriceAUD": 0
   },
   {
-    "id": "fire-bezel-set",
     "hidden": true,
+    "id": "fire-bezel-set",
     "name": "The Fire Bezel Set",
     "width": null,
     "cat": "chain",
@@ -273,37 +199,24 @@ window.AXIA_PRODUCTS = [
       "cuban"
     ],
     "art": "cuban",
-    "desc": "Fire Bezel, head to wrist. The 15mm bezel-set Cuban chain at 20\" with its matching bracelet at 8\", our boldest set of light.",
-    "bundle": [
-      "Fire Bezel Cuban Chain, 15mm · 20\"",
-      "Fire Bezel Cuban Bracelet, 15mm · your size"
-    ],
-    "bundleOf": [
-      "fire-bezel-cuban-chain-15mm",
-      "fire-bezel-cuban-bracelet-15mm"
-    ],
     "images": [
       "assets/img/products/fire-bezel-cuban-chain-15mm/1.jpg",
       "assets/img/products/fire-bezel-cuban-bracelet-15mm/silver/1.jpg"
     ],
+    "singlePrice": false,
     "defaultLength": "8\"",
+    "desc": "",
     "variants": [
       {
         "length": "7.5\"",
-        "priceAUD": 3999
-      },
-      {
-        "length": "8\"",
-        "priceAUD": 3999
+        "priceAUD": 0
       }
     ],
-    "compareAtAUD": 4898,
-    "fromPriceAUD": 3999,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
-    "id": "micro-pave-set",
     "hidden": true,
+    "id": "micro-pave-set",
     "name": "The Micro Pavé Set",
     "width": null,
     "cat": "chain",
@@ -319,37 +232,20 @@ window.AXIA_PRODUCTS = [
       "cuban"
     ],
     "art": "cuban",
-    "desc": "Micro pavé, head to wrist. The 15mm micro pavé Cuban chain at 20\" with its matching bracelet at 8\", a dense, continuous field of light across both.",
-    "bundle": [
-      "Micro Pavé Cuban Chain, 15mm · 20\"",
-      "Micro Pavé Cuban Bracelet, 15mm · your size"
-    ],
-    "bundleOf": [
-      "micro-pave-cuban-chain-15mm",
-      "micro-pave-cuban-bracelet-15mm"
-    ],
     "images": [
       "assets/img/products/micro-pave-cuban-chain-15mm/1.jpg",
       "assets/img/products/micro-pave-cuban-bracelet-15mm/1.jpg"
     ],
+    "singlePrice": false,
     "defaultLength": "7.5\"",
+    "desc": "",
     "variants": [
       {
         "length": "7\"",
-        "priceAUD": 3499
-      },
-      {
-        "length": "7.5\"",
-        "priceAUD": 3499
-      },
-      {
-        "length": "8\"",
-        "priceAUD": 3499
+        "priceAUD": 0
       }
     ],
-    "compareAtAUD": 4348,
-    "fromPriceAUD": 3499,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
     "id": "tennis-chain",
@@ -529,8 +425,8 @@ window.AXIA_PRODUCTS = [
     "singlePrice": false
   },
   {
-    "id": "tennis-chain-2mm",
     "hidden": true,
+    "id": "tennis-chain-2mm",
     "name": "Classic Tennis Chain",
     "width": "2mm",
     "cat": "chain",
@@ -545,43 +441,23 @@ window.AXIA_PRODUCTS = [
       "tennis"
     ],
     "art": "tennis",
-    "desc": "The finest tennis line AXIA makes. A 2mm run of precision-set moissanite for a discreet, continuous flash under the collar.",
     "images": [
       "assets/img/products/tennis-chain-2mm/1.jpg",
       "assets/img/products/tennis-chain-sizing.jpg"
     ],
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "16\"",
-        "priceAUD": 299
-      },
-      {
-        "length": "18\"",
-        "priceAUD": 329
-      },
-      {
-        "length": "20\"",
-        "priceAUD": 349
-      },
-      {
-        "length": "22\"",
-        "priceAUD": 379
-      },
-      {
-        "length": "24\"",
-        "priceAUD": 399
-      },
-      {
-        "length": "26\"",
-        "priceAUD": 429
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 299,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
-    "id": "tennis-chain-3mm",
     "hidden": true,
+    "id": "tennis-chain-3mm",
     "name": "Classic Tennis Chain",
     "width": "3mm",
     "cat": "chain",
@@ -596,39 +472,19 @@ window.AXIA_PRODUCTS = [
       "tennis"
     ],
     "art": "tennis",
-    "desc": "A refined line of precision-set moissanite built for daily wear. The 3mm profile delivers controlled brilliance without overpowering the rest of the look.",
     "images": [
       "assets/img/products/tennis-chain-3mm/1.jpg",
       "assets/img/products/tennis-chain-sizing.jpg"
     ],
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "16\"",
-        "priceAUD": 379
-      },
-      {
-        "length": "18\"",
-        "priceAUD": 419
-      },
-      {
-        "length": "20\"",
-        "priceAUD": 449
-      },
-      {
-        "length": "22\"",
-        "priceAUD": 479
-      },
-      {
-        "length": "24\"",
-        "priceAUD": 529
-      },
-      {
-        "length": "26\"",
-        "priceAUD": 559
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 379,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
     "id": "tennis-chain-4mm",
@@ -682,8 +538,8 @@ window.AXIA_PRODUCTS = [
     "singlePrice": false
   },
   {
-    "id": "tennis-chain-5mm",
     "hidden": true,
+    "id": "tennis-chain-5mm",
     "name": "Classic Tennis Chain",
     "width": "5mm",
     "cat": "chain",
@@ -698,39 +554,19 @@ window.AXIA_PRODUCTS = [
       "tennis"
     ],
     "art": "tennis",
-    "desc": "The boldest classic tennis chain. A 5mm line of continuous light for presence without moving into Cuban territory.",
     "images": [
       "assets/img/products/tennis-chain-5mm/1.jpg",
       "assets/img/products/tennis-chain-sizing.jpg"
     ],
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "16\"",
-        "priceAUD": 549
-      },
-      {
-        "length": "18\"",
-        "priceAUD": 599
-      },
-      {
-        "length": "20\"",
-        "priceAUD": 649
-      },
-      {
-        "length": "22\"",
-        "priceAUD": 679
-      },
-      {
-        "length": "24\"",
-        "priceAUD": 699
-      },
-      {
-        "length": "26\"",
-        "priceAUD": 749
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 549,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
     "id": "tennis-bracelet",
@@ -910,8 +746,8 @@ window.AXIA_PRODUCTS = [
     "singlePrice": false
   },
   {
-    "id": "tennis-bracelet-2mm",
     "hidden": true,
+    "id": "tennis-bracelet-2mm",
     "name": "Classic Tennis Bracelet",
     "width": "2mm",
     "cat": "bracelet",
@@ -926,39 +762,19 @@ window.AXIA_PRODUCTS = [
       "tennis"
     ],
     "art": "tennis",
-    "desc": "A fine 2mm tennis bracelet, set link to link. The quiet entry into AXIA, minimal on the wrist, precise up close.",
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "6\"",
-        "priceAUD": 129
-      },
-      {
-        "length": "7\"",
-        "priceAUD": 139
-      },
-      {
-        "length": "7.5\"",
-        "priceAUD": 149
-      },
-      {
-        "length": "8\"",
-        "priceAUD": 159
-      },
-      {
-        "length": "8.5\"",
-        "priceAUD": 169
-      },
-      {
-        "length": "9\"",
-        "priceAUD": 179
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 129,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
-    "id": "tennis-bracelet-3mm",
     "hidden": true,
+    "id": "tennis-bracelet-3mm",
     "name": "Classic Tennis Bracelet",
     "width": "3mm",
     "cat": "bracelet",
@@ -973,39 +789,19 @@ window.AXIA_PRODUCTS = [
       "tennis"
     ],
     "art": "tennis",
-    "desc": "The AXIA everyday bracelet. A 3mm tennis line that holds its brilliance without shouting, the piece most first orders start with.",
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "6\"",
-        "priceAUD": 159
-      },
-      {
-        "length": "7\"",
-        "priceAUD": 179
-      },
-      {
-        "length": "7.5\"",
-        "priceAUD": 189
-      },
-      {
-        "length": "8\"",
-        "priceAUD": 199
-      },
-      {
-        "length": "8.5\"",
-        "priceAUD": 219
-      },
-      {
-        "length": "9\"",
-        "priceAUD": 229
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 159,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
-    "id": "tennis-bracelet-4mm",
     "hidden": true,
+    "id": "tennis-bracelet-4mm",
     "name": "Classic Tennis Bracelet",
     "width": "4mm",
     "cat": "bracelet",
@@ -1020,39 +816,19 @@ window.AXIA_PRODUCTS = [
       "tennis"
     ],
     "art": "tennis",
-    "desc": "A 4mm tennis bracelet with more weight and light return. Reads clearly on the wrist while keeping a disciplined profile.",
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "6\"",
-        "priceAUD": 199
-      },
-      {
-        "length": "7\"",
-        "priceAUD": 219
-      },
-      {
-        "length": "7.5\"",
-        "priceAUD": 229
-      },
-      {
-        "length": "8\"",
-        "priceAUD": 239
-      },
-      {
-        "length": "8.5\"",
-        "priceAUD": 259
-      },
-      {
-        "length": "9\"",
-        "priceAUD": 279
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 199,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
-    "id": "tennis-bracelet-5mm",
     "hidden": true,
+    "id": "tennis-bracelet-5mm",
     "name": "Classic Tennis Bracelet",
     "width": "5mm",
     "cat": "bracelet",
@@ -1067,35 +843,15 @@ window.AXIA_PRODUCTS = [
       "tennis"
     ],
     "art": "tennis",
-    "desc": "The heaviest classic tennis bracelet. A 5mm line built for a fuller wrist presence, still set with the same precision.",
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "6\"",
-        "priceAUD": 219
-      },
-      {
-        "length": "7\"",
-        "priceAUD": 239
-      },
-      {
-        "length": "7.5\"",
-        "priceAUD": 259
-      },
-      {
-        "length": "8\"",
-        "priceAUD": 279
-      },
-      {
-        "length": "8.5\"",
-        "priceAUD": 289
-      },
-      {
-        "length": "9\"",
-        "priceAUD": 299
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 219,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
     "id": "square-halo-tennis-bracelet",
@@ -1266,8 +1022,8 @@ window.AXIA_PRODUCTS = [
     "singlePrice": false
   },
   {
-    "id": "classic-cuban-bracelet-15mm",
     "hidden": true,
+    "id": "classic-cuban-bracelet-15mm",
     "name": "Iced Cuban Bracelet",
     "width": "15mm",
     "cat": "bracelet",
@@ -1286,7 +1042,6 @@ window.AXIA_PRODUCTS = [
       "15mm-cuban"
     ],
     "art": "cubanBracelet",
-    "desc": "The classic Cuban scaled up. A 15mm iced profile with real wrist weight, holding a broad, continuous field of light across every link.",
     "images": [
       "assets/img/products/classic-cuban-bracelet-15mm/silver/1.jpg",
       "assets/img/products/classic-cuban-bracelet-15mm/silver/2.jpg",
@@ -1313,30 +1068,15 @@ window.AXIA_PRODUCTS = [
         "assets/img/products/classic-cuban-bracelet-15mm/rosegold/4.jpg"
       ]
     },
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "6.5\"",
-        "priceAUD": 1299
-      },
-      {
-        "length": "7\"",
-        "priceAUD": 1399
-      },
-      {
-        "length": "7.5\"",
-        "priceAUD": 1499
-      },
-      {
-        "length": "8\"",
-        "priceAUD": 1599
-      },
-      {
-        "length": "8.5\"",
-        "priceAUD": 1699
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 1299,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
     "id": "prong-cuban-bracelet-10mm",
@@ -1392,6 +1132,7 @@ window.AXIA_PRODUCTS = [
     "singlePrice": false
   },
   {
+    "hidden": true,
     "id": "prong-cuban-bracelet-15mm",
     "name": "Moonrock Cuban Bracelet",
     "width": "15mm",
@@ -1410,7 +1151,6 @@ window.AXIA_PRODUCTS = [
       "15mm-cuban"
     ],
     "art": "cubanBracelet",
-    "desc": "The Moonrock Cuban at 15mm. Bigger and bolder, stones lifted into open settings for maximum sparkle.",
     "images": [
       "assets/img/products/prong-cuban-bracelet-15mm/silver/1.jpg"
     ],
@@ -1427,27 +1167,19 @@ window.AXIA_PRODUCTS = [
         "assets/img/products/prong-cuban-bracelet-15mm/sizing.jpg"
       ]
     },
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "7\"",
-        "priceAUD": 1599
-      },
-      {
-        "length": "7.5\"",
-        "priceAUD": 1699
-      },
-      {
-        "length": "8\"",
-        "priceAUD": 1799
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 1599,
-    "singlePrice": false,
-    "hidden": true
+    "fromPriceAUD": 0
   },
   {
-    "id": "prong-cuban-bracelet-16mm",
     "hidden": true,
+    "id": "prong-cuban-bracelet-16mm",
     "name": "Moonrock Cuban Bracelet",
     "width": "16mm",
     "cat": "bracelet",
@@ -1464,7 +1196,6 @@ window.AXIA_PRODUCTS = [
       "cuban"
     ],
     "art": "cubanBracelet",
-    "desc": "The widest Moonrock Cuban bracelet. A 16mm build engineered for full presence, each raised stone driving hard light off an aggressive, exposed setting.",
     "images": [
       "assets/img/products/prong-cuban-bracelet-16mm/silver/1.jpg"
     ],
@@ -1481,20 +1212,18 @@ window.AXIA_PRODUCTS = [
         "assets/img/products/prong-cuban-bracelet-16mm/sizing.jpg"
       ]
     },
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "7\"",
-        "priceAUD": 1899
-      },
-      {
-        "length": "8\"",
-        "priceAUD": 2099
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 1899,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
+    "hidden": true,
     "id": "single-row-prong-cuban-chain-10mm",
     "name": "Moonrock Cuban Chain",
     "width": "10mm",
@@ -1511,37 +1240,24 @@ window.AXIA_PRODUCTS = [
       "cuban"
     ],
     "art": "cuban",
-    "desc": "A 10mm Cuban with a single row of raised, prong-set stones. Cratered texture that catches light from every angle.",
     "images": [
       "assets/img/products/single-row-prong-cuban-chain-10mm/1.jpg",
       "assets/img/products/single-row-prong-cuban-chain-10mm/2.jpg",
       "assets/img/products/single-row-prong-cuban-chain-10mm/3.jpg"
     ],
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "18\"",
-        "priceAUD": 1499
-      },
-      {
-        "length": "20\"",
-        "priceAUD": 1649
-      },
-      {
-        "length": "22\"",
-        "priceAUD": 1799
-      },
-      {
-        "length": "24\"",
-        "priceAUD": 1949
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 1499,
-    "singlePrice": false,
-    "hidden": true
+    "fromPriceAUD": 0
   },
   {
-    "id": "prong-cuban-chain-16mm",
     "hidden": true,
+    "id": "prong-cuban-chain-16mm",
     "name": "Moonrock Cuban Chain",
     "width": "16mm",
     "cat": "chain",
@@ -1557,7 +1273,6 @@ window.AXIA_PRODUCTS = [
       "cuban"
     ],
     "art": "cuban",
-    "desc": "A 16mm Moonrock Cuban chain built for scale. Open settings across the full width push light hard, sitting between the core range and The Titans.",
     "images": [
       "assets/img/products/prong-cuban-chain-16mm/1.jpg",
       "assets/img/products/prong-cuban-chain-16mm/2.jpg",
@@ -1565,26 +1280,15 @@ window.AXIA_PRODUCTS = [
       "assets/img/products/prong-cuban-chain-16mm/4.jpg",
       "assets/img/products/prong-cuban-chain-16mm/5.jpg"
     ],
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "18\"",
-        "priceAUD": 3999
-      },
-      {
-        "length": "20\"",
-        "priceAUD": 4399
-      },
-      {
-        "length": "22\"",
-        "priceAUD": 4799
-      },
-      {
-        "length": "24\"",
-        "priceAUD": 5199
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 3999,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
     "id": "floral-bracelet-15mm",
@@ -1784,8 +1488,8 @@ window.AXIA_PRODUCTS = [
     "singlePrice": false
   },
   {
-    "id": "micro-pave-cuban-bracelet-12mm",
     "hidden": true,
+    "id": "micro-pave-cuban-bracelet-12mm",
     "name": "Micro Pavé Cuban Bracelet",
     "width": "12mm",
     "cat": "bracelet",
@@ -1801,23 +1505,19 @@ window.AXIA_PRODUCTS = [
       "cuban"
     ],
     "art": "cubanBracelet",
-    "desc": "Dense micro pavé setting gives the surface a continuous field of light. The result is refined, detailed and more textural than a traditional iced Cuban.",
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "7\"",
-        "priceAUD": 999
-      },
-      {
-        "length": "8\"",
-        "priceAUD": 1099
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 999,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
-    "id": "micro-pave-cuban-chain-12mm",
     "hidden": true,
+    "id": "micro-pave-cuban-chain-12mm",
     "name": "Micro Pavé Cuban Chain",
     "width": "12mm",
     "cat": "chain",
@@ -1833,31 +1533,19 @@ window.AXIA_PRODUCTS = [
       "cuban"
     ],
     "art": "cuban",
-    "desc": "A 12mm Cuban chain packed with micro pavé stones for an unbroken, high-detail surface. Reads as texture and depth rather than individual links.",
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "18\"",
-        "priceAUD": 2299
-      },
-      {
-        "length": "20\"",
-        "priceAUD": 2499
-      },
-      {
-        "length": "22\"",
-        "priceAUD": 2699
-      },
-      {
-        "length": "24\"",
-        "priceAUD": 2899
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 2299,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
-    "id": "fire-bezel-cuban-bracelet-15mm",
     "hidden": true,
+    "id": "fire-bezel-cuban-bracelet-15mm",
     "name": "Fire Bezel Cuban Bracelet",
     "width": "15mm",
     "cat": "bracelet",
@@ -1874,28 +1562,24 @@ window.AXIA_PRODUCTS = [
       "cuban"
     ],
     "art": "cubanBracelet",
-    "desc": "Individual stones are framed in pronounced bezel forms, producing a sharper and more dimensional surface. A specialised 15mm construction designed for controlled impact.",
     "images": [
       "assets/img/products/fire-bezel-cuban-bracelet-15mm/both.jpg",
       "assets/img/products/fire-bezel-cuban-bracelet-15mm/silver/1.jpg",
       "assets/img/products/fire-bezel-cuban-bracelet-15mm/silver/2.jpg"
     ],
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "7.5\"",
-        "priceAUD": 1499
-      },
-      {
-        "length": "8\"",
-        "priceAUD": 1599
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 1499,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
-    "id": "fire-bezel-cuban-chain-15mm",
     "hidden": true,
+    "id": "fire-bezel-cuban-chain-15mm",
     "name": "Fire Bezel Cuban Chain",
     "width": "15mm",
     "cat": "chain",
@@ -1911,36 +1595,24 @@ window.AXIA_PRODUCTS = [
       "cuban"
     ],
     "art": "cuban",
-    "desc": "The fire bezel construction as a full chain. Framed, raised stones run the length of a 15mm Cuban for a hard, dimensional field of light across the collar.",
     "images": [
       "assets/img/products/fire-bezel-cuban-chain-15mm/1.jpg",
       "assets/img/products/fire-bezel-cuban-chain-15mm/2.jpg",
       "assets/img/products/fire-bezel-cuban-chain-15mm/3.jpg"
     ],
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "18\"",
-        "priceAUD": 2999
-      },
-      {
-        "length": "20\"",
-        "priceAUD": 3299
-      },
-      {
-        "length": "22\"",
-        "priceAUD": 3599
-      },
-      {
-        "length": "24\"",
-        "priceAUD": 3899
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 2999,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
-    "id": "baguette-cuban-bracelet-15mm",
     "hidden": true,
+    "id": "baguette-cuban-bracelet-15mm",
     "name": "Baguette Cuban Bracelet",
     "width": "15mm",
     "cat": "bracelet",
@@ -1956,39 +1628,19 @@ window.AXIA_PRODUCTS = [
       "cuban"
     ],
     "art": "cubanBracelet",
-    "desc": "Linear baguette cuts reshape the Cuban into a more architectural composition. Structured flashes of light replace the softer brilliance of traditional round-set links.",
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "6.5\"",
-        "priceAUD": 1199
-      },
-      {
-        "length": "7\"",
-        "priceAUD": 1299
-      },
-      {
-        "length": "7.5\"",
-        "priceAUD": 1399
-      },
-      {
-        "length": "8\"",
-        "priceAUD": 1499
-      },
-      {
-        "length": "8.5\"",
-        "priceAUD": 1599
-      },
-      {
-        "length": "9\"",
-        "priceAUD": 1699
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 1199,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
-    "id": "cross-link-cuban-bracelet-15mm",
     "hidden": true,
+    "id": "cross-link-cuban-bracelet-15mm",
     "name": "Chrome Hearts Inspired Cuban Bracelet",
     "width": "15mm",
     "cat": "bracelet",
@@ -2004,44 +1656,24 @@ window.AXIA_PRODUCTS = [
       "cuban"
     ],
     "art": "cubanBracelet",
-    "desc": "A repeating cross-link geometry gives the Cuban a more symbolic and sculptural rhythm, each link carrying a dagger-cross motif. Bold from a distance, intricate at close range.",
     "images": [
       "assets/img/products/cross-link-cuban-bracelet-15mm/1.jpg",
       "assets/img/products/cross-link-cuban-bracelet-15mm/2.jpg",
       "assets/img/products/cross-link-cuban-bracelet-15mm/3.jpg"
     ],
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "6.5\"",
-        "priceAUD": 1099
-      },
-      {
-        "length": "7\"",
-        "priceAUD": 1199
-      },
-      {
-        "length": "7.5\"",
-        "priceAUD": 1299
-      },
-      {
-        "length": "8\"",
-        "priceAUD": 1399
-      },
-      {
-        "length": "8.5\"",
-        "priceAUD": 1499
-      },
-      {
-        "length": "9\"",
-        "priceAUD": 1599
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 1099,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
-    "id": "micro-pave-cuban-bracelet-15mm",
     "hidden": true,
+    "id": "micro-pave-cuban-bracelet-15mm",
     "name": "Micro Pavé Cuban Bracelet",
     "width": "15mm",
     "cat": "bracelet",
@@ -2057,7 +1689,6 @@ window.AXIA_PRODUCTS = [
       "cuban"
     ],
     "art": "cubanBracelet",
-    "desc": "Micro pavé taken to 15mm. A dense, continuous surface of small stones gives a broad statement bracelet a refined, textural finish rather than a blocky one.",
     "images": [
       "assets/img/products/micro-pave-cuban-bracelet-15mm/1.jpg",
       "assets/img/products/micro-pave-cuban-bracelet-15mm/2.jpg",
@@ -2066,39 +1697,24 @@ window.AXIA_PRODUCTS = [
     ],
     "video": "assets/img/products/micro-pave-cuban-bracelet-15mm/bracelet.mp4",
     "videoPoster": "assets/img/products/micro-pave-cuban-bracelet-15mm/poster.jpg",
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "7\"",
-        "priceAUD": 1149
-      },
-      {
-        "length": "7.5\"",
-        "priceAUD": 1249
-      },
-      {
-        "length": "8\"",
-        "priceAUD": 1349
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 1149,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
-    "id": "micro-pave-cuban-chain-15mm",
     "hidden": true,
+    "id": "micro-pave-cuban-chain-15mm",
     "name": "Micro Pavé Cuban Chain",
     "width": "15mm",
     "cat": "chain",
     "cons": "micro-pave",
     "level": 3,
-    "images": [
-      "assets/img/products/micro-pave-cuban-chain-15mm/1.jpg",
-      "assets/img/products/micro-pave-cuban-chain-15mm/2.jpg",
-      "assets/img/products/micro-pave-cuban-chain-15mm/3.jpg",
-      "assets/img/products/micro-pave-cuban-chain-15mm/4.jpg",
-      "assets/img/products/micro-pave-cuban-chain-15mm/5.jpg",
-      "assets/img/products/micro-pave-cuban-chain-15mm/6.jpg"
-    ],
     "col": [
       "Silver"
     ],
@@ -2109,31 +1725,27 @@ window.AXIA_PRODUCTS = [
       "cuban"
     ],
     "art": "cuban",
-    "desc": "A 15mm micro pavé Cuban chain, statement width with a fine, unbroken field of light. Detailed at close range, commanding from across the room.",
+    "images": [
+      "assets/img/products/micro-pave-cuban-chain-15mm/1.jpg",
+      "assets/img/products/micro-pave-cuban-chain-15mm/2.jpg",
+      "assets/img/products/micro-pave-cuban-chain-15mm/3.jpg",
+      "assets/img/products/micro-pave-cuban-chain-15mm/4.jpg",
+      "assets/img/products/micro-pave-cuban-chain-15mm/5.jpg",
+      "assets/img/products/micro-pave-cuban-chain-15mm/6.jpg"
+    ],
+    "singlePrice": false,
+    "desc": "",
     "variants": [
       {
         "length": "18\"",
-        "priceAUD": 2699
-      },
-      {
-        "length": "20\"",
-        "priceAUD": 2999
-      },
-      {
-        "length": "22\"",
-        "priceAUD": 3299
-      },
-      {
-        "length": "24\"",
-        "priceAUD": 3599
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 2699,
-    "singlePrice": false
+    "fromPriceAUD": 0
   },
   {
-    "id": "the-titan",
     "hidden": true,
+    "id": "the-titan",
     "name": "THE TITAN",
     "width": "18mm",
     "cat": "chain",
@@ -2148,39 +1760,39 @@ window.AXIA_PRODUCTS = [
       "titans"
     ],
     "art": "cuban",
-    "titan": true,
-    "desc": "Fancy-cut stones transform the Miami Cuban into a larger study of shape and light. THE TITAN is built for unmistakable scale without losing structural discipline.",
     "images": [
       "assets/img/products/the-titan/1.jpg",
       "assets/img/products/the-titan/2.jpg",
       "assets/img/products/the-titan/3.jpg",
       "assets/img/products/the-titan/4.jpg"
     ],
+    "linkTo": "titans.html",
+    "titan": true,
+    "singlePrice": false,
+    "desc": "Fancy-cut stones transform the Miami Cuban into a larger study of shape and light. THE TITAN is built for unmistakable scale without losing structural discipline.",
     "variants": [
       {
         "length": "18\"",
-        "priceAUD": 2499
+        "priceAUD": 0
       },
       {
         "length": "20\"",
-        "priceAUD": 2799
+        "priceAUD": 0
       },
       {
         "length": "22\"",
-        "priceAUD": 3099
+        "priceAUD": 0
       },
       {
         "length": "24\"",
-        "priceAUD": 3399
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 2499,
-    "singlePrice": false,
-    "linkTo": "titans.html"
+    "fromPriceAUD": 0
   },
   {
-    "id": "the-emperor",
     "hidden": true,
+    "id": "the-emperor",
     "name": "THE EMPEROR",
     "width": "18mm",
     "cat": "chain",
@@ -2195,8 +1807,6 @@ window.AXIA_PRODUCTS = [
       "titans"
     ],
     "art": "cuban",
-    "titan": true,
-    "desc": "Baguette cuts create long, ordered flashes across an 18mm Cuban foundation. THE EMPEROR is architectural, commanding and deliberately formal.",
     "images": [
       "assets/img/products/the-emperor/1.jpg",
       "assets/img/products/the-emperor/2.jpg",
@@ -2204,27 +1814,29 @@ window.AXIA_PRODUCTS = [
       "assets/img/products/the-emperor/4.jpg",
       "assets/img/products/the-emperor/5.jpg"
     ],
+    "linkTo": "titans.html",
+    "titan": true,
+    "singlePrice": false,
+    "desc": "Baguette cuts create long, ordered flashes across an 18mm Cuban foundation. THE EMPEROR is architectural, commanding and deliberately formal.",
     "variants": [
       {
         "length": "18\"",
-        "priceAUD": 2899
+        "priceAUD": 0
       },
       {
         "length": "20\"",
-        "priceAUD": 3199
+        "priceAUD": 0
       },
       {
         "length": "22\"",
-        "priceAUD": 3499
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 2899,
-    "singlePrice": false,
-    "linkTo": "titans.html"
+    "fromPriceAUD": 0
   },
   {
-    "id": "the-requiem",
     "hidden": true,
+    "id": "the-requiem",
     "name": "THE REQUIEM",
     "width": "18mm",
     "cat": "chain",
@@ -2239,8 +1851,6 @@ window.AXIA_PRODUCTS = [
       "titans"
     ],
     "art": "cuban",
-    "titan": true,
-    "desc": "A cross-defined clasp anchors an 18mm Cuban built around symbolism and weight. THE REQUIEM carries a darker, more ceremonial presence within The Titans.",
     "images": [
       "assets/img/products/the-requiem/1.jpg",
       "assets/img/products/the-requiem/2.jpg",
@@ -2248,31 +1858,33 @@ window.AXIA_PRODUCTS = [
     ],
     "video": "assets/img/products/the-requiem/requiem.mp4",
     "videoPoster": "assets/img/products/the-requiem/poster.jpg",
+    "linkTo": "titans.html",
+    "titan": true,
+    "singlePrice": false,
+    "desc": "A cross-defined clasp anchors an 18mm Cuban built around symbolism and weight. THE REQUIEM carries a darker, more ceremonial presence within The Titans.",
     "variants": [
       {
         "length": "18\"",
-        "priceAUD": 2399
+        "priceAUD": 0
       },
       {
         "length": "20\"",
-        "priceAUD": 2599
+        "priceAUD": 0
       },
       {
         "length": "22\"",
-        "priceAUD": 2899
+        "priceAUD": 0
       },
       {
         "length": "24\"",
-        "priceAUD": 3199
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 2399,
-    "singlePrice": false,
-    "linkTo": "titans.html"
+    "fromPriceAUD": 0
   },
   {
-    "id": "the-ascendant",
     "hidden": true,
+    "id": "the-ascendant",
     "name": "THE ASCENDANT",
     "width": "18mm",
     "cat": "chain",
@@ -2287,8 +1899,6 @@ window.AXIA_PRODUCTS = [
       "titans"
     ],
     "art": "cuban",
-    "titan": true,
-    "desc": "Marquise-cut stones give AXIA's most ambitious Cuban a rising, pointed rhythm. The apex of the collection, made to order and personalised, built one at a time.",
     "images": [
       "assets/img/products/the-ascendant/1.jpg",
       "assets/img/products/the-ascendant/2.jpg",
@@ -2297,30 +1907,32 @@ window.AXIA_PRODUCTS = [
       "assets/img/products/the-ascendant/5.jpg",
       "assets/img/products/the-ascendant/6.jpg"
     ],
+    "linkTo": "titans.html",
+    "titan": true,
+    "singlePrice": false,
+    "desc": "Marquise-cut stones give AXIA's most ambitious Cuban a rising, pointed rhythm. The apex of the collection, made to order and personalised, built one at a time.",
     "variants": [
       {
         "length": "16\"",
-        "priceAUD": 4499
+        "priceAUD": 0
       },
       {
         "length": "18\"",
-        "priceAUD": 4999
+        "priceAUD": 0
       },
       {
         "length": "20\"",
-        "priceAUD": 5499
+        "priceAUD": 0
       },
       {
         "length": "22\"",
-        "priceAUD": 5999
+        "priceAUD": 0
       },
       {
         "length": "24\"",
-        "priceAUD": 6499
+        "priceAUD": 0
       }
     ],
-    "fromPriceAUD": 4499,
-    "singlePrice": false,
-    "linkTo": "titans.html"
+    "fromPriceAUD": 0
   }
 ];

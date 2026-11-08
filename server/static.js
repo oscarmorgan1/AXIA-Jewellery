@@ -9,6 +9,7 @@ import path from 'node:path';
 import express from 'express';
 import { getSiteMode, isShopOpen } from './services.js';
 import { renderPage } from './seo.js';
+import { withNonce } from './csp.js';
 
 const NO_CACHE = 'no-cache';
 const WEEK = 'public, max-age=604800';
@@ -47,11 +48,12 @@ export function staticSite(root) {
   const router = express.Router();
   // maintenance.html and offline.html are only ever sent by the switch below, never as pages.
   const pages = new Set(fs.readdirSync(root).filter(f => f.endsWith('.html')).map(f => f.slice(0, -5)).filter(p => p !== 'maintenance' && p !== 'offline'));
-  const sendPage = (res, file) => res.set('Cache-Control', NO_CACHE).sendFile(file);
+  // Every page goes out with this response's CSP nonce on its <script> tags (csp.js).
+  const sendPage = (res, file) => res.set('Cache-Control', NO_CACHE).type('html').send(withNonce(fs.readFileSync(file, 'utf8'), res.locals.nonce));
   // Storefront pages go out with their canonical, preview and robots tags (seo.js).
   const sendSitePage = async (req, res, name) => {
     const html = await renderPage(path.join(root, name + '.html'), name, req.path === '/' ? '/' : '/' + name, req.query);
-    res.set('Cache-Control', NO_CACHE).type('html').send(html);
+    res.set('Cache-Control', NO_CACHE).type('html').send(withNonce(html, res.locals.nonce));
   };
 
   // Crawlers ask for these on every visit; answering saves a stream of 404s.

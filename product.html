@@ -452,7 +452,7 @@
   <symbol id="boxArt" viewBox="0 0 400 320"><path d="M70 140 L130 84 L360 84 L300 140 Z" fill="#242220" stroke="#3a3733" stroke-width="1.5"/><path d="M300 140 L360 84 L360 232 L300 288 Z" fill="#181614" stroke="#3a3733" stroke-width="1.5"/><rect x="70" y="140" width="230" height="148" rx="4" fill="#1f1d1b" stroke="#3a3733" stroke-width="1.5"/><text x="185" y="220" text-anchor="middle" font-family="Bodoni Moda,serif" font-size="24" letter-spacing="7" fill="#F4F1EA">AXIA</text><path d="M300 200 L300 288" stroke="#F3436E" stroke-width="8"/></symbol>
 </svg>
 
-<script src="assets/js/catalogue.js?v=20261107a"></script>
+<script src="assets/js/catalogue.js?v=20261108a"></script>
 <script type="text/axia-deferred" src="assets/js/axia.js?v=20261107b"></script>
 <script type="text/axia-deferred">
 (function(){
@@ -502,7 +502,7 @@
   function claspStageHTML(){
     const c=claspFor(), pl=c.plate, ghost = engraving? '' : ' is-ghost';
     return '<div class="engrave__stage" id="claspStage">'
-      +'<img id="claspImg" class="engrave__photo" src="'+c.img+'" alt="AXIA Cuban clasp in '+colour+'" onload="try{window.__fitPlate&&window.__fitPlate()}catch(e){}">'
+      +'<img id="claspImg" class="engrave__photo" src="'+c.img+'" alt="AXIA Cuban clasp in '+colour+'">'
       +'<svg class="engrave__svg" id="claspSvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'
       +'<g id="claspRot" transform="rotate('+pl.rot+' '+pl.cx+' '+pl.cy+')">'
       +'<text class="engrave__txt'+ghost+'" id="claspEngrave" x="'+pl.cx+'" y="'+pl.cy+'" text-anchor="middle">'+esc(engraving||'Your name')+'</text>'
@@ -666,6 +666,8 @@
   document.title=fullName()+' | AXIA';
   const cr=document.querySelector('.crumb'); if(cr) cr.innerHTML='<a href="store">Home</a><span class="sep">/</span><a href="collection">Shop</a><span class="sep">/</span><span>'+fullName()+'</span>';
   $('#optWrap').innerHTML=optHTML();
+  /* re-fit the engraving once the clasp photo has loaded (a listener: the CSP runs no onload attributes) */
+  (function(){ const ci=$('#claspImg'); if(ci) ci.addEventListener('load',()=>{ try{ fitPlate(); }catch(e){} }); })();
   $('#factsWrap').innerHTML=factsHTML();
   /* live engraving preview: updates the clasp text as they type */
   (function(){ const ei=$('#engraveInput'); if(!ei) return;
@@ -738,7 +740,7 @@
         const a=document.createElement('a'); a.className='rvc__prod'; a.href=x.linkTo||'product?id='+x.id;
         const ph=firstPhoto(x);
         a.innerHTML=(ph?'<img alt="" loading="lazy" '+AXIA_IMG(ph,'44px')+'>':'')
-          +'<span class="rvc__prod-t"><span class="rvc__prod-n"></span><span class="rvc__prod-p">'+(x.singlePrice?'':'From ')+fmtA(x.fromPriceAUD)+'</span></span><span class="rvc__prod-a" aria-hidden="true">&rarr;</span>';
+          +'<span class="rvc__prod-t"><span class="rvc__prod-n"></span><span class="rvc__prod-p">'+(x.hidden?'Coming soon':(x.singlePrice?'':'From ')+fmtA(x.fromPriceAUD))+'</span></span><span class="rvc__prod-a" aria-hidden="true">&rarr;</span>';
         a.querySelector('.rvc__prod-n').textContent=x.name+(x.width?', '+x.width:'');
         c.appendChild(a);
       } else if(anyLinked){ const gap=document.createElement('span'); gap.className='rvc__prod rvc__prod--blank'; gap.setAttribute('aria-hidden','true'); c.appendChild(gap); }
