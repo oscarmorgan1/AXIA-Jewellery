@@ -174,6 +174,15 @@ async function cascadeOrder(id, { by, keepCustomer = false } = {}) {
   }
   done.returns = returns.size;
 
+  // Pieces that came back from this order keep a `returns` history entry naming it
+  // (and who owned them): those entries go too.
+  const histories = await db.collection('pieces').where('returns', '!=', null).get();
+  for (const d of histories.docs) {
+    const list = d.get('returns');
+    if (!Array.isArray(list) || !list.some(e => e && e.orderId === id)) continue;
+    await d.ref.update({ returns: list.filter(e => !(e && e.orderId === id)), updatedAt: FieldValue.serverTimestamp() });
+  }
+
   // The customer record: drop the order, its emails, and recount first and last order.
   if (!keepCustomer && email && !email.includes('/')) await detachFromCustomer(email, id);
 
@@ -314,15 +323,23 @@ export async function eraseCustomer(rawEmail, { confirm, by }) {
     const p = d.data();
     const holds = p.ownerEmail === email || (p.ownerUid && uids.includes(p.ownerUid));
     const inHistory = (p.owners || []).some(mine);
-    if (!holds && !inHistory) continue;
+    const inReturns = (p.returns || []).some(r => r && (r.owners || []).some(mine));
+    if (!holds && !inHistory && !inReturns) continue;
+    const scrub = list => list.map(e => (mine(e) ? { uid: null, email: '', erased: true, via: e.via || '', at: e.at || null } : e));
     await d.ref.update({
       ...(holds ? { ownerUid: ERASED_OWNER, ownerEmail: '' } : {}),
-      ...(inHistory ? { owners: p.owners.map(e => (mine(e) ? { uid: null, email: '', erased: true, via: e.via || '', at: e.at || null } : e)) } : {}),
+      ...(inHistory ? { owners: scrub(p.owners) } : {}),
+      ...(inReturns ? { returns: p.returns.map(r => (r && Array.isArray(r.owners) ? { ...r, owners: scrub(r.owners) } : r)) } : {}),
       updatedAt: FieldValue.serverTimestamp(),
     });
     await syncPiece(d.id);
     counts.piecesScrubbed++;
   }
+
+  // 3b. Returns still filed under their email (their orders' returns went with the orders).
+  const theirReturns = (await db.collection('returns').where('customerEmail', '==', email).get()).docs;
+  await Promise.all(theirReturns.map(d => d.ref.delete()));
+  counts.returns = theirReturns.length;
 
   // 4. Support messages (contact form and portal), waitlist sign-ups, claim links.
   const messages = uniqueDocs([...(await db.collection('messages').where('email', '==', email).get()).docs, ...(await whereIn('messages', 'uid', uids))]);

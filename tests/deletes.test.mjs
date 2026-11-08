@@ -55,7 +55,14 @@ beforeEach(async () => {
     w('promoCodes/promo_used', { code: 'USED10', stripe: {} }),
     w('promoCodes/promo_new', { code: 'NEW10', stripe: {} }),
     w('promoCodes/promo_edit', { code: 'RENAMED', previousCodes: ['OLDNAME'], stripe: { promotionCodeId: 'promo_now', previousPromotionCodeIds: ['promo_old'] } }),
-    w('returns/r1', { orderId: 'o1', number: 'R-AX1001-1' }),
+    w('returns/r1', { orderId: 'o1', number: 'R-AX1001-1', customerEmail: 'ana@example.com' }),
+    // Left over from an order that no longer exists.
+    w('returns/r2', { orderId: 'gone', number: 'R-OLD-1', customerEmail: 'ana@example.com' }),
+    // Came back twice: once from Ana's o1, once from Ben's o3 after Ben passed it to Ana.
+    w('pieces/P3', { key: 'P3', serial: 'P3', productId: 'p', productName: 'Cuban', orderId: null, returns: [
+      { returnId: 'r1', orderId: 'o1', orderNumber: 'AX1001', owners: [{ uid, email: 'ana@example.com', via: 'order', at: null }] },
+      { returnId: 'r3', orderId: 'o3', orderNumber: 'AX1003', owners: [{ uid: 'ben', email: 'ben@example.com', via: 'order', at: null }, { uid, email: 'ana@example.com', via: 'transfer', at: null }] },
+    ] }),
     w(`accounts/${uid}/returns/r1`, { number: 'R-AX1001-1' }),
   ]);
 });
@@ -71,6 +78,7 @@ test('deleting an order removes every reference and frees its pieces', async () 
   assert.equal(r.returns, 1);
   assert.ok(!(await exists('returns/r1')));
   assert.ok(!(await exists(`accounts/${uid}/returns/r1`)));
+  assert.deepEqual((await db.doc('pieces/P3').get()).get('returns').map(e => e.orderId), ['o3']);
   assert.ok(!(await exists('orders/o1')));
   assert.ok(!(await exists(`accounts/${uid}/orders/o1`)));
   assert.ok(await exists(`accounts/${uid}/orders/o2`));
@@ -99,7 +107,7 @@ test('erasing a customer removes everything tied to their email', async () => {
   const r = await eraseCustomer('Ana@Example.com', { confirm: 'ana@example.com', by: 'admin' });
   assert.equal(r.orders, 2);
   for (const path of ['orders/o1', 'orders/o2', 'customers/ana@example.com', `accounts/${uid}`, `accounts/${uid}/saved/cart`, `accounts/${uid}/threads/m1`,
-    `accounts/${uid}/pieces/P2`, 'messages/m1', 'messages/m2', 'signups/s1', 'accountInvites/i1', 'pieceTransfers/t1']) {
+    `accounts/${uid}/pieces/P2`, 'returns/r1', 'returns/r2', 'messages/m1', 'messages/m2', 'signups/s1', 'accountInvites/i1', 'pieceTransfers/t1']) {
     assert.ok(!(await exists(path)), `${path} still there`);
   }
   await assert.rejects(getAuth().getUser(uid), /no user record/i);
@@ -110,6 +118,11 @@ test('erasing a customer removes everything tied to their email', async () => {
   assert.ok(!JSON.stringify(p2).includes('ana@example.com'));
   assert.equal(p2.portalUid, null);
   assert.ok(!JSON.stringify((await db.doc('pieces/P1').get()).data()).includes('ana@example.com'));
+  const p3 = (await db.doc('pieces/P3').get()).data();
+  assert.ok(!JSON.stringify(p3).includes('ana@example.com'));
+  assert.ok(!JSON.stringify(p3).includes(uid));
+  assert.deepEqual(p3.returns.map(e => e.orderId), ['o3']); // Ben's return stays, without Ana
+  assert.equal(p3.returns[0].owners[0].email, 'ben@example.com');
   const log = await db.collection('erasures').get();
   assert.equal(log.size, 1);
   assert.ok(!JSON.stringify(log.docs[0].data()).includes('ana@'));
