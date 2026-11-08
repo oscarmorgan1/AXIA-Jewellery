@@ -31,9 +31,12 @@ app.use((req, res, next) => {
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'SAMEORIGIN',
     // Scripts only from this site (inline ones included, the pages rely on them)
-    // and Google's sign-in scripts for the portal's Google button.
+    // Google's sign-in scripts for the portal's Google button, and reCAPTCHA
+    // (www.google.com/recaptcha, which loads more from www.gstatic.com/recaptcha)
+    // for Firebase App Check. Without reCAPTCHA, App Check never gets a token and
+    // every Firebase call in the portals waits forever.
     'Content-Security-Policy': "frame-ancestors 'self'; base-uri 'self'; object-src 'none'; "
-      + "script-src 'self' 'unsafe-inline' https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com",
+      + "script-src 'self' 'unsafe-inline' https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://www.google.com/recaptcha/",
     'Strict-Transport-Security': 'max-age=31536000',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
