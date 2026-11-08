@@ -25,6 +25,8 @@ const Suppliers = lazy(() => import('./pages/Suppliers'));
 const Reviews = lazy(() => import('./pages/Reviews'));
 const Returns = lazy(() => import('./pages/Returns'));
 const ReturnDetail = lazy(() => import('./pages/ReturnDetail'));
+const Marketing = lazy(() => import('./pages/Marketing'));
+const Campaign = lazy(() => import('./pages/Campaign'));
 
 /**
  * Signed in, but not an admin: a customer. Checks once more for a freshly granted
@@ -68,6 +70,8 @@ export default function App() {
         <Route path="returns" element={<Returns />} />
         <Route path="returns/:id" element={<ReturnDetail />} />
         <Route path="promos" element={<Promos />} />
+        <Route path="marketing" element={<Marketing />} />
+        <Route path="marketing/:id" element={<Campaign />} />
         <Route path="website" element={<Website />} />
         <Route path="settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />

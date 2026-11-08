@@ -28,6 +28,7 @@ import { db, stripe, resend } from './services.js';
 import { customerId } from './orders.js';
 import { syncPiece, syncThread, ERASED_OWNER } from './sync.js';
 import { closeTransfer } from './transfers.js';
+import { eraseFromCampaigns } from './marketing.js';
 
 class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
 
@@ -356,7 +357,8 @@ export async function eraseCustomer(rawEmail, { confirm, by }) {
     try { await getAuth().deleteUser(uid); counts.signIns++; } catch (err) { if (!(err && err.code === 'auth/user-not-found')) throw err; }
   }
 
-  // 6. The customer record, then Resend.
+  // 6. Their line in marketing email results, the customer record, then Resend.
+  counts.campaigns = await eraseFromCampaigns(email);
   await custRef.delete();
   const resendResult = await eraseFromResend(email);
 

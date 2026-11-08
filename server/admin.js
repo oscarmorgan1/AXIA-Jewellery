@@ -21,6 +21,7 @@ import { syncOrder, syncPiece, stripeReceipt, syncThread } from './sync.js';
 import { adminReturnRoutes } from './returns.js';
 import { deletePromo, deleteSupplier, deleteOrder, eraseCustomer } from './deletes.js';
 import { systemStatus } from './status.js';
+import { adminMarketingRoutes } from './marketing.js';
 
 /**
  * Statuses an admin can set. `refunded` only comes from Stripe, with the money;
@@ -442,6 +443,7 @@ export function adminRoutes() {
   })));
   router.post('/api/admin/media/reset', handle(req => resetVideo(str(req.body.slot, 20))));
   router.use(adminReturnRoutes(handle));
+  router.use(adminMarketingRoutes(handle));
   router.get('/api/admin/promos', handle(listPromos));
   router.post('/api/admin/promos', handle(createPromo));
   router.post('/api/admin/promos/:id/active', handle(setPromoActive));
