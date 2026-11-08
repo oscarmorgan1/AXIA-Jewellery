@@ -12,17 +12,21 @@
    ============================================================ */
 import { initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth, onAuthStateChanged, type User } from 'firebase/auth';
+import { startAppCheck } from '../src/appCheck';
 import { firebaseConfig } from '../src/firebaseConfig';
 
 interface Line { [k: string]: unknown }
 interface Axia { getCart(): Line[]; setCart(lines: Line[], at: number): void }
 declare global { interface Window { AXIA: Axia } }
 
-const auth = getAuth(initializeApp(firebaseConfig));
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 // Same rule as the portal (src/firebase.ts): on localhost, the emulators.
-if (['localhost', '127.0.0.1'].includes(location.hostname) && import.meta.env.VITE_USE_EMULATORS !== 'false') {
+const usingEmulators = ['localhost', '127.0.0.1'].includes(location.hostname) && import.meta.env.VITE_USE_EMULATORS !== 'false';
+if (usingEmulators) {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
 }
+startAppCheck(app, usingEmulators);
 
 const get = (k: string) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const set = (k: string, v: string | null) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) { /* storage blocked */ } };
