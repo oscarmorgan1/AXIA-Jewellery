@@ -57,3 +57,18 @@ env:
   - variable: PUBLIC_SITE_URL
     value: "https://axiajewellery.com"
     availability: [RUNTIME]
+
+  # Firebase App Check reCAPTCHA site key (see admin-portal/src/appCheck.ts).
+  # Read by `npm run build`, so BUILD availability. It ends up in the public
+  # JavaScript like any site key; it's a secret only so it can be rotated with
+  # one command and a new rollout, without a code change:
+  #   npx firebase apphosting:secrets:set appcheck-site-key --project axia-jewellery
+  - variable: VITE_APPCHECK_SITE_KEY
+    secret: appcheck-site-key
+    availability: [BUILD]
+
+  # The key is a reCAPTCHA Enterprise key (Google Cloud > Fraud Defense).
+  # Set to "v3" for a classic reCAPTCHA v3 key.
+  - variable: VITE_APPCHECK_PROVIDER
+    value: "enterprise"
+    availability: [BUILD]

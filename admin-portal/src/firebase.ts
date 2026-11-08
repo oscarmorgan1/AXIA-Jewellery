@@ -3,6 +3,7 @@ import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { connectStorageEmulator, getStorage } from 'firebase/storage';
 
+import { startAppCheck } from './appCheck';
 import { firebaseConfig } from './firebaseConfig';
 
 export const app = initializeApp(firebaseConfig);
@@ -21,6 +22,8 @@ if (usingEmulators) {
   connectFirestoreEmulator(db, host, 8080);
   connectStorageEmulator(storage, host, 9199);
 }
+
+startAppCheck(app, usingEmulators);
 
 // Storefront images are stored as site-relative paths ("assets/img/...").
 // In `vite dev` the storefront is served by the Hosting emulator on :5000.
