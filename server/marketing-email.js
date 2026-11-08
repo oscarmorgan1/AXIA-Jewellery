@@ -137,7 +137,7 @@ export function marketingEmail(content, { products = [], siteUrl, firstName = ''
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px"><tr><td align="center" style="padding:26px 20px 0;${sans};font-size:11px;line-height:1.7;color:${C.soft}">
   ${link(`${brandUrl()}/shop`, 'Shop')} &nbsp;·&nbsp; ${link(`${brandUrl()}/support`, 'Help centre')} &nbsp;·&nbsp; ${link(`${brandUrl()}/genuine`, 'Verify a piece')}<br>
   ${esc(why)}<br>
-  Sent by AXIA Jewellery, axiajewellery.com. Replies reach our team.<br>
+  Sent by AXIA Jewellery, axiajewellery.com.<br>
   <a href="${UNSUBSCRIBE_TOKEN}" style="color:${C.ink};font-weight:700;text-decoration:underline">Unsubscribe</a> from AXIA news and offers in one click.
 </td></tr></table>
 </td></tr></table></body></html>`;
