@@ -1,11 +1,12 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, TicketPercent } from 'lucide-react';
+import { Pencil, Plus, TicketPercent, Trash2 } from 'lucide-react';
 import { useOrders } from '../lib/data';
 import { adminApi } from '../lib/api';
 import { aud } from '../lib/format';
 import { isSale, orderNo } from '../lib/orders';
 import Drawer from '../components/Drawer';
+import ConfirmDelete from '../components/ConfirmDelete';
 import StatCard from '../components/StatCard';
 import { useToast } from '../components/Toast';
 import type { Order, PromoCode } from '../types';
@@ -18,29 +19,50 @@ interface Usage { orders: Order[]; salesAUD: number; discountAUD: number }
 const blankUsage = (): Usage => ({ orders: [], salesAUD: 0, discountAUD: 0 });
 const day = (ms: number | null) => ms ? new Date(ms).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
 
-function NewPromo({ onClose, onCreated }: { onClose: () => void; onCreated: (code: string) => void }) {
-  const [f, setF] = useState({ code: '', percentOff: '15', kind: 'affiliate' as 'affiliate' | 'standard', affiliateName: '', affiliateEmail: '', maxRedemptions: '', expiresAt: '' });
+const dateInput = (ms: number | null) => {
+  if (!ms) return '';
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+/** New code, or editing one (`promo`). */
+function PromoForm({ promo, used, onClose, onSaved }: { promo?: PromoCode; used?: number; onClose: () => void; onSaved: (msg: string) => void }) {
+  const [f, setF] = useState(promo ? {
+    code: promo.code, percentOff: String(promo.percentOff), kind: promo.kind, affiliateName: promo.affiliate?.name || '', affiliateEmail: promo.affiliate?.email || '',
+    maxRedemptions: promo.maxRedemptions ? String(promo.maxRedemptions) : '', expiresAt: dateInput(promo.expiresAt),
+  } : { code: '', percentOff: '15', kind: 'affiliate' as 'affiliate' | 'standard', affiliateName: '', affiliateEmail: '', maxRedemptions: '', expiresAt: '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const set = (p: Partial<typeof f>) => setF(x => ({ ...x, ...p }));
 
-  async function create() {
+  // Stripe can't change these on an existing code, so changing one makes a new Stripe code.
+  const replaces = !!promo && (f.code !== promo.code || Number(f.percentOff) !== promo.percentOff
+    || (f.maxRedemptions ? Number(f.maxRedemptions) : null) !== (promo.maxRedemptions || null) || f.expiresAt !== dateInput(promo.expiresAt));
+
+  async function save() {
     setBusy(true); setError('');
+    const body = {
+      code: f.code, percentOff: Number(f.percentOff), kind: f.kind,
+      affiliateName: f.affiliateName, affiliateEmail: f.affiliateEmail,
+      maxRedemptions: f.maxRedemptions ? Number(f.maxRedemptions) : null,
+      // Unchanged end date: send the stored time back exactly, so it doesn't count as a change.
+      expiresAt: !f.expiresAt ? null : promo && f.expiresAt === dateInput(promo.expiresAt) ? new Date(promo.expiresAt!).toISOString() : new Date(`${f.expiresAt}T23:59:59`).toISOString(),
+    };
     try {
-      await adminApi('/promos', {
-        code: f.code, percentOff: Number(f.percentOff), kind: f.kind,
-        affiliateName: f.affiliateName, affiliateEmail: f.affiliateEmail,
-        maxRedemptions: f.maxRedemptions ? Number(f.maxRedemptions) : null,
-        expiresAt: f.expiresAt ? new Date(`${f.expiresAt}T23:59:59`).toISOString() : null,
-      });
-      onCreated(f.code.toUpperCase());
+      if (promo) {
+        const r = await adminApi<{ changed: boolean }>(`/promos/${encodeURIComponent(promo.id)}/edit`, body);
+        onSaved(r.changed ? `${f.code.toUpperCase()} saved` : 'Nothing changed');
+      } else {
+        await adminApi('/promos', body);
+        onSaved(`${f.code.toUpperCase()} created in Stripe`);
+      }
     } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   }
 
   return (
-    <Drawer title="New promo code" onClose={onClose} footer={<>
+    <Drawer title={promo ? `Edit ${promo.code}` : 'New promo code'} onClose={onClose} footer={<>
       <button className="btn" onClick={onClose}>Cancel</button><span style={{ flex: 1 }} />
-      <button className="btn btn--primary" onClick={create} disabled={busy || !f.code}>{busy ? 'Creating in Stripe…' : 'Create code'}</button>
+      <button className="btn btn--primary" onClick={save} disabled={busy || !f.code}>{busy ? 'Saving in Stripe…' : promo ? 'Save changes' : 'Create code'}</button>
     </>}>
       {error && <div className="notice notice--error">{error}</div>}
       <div className="segmented">
@@ -60,7 +82,14 @@ function NewPromo({ onClose, onCreated }: { onClose: () => void; onCreated: (cod
         <label className="field">Max uses (optional)<input className="input" type="number" min={1} value={f.maxRedemptions} placeholder="Unlimited" onChange={e => set({ maxRedemptions: e.target.value })} /></label>
         <label className="field">Ends on (optional)<input className="input" type="date" value={f.expiresAt} onChange={e => set({ expiresAt: e.target.value })} /></label>
       </div>
-      <div className="card__sub">The code is created in Stripe, so customers enter it on the Stripe checkout page. The discount comes off the items, not shipping. One use per checkout.</div>
+      {promo ? (
+        replaces ? (
+          <div className="notice notice--warn">
+            Stripe can’t change a code’s text, discount, use limit or end date, so saving switches the old Stripe code off and makes a new one straight away.
+            Its {used ? `${used} ${used === 1 ? 'order stays' : 'orders stay'}` : 'past orders stay'} counted here{f.maxRedemptions ? ', and earlier uses still count towards the max uses' : ''}.
+          </div>
+        ) : <div className="card__sub">Name and affiliate details change in place. The code keeps working at checkout the whole time.</div>
+      ) : <div className="card__sub">The code is created in Stripe, so customers enter it on the Stripe checkout page. The discount comes off the items, not shipping. One use per checkout.</div>}
     </Drawer>
   );
 }
@@ -70,6 +99,8 @@ export default function Promos() {
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<PromoCode | null>(null);
+  const [editing, setEditing] = useState<PromoCode | null>(null);
   const { data: orders } = useOrders();
   const toast = useToast();
   const confirm = useConfirm();
@@ -79,20 +110,41 @@ export default function Promos() {
   }, []);
   useEffect(load, [load]);
 
+  // Every Stripe code and text a promo has had (editing can replace them) → its record.
+  const lookup = useMemo(() => {
+    const byId = new Map<string, string>(), byCode = new Map<string, string>();
+    for (const p of promos || []) {
+      for (const sid of [p.id, p.stripe.promotionCodeId, ...(p.stripe.previousPromotionCodeIds || [])]) byId.set(sid, p.id);
+      for (const c of [...(p.previousCodes || []), p.code]) byCode.set(c, p.id);
+    }
+    return { byId, byCode };
+  }, [promos]);
+
   // Sales per code, matched by Stripe promotion code id (or the code text for older orders).
   const usage = useMemo(() => {
     const m = new Map<string, Usage>();
-    const byCode = new Map((promos || []).map(p => [p.code, p.id]));
+    const { byId, byCode } = lookup;
     for (const o of orders) {
       if (!isSale(o)) continue;
-      const id = o.promotionCodeId || (o.promotionCode && byCode.get(o.promotionCode.toUpperCase())) || '';
+      const id = (o.promotionCodeId && byId.get(o.promotionCodeId)) || (o.promotionCode && byCode.get(o.promotionCode.toUpperCase())) || '';
       if (!id) continue;
       const u = m.get(id) || blankUsage();
       u.orders.push(o); u.salesAUD += o.totalAUD || 0; u.discountAUD += o.discountAUD || 0;
       m.set(id, u);
     }
     return m;
-  }, [orders, promos]);
+  }, [orders, lookup]);
+
+  // Any order at all with the code, paid or not: those codes can't be deleted.
+  const onOrders = useMemo(() => {
+    const m = new Map<string, number>();
+    const { byId, byCode } = lookup;
+    for (const o of orders) {
+      const id = (o.promotionCodeId && byId.get(o.promotionCodeId)) || (o.promotionCode && byCode.get(o.promotionCode.toUpperCase())) || '';
+      if (id) m.set(id, (m.get(id) || 0) + 1);
+    }
+    return m;
+  }, [orders, lookup]);
 
   const affiliates = useMemo(() => {
     const m = new Map<string, Usage & { codes: string[] }>();
@@ -182,7 +234,13 @@ export default function Promos() {
                         <td className="num">{aud(u.salesAUD, 2)}</td>
                         <td className="num">{aud(u.discountAUD, 2)}</td>
                         <td>{p.expiresAt ? `Ends ${day(p.expiresAt)}` : 'No end date'}</td>
-                        <td><button className="btn btn--sm" onClick={e => { e.stopPropagation(); toggle(p); }}>{p.active ? 'Turn off' : 'Turn on'}</button></td>
+                        <td><div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                          <button className="btn btn--sm" onClick={e => { e.stopPropagation(); setEditing(p); }} aria-label={`Edit ${p.code}`}><Pencil size={13} /> Edit</button>
+                          <button className="btn btn--sm" onClick={e => { e.stopPropagation(); toggle(p); }}>{p.active ? 'Turn off' : 'Turn on'}</button>
+                          <button className="btn btn--sm" style={{ padding: "0 8px" }} aria-label={`Delete ${p.code}`} disabled={!!onOrders.get(p.id)}
+                            title={onOrders.get(p.id) ? 'Used on an order, so it can’t be deleted. Turn it off instead.' : `Delete ${p.code}`}
+                            onClick={e => { e.stopPropagation(); setDeleting(p); }}><Trash2 size={14} /></button>
+                        </div></td>
                       </tr>
                       {open === p.id && (
                         <tr><td colSpan={9}>
@@ -195,6 +253,11 @@ export default function Promos() {
                             </div>
                           )) : <span className="muted">No orders with this code yet.</span>}
                           <div className="muted" style={{ fontSize: 12.5, marginTop: 8 }}>Created {day(p.createdAt)}{p.affiliate?.email ? ` · ${p.affiliate.email}` : ''} · Stripe {p.stripe.promotionCodeId}</div>
+                          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                            {onOrders.get(p.id)
+                              ? <span className="muted" style={{ fontSize: 12.5 }}>Used on {onOrders.get(p.id)} {onOrders.get(p.id) === 1 ? 'order' : 'orders'}, so it can’t be deleted. Turn it off instead.</span>
+                              : <button className="btn btn--sm btn--danger" onClick={() => setDeleting(p)}><Trash2 size={14} /> Delete code</button>}
+                          </div>
                         </td></tr>
                       )}
                     </Fragment>
@@ -206,7 +269,19 @@ export default function Promos() {
         )}
       </div>
 
-      {creating && <NewPromo onClose={() => setCreating(false)} onCreated={code => { setCreating(false); toast.show(`${code} created in Stripe`); load(); }} />}
+      {deleting && (
+        <ConfirmDelete title={`Delete ${deleting.code}?`} action="Delete code" onClose={() => setDeleting(null)}
+          onConfirm={async () => {
+            await adminApi(`/promos/${encodeURIComponent(deleting.id)}/delete`, {});
+            setDeleting(null); setOpen(null); toast.show(`${deleting.code} deleted`); load();
+          }}>
+          <p>No order has used {deleting.code}, so it can go. It stops working at checkout straight away and leaves this list.</p>
+          <p className="muted">Stripe doesn’t let promotion codes be deleted, so it’s switched off there and stays in your Stripe dashboard as an inactive code.</p>
+          {deleting.code === WELCOME_CODE && <div className="notice notice--warn">{WELCOME_CODE} is the code the welcome email gives everyone who signs up. Without it, that email offers a code that won’t work.</div>}
+        </ConfirmDelete>
+      )}
+      {creating && <PromoForm onClose={() => setCreating(false)} onSaved={m => { setCreating(false); toast.show(m); load(); }} />}
+      {editing && <PromoForm promo={editing} used={onOrders.get(editing.id) || 0} onClose={() => setEditing(null)} onSaved={m => { setEditing(null); toast.show(m); load(); }} />}
       {toast.node}
     </>
   );

@@ -181,7 +181,12 @@ export interface PromoCode {
   maxRedemptions: number | null;
   expiresAt: number | null;
   createdAt: number | null;
-  stripe: { couponId: string; promotionCodeId: string; livemode: boolean };
+  updatedAt?: number | null;
+  stripe: { couponId: string; promotionCodeId: string; livemode: boolean; previousPromotionCodeIds?: string[] };
+  /** Earlier text of the code, if it was renamed. */
+  previousCodes?: string[];
+  /** Stripe uses on codes this one replaced when it was edited. */
+  redeemedBefore?: number;
 }
 
 /** Public collection document (Firestore `collections/{slug}`). Products join via `coll`. */
