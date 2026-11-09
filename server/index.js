@@ -1,9 +1,12 @@
 // The AXIA web server, run by Firebase App Hosting (`npm start`).
 // Serves the storefront and admin portal, plus the checkout and admin APIs.
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { staticSite } from './static.js';
+import { cspMiddleware, cspReportRoutes, withNonce } from './csp.js';
+import { rateLimit } from './limit.js';
 import { checkoutRoutes } from './checkout.js';
 import { webhookRoutes } from './webhook.js';
 import { adminRoutes } from './admin.js';
@@ -16,6 +19,7 @@ import { accountRoutes } from './account.js';
 import { transferRoutes, sweepExpiredTransfers } from './transfers.js';
 import { returnRoutes } from './returns.js';
 import { resendWebhookRoutes } from './marketing.js';
+import { catalogueRoutes } from './catalogue.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const app = express();
@@ -26,17 +30,11 @@ app.set('trust proxy', true);
 
 // Browser hardening on every response: no MIME sniffing, no framing by other
 // sites (clickjacking), HTTPS only, and no referrer leaking full URLs (order ids).
+app.use(cspMiddleware); // Content-Security-Policy with a per-request nonce (csp.js)
 app.use((req, res, next) => {
   res.set({
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'SAMEORIGIN',
-    // Scripts only from this site (inline ones included, the pages rely on them)
-    // Google's sign-in scripts for the portal's Google button, and reCAPTCHA
-    // (www.google.com/recaptcha, which loads more from www.gstatic.com/recaptcha)
-    // for Firebase App Check. Without reCAPTCHA, App Check never gets a token and
-    // every Firebase call in the portals waits forever.
-    'Content-Security-Policy': "frame-ancestors 'self'; base-uri 'self'; object-src 'none'; "
-      + "script-src 'self' 'unsafe-inline' https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://www.google.com/recaptcha/",
     'Strict-Transport-Security': 'max-age=31536000',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
@@ -44,6 +42,7 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(cspReportRoutes(express, rateLimit));
 app.use(webhookRoutes()); // before any JSON parsing: Stripe signs the raw body
 app.use(resendWebhookRoutes()); // the same for Resend's delivery, open and click events
 app.use(checkoutRoutes());
@@ -53,6 +52,7 @@ app.use(signupRoutes());
 app.use(unsubscribeRoutes());
 app.use(publicFormRoutes());
 app.use(genuineRoutes());
+app.use(catalogueRoutes());
 app.use(accountRoutes());
 app.use(transferRoutes());
 app.use(returnRoutes());
@@ -62,7 +62,7 @@ app.use(staticSite(root));
 app.use((req, res) => {
   res.status(404);
   if (req.method === 'GET' && req.accepts(['html', 'text']) === 'html') {
-    return res.set('Cache-Control', 'no-cache').sendFile(path.join(root, '404.html'));
+    return res.set('Cache-Control', 'no-cache').type('html').send(withNonce(fs.readFileSync(path.join(root, '404.html'), 'utf8'), res.locals.nonce));
   }
   res.type('text').send('Not found');
 });

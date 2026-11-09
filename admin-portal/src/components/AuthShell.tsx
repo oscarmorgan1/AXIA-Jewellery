@@ -1,7 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
 import Logo from './Logo';
-import { db, siteUrl } from '../firebase';
+import { siteUrl } from '../firebase';
 import { firstImage } from '../lib/catalogue';
 import type { Product } from '../types';
 
@@ -31,9 +30,9 @@ function useSlides(): Slide[] {
   const [slides, setSlides] = useState<Slide[]>(FALLBACK);
   useEffect(() => {
     let live = true;
-    // products/ is publicly readable, so this works before sign-in.
-    getDocs(collection(db, 'products')).then(snap => {
-      const list = snap.docs.map(d => ({ ...(d.data() as Product), id: d.id }))
+    // products/ is admins only, so before sign-in this uses the storefront's public catalogue.
+    fetch('/api/catalogue').then(r => (r.ok ? r.json() : Promise.reject(new Error(String(r.status))))).then((j: { products?: Product[] }) => {
+      const list = (j.products || [])
         .filter(p => !p.archived && !p.hidden && !p.linkTo && firstImage(p))
         .sort((a, b) => (a.sort ?? 999) - (b.sort ?? 999))
         .slice(0, MAX_SLIDES)

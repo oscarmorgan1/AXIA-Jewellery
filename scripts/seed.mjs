@@ -1,6 +1,6 @@
 // Seeds Firestore from the current site data.
 //
-//   products/{id}       <- assets/data/products.js (public catalogue)
+//   products/{id}       <- private/catalogue.json (full catalogue), else assets/data/products.js
 //   collections/{slug}  <- starter collections (scripts/catalogue.mjs)
 //   productCosts/{id}   <- private/AXIA-backend-data.json  products[].economics (admin only)
 //   internal/costAssumptions, internal/firstDropPlan <- same private file

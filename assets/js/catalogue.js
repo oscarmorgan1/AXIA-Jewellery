@@ -1,7 +1,8 @@
 /* ============================================================
    AXIA, catalogue loader
-   Loads the live product catalogue from Firestore ("products" and
-   "collections", edited in the admin portal at /admin) into
+   Loads the live product catalogue ("products" and "collections", edited
+   in the admin portal at /admin) from the server, GET /api/catalogue
+   (server/catalogue.js), into
    window.AXIA_PRODUCTS and window.AXIA_COLLECTIONS, then runs the
    page's scripts. Also loads the site settings edited in the portal
    (the launch countdown, from site/countdown, and whether the shop is
@@ -15,24 +16,21 @@
    once the catalogue is ready, so they behave exactly as they did when
    products.js was a plain synchronous include.
 
-   If Firestore can't be reached, assets/data/products.js (a snapshot,
-   refreshed with `npm run export:products`) is used instead.
+   Firestore's products/ is admins only, so browsers never read it: the
+   server sends live pieces in full and Coming soon pieces as teasers
+   (server/public-catalogue.js). If the server can't be reached,
+   assets/data/products.js (the same public view, refreshed with
+   `npm run export:products`) is used instead.
 
-   Source override for testing: ?catalogue=static | emulator | live
+   Source override for testing: ?catalogue=static
    ============================================================ */
 (function () {
   'use strict';
-  var PROJECT = 'axia-jewellery';
-  var API_KEY = 'AIzaSyAXFXM3znoKUCD2ZPFfB8saBwV9r4eKItA'; // public web key; access is enforced by Firestore rules
-  var FALLBACK = 'assets/data/products.js?v=20260930a';
-  var CACHE_KEY = 'axia_catalogue_v4', CACHE_TTL = 60 * 1000, TIMEOUT = 9000;
+  var FALLBACK = 'assets/data/products.js?v=20261108a';
+  var CACHE_KEY = 'axia_catalogue_v5', CACHE_TTL = 60 * 1000, TIMEOUT = 9000;
 
-  var q = new URLSearchParams(location.search).get('catalogue');
-  var local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
-  var source = q || (local ? 'emulator' : 'live');
-  var base = source === 'emulator'
-    ? 'http://' + (location.hostname === 'localhost' ? 'localhost' : '127.0.0.1') + ':8080/v1'
-    : 'https://firestore.googleapis.com/v1';
+  /* ?catalogue=static forces the bundled snapshot; anything else asks the server. */
+  var source = new URLSearchParams(location.search).get('catalogue') === 'static' ? 'static' : 'live';
 
   /* Shop tabs used if the collections can't be loaded (matches the seed). */
   var DEFAULT_COLLECTIONS = [
@@ -47,67 +45,38 @@
      (mode: 'timer' counts down to target, 'text' shows text, 'off' hides it). */
   var DEFAULT_COUNTDOWN = { mode: 'text', label: 'The First Drop', text: 'Dropping soon', target: '2026-11-20T19:00:00+11:00', endedText: 'Out now' };
 
-  /* Firestore REST values -> plain JSON */
-  function val(v) {
-    if (!v) return null;
-    if ('stringValue' in v) return v.stringValue;
-    if ('integerValue' in v) return Number(v.integerValue);
-    if ('doubleValue' in v) return v.doubleValue;
-    if ('booleanValue' in v) return v.booleanValue;
-    if ('nullValue' in v) return null;
-    if ('timestampValue' in v) return v.timestampValue;
-    if ('arrayValue' in v) return (v.arrayValue.values || []).map(val);
-    if ('mapValue' in v) return obj(v.mapValue.fields || {});
-    return null;
+  /* One request for everything public: the catalogue (live pieces in full,
+     Coming soon pieces as teasers), the collections and the site settings.
+     Shared by the catalogue, the site videos and the review videos below. */
+  var apiCall = null;
+  function fetchApi() {
+    if (apiCall) return apiCall;
+    var ctrl = 'AbortController' in window ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, TIMEOUT);
+    apiCall = fetch('/api/catalogue', { signal: ctrl ? ctrl.signal : undefined, credentials: 'same-origin' }).then(function (r) {
+      clearTimeout(timer);
+      if (!r.ok) throw new Error('Catalogue ' + r.status);
+      return r.json();
+    }, function (e) { clearTimeout(timer); throw e; });
+    apiCall.catch(function () { apiCall = null; });
+    return apiCall;
   }
-  function obj(fields) { var o = {}; for (var k in fields) o[k] = val(fields[k]); return o; }
+  function siteDoc(name) {
+    return fetchApi().then(function (j) { return (j.site && j.site[name]) || null; });
+  }
 
   function tidy(list) {
     return list.filter(function (p) { return p && p.id && !p.archived; })
-      .sort(function (a, b) { return (a.sort || 0) - (b.sort || 0); })
       .map(function (p) { delete p.sort; delete p.archived; delete p.updatedAt; return p; });
   }
 
-  function docsUrl(path) {
-    return base + '/projects/' + PROJECT + '/databases/(default)/documents/' + path;
-  }
-  function keyParam(sep) { return source === 'live' ? sep + 'key=' + API_KEY : ''; }
-
-  function listAll(name, signal) {
-    var all = [];
-    function page(token) {
-      var url = docsUrl(name) + '?pageSize=300' + keyParam('&') + (token ? '&pageToken=' + encodeURIComponent(token) : '');
-      return fetch(url, { signal: signal }).then(function (r) {
-        if (!r.ok) throw new Error('Firestore ' + name + ' ' + r.status);
-        return r.json();
-      }).then(function (j) {
-        (j.documents || []).forEach(function (d) { all.push(obj(d.fields || {})); });
-        return j.nextPageToken ? page(j.nextPageToken) : all;
-      });
-    }
-    return page();
-  }
-
-  function getDoc(path, signal) {
-    return fetch(docsUrl(path) + keyParam('?'), { signal: signal }).then(function (r) {
-      if (r.status === 404) return null;
-      if (!r.ok) throw new Error('Firestore ' + path + ' ' + r.status);
-      return r.json().then(function (d) { return obj(d.fields || {}); });
+  function fetchCatalogue() {
+    return fetchApi().then(function (j) {
+      var list = tidy(j.products || []);
+      if (!list.length) throw new Error('Catalogue is empty');
+      var s = j.site || {};
+      return { p: list, c: tidyCollections(j.collections), s: { countdown: s.countdown || null, shop: s.shop || null } };
     });
-  }
-
-  function fetchFirestore() {
-    var ctrl = 'AbortController' in window ? new AbortController() : null;
-    var signal = ctrl ? ctrl.signal : undefined;
-    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, TIMEOUT);
-    var cols = listAll('collections', signal).catch(function () { return []; });
-    var cd = getDoc('site/countdown', signal).catch(function () { return null; });
-    var shop = getDoc('site/shop', signal).catch(function () { return null; });
-    return Promise.all([listAll('products', signal), cols, cd, shop]).then(function (r) {
-      clearTimeout(timer);
-      if (!r[0].length) throw new Error('Firestore catalogue is empty');
-      return { p: tidy(r[0]), c: tidyCollections(r[1]), s: { countdown: r[2], shop: r[3] } };
-    }, function (e) { clearTimeout(timer); throw e; });
   }
 
   function tidyCollections(list) {
@@ -135,10 +104,11 @@
   }
   function writeCache(d) { try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), src: source, p: d.p, c: d.c, s: d.s })); } catch (e) {} }
 
+  try { sessionStorage.removeItem('axia_catalogue_v4'); } catch (e) {} /* the old full copy, before Coming soon pieces became teasers */
   var cached = source === 'static' ? null : readCache();
   var catalogue = cached ? Promise.resolve(cached)
     : source === 'static' ? loadFallback()
-    : fetchFirestore().then(function (p) { writeCache(p); return p; }, function (e) {
+    : fetchCatalogue().then(function (p) { writeCache(p); return p; }, function (e) {
         if (window.console) console.warn('[AXIA] Live catalogue unavailable, using the bundled snapshot.', e);
         return loadFallback();
       });
@@ -155,8 +125,11 @@
         return new Promise(function (resolve) {
           var s = document.createElement('script');
           for (var i = 0; i < old.attributes.length; i++) {
-            var a = old.attributes[i]; if (a.name !== 'type') s.setAttribute(a.name, a.value);
+            var a = old.attributes[i]; if (a.name !== 'type' && a.name !== 'nonce') s.setAttribute(a.name, a.value);
           }
+          /* the page's CSP only runs scripts carrying its nonce (server/csp.js); the
+             attribute reads empty once parsed, the property still holds it */
+          if (old.nonce) s.nonce = old.nonce;
           if (old.src) { s.async = false; s.onload = s.onerror = function () { resolve(); }; }
           else s.textContent = old.textContent;
           old.parentNode.replaceChild(s, old);
@@ -224,13 +197,10 @@
     var MEDIA_KEY = 'axia_media_v1';
     function settings() {
       try { var c = JSON.parse(sessionStorage.getItem(MEDIA_KEY)); if (c && Date.now() - c.t < CACHE_TTL) return Promise.resolve(c.m); } catch (e) {}
-      var ctrl = 'AbortController' in window ? new AbortController() : null;
-      var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 2500);
-      return getDoc('site/media', ctrl && ctrl.signal).then(function (m) {
-        clearTimeout(timer);
+      return siteDoc('media').then(function (m) {
         try { sessionStorage.setItem(MEDIA_KEY, JSON.stringify({ t: Date.now(), m: m || {} })); } catch (e) {}
         return m || {};
-      }, function () { clearTimeout(timer); return {}; });
+      }, function () { return {}; });
     }
     function small() {
       var c = navigator.connection || {};
@@ -269,14 +239,11 @@
   window.AXIA_REVIEWS = function () {
     var KEY = 'axia_reviews_v1';
     try { var c = JSON.parse(sessionStorage.getItem(KEY)); if (c && Date.now() - c.t < CACHE_TTL) return Promise.resolve(c.v); } catch (e) {}
-    var ctrl = 'AbortController' in window ? new AbortController() : null;
-    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 4000);
-    return getDoc('site/reviews', ctrl && ctrl.signal).then(function (d) {
-      clearTimeout(timer);
+    return siteDoc('reviews').then(function (d) {
       var v = d ? (Array.isArray(d.videos) ? d.videos : []) : null;
       try { sessionStorage.setItem(KEY, JSON.stringify({ t: Date.now(), v: v })); } catch (e) {}
       return v;
-    }, function () { clearTimeout(timer); return null; });
+    }, function () { return null; });
   };
 
   /* ---- Launch countdown (Admin > Settings > Countdown) ----

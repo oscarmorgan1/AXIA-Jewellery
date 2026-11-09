@@ -74,9 +74,8 @@ function page(title: string, body: string) {
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Hanken+Grotesk:wght@400;600;700&family=Cormorant:ital,wght@1,600&display=swap" rel="stylesheet">
 <style>${CSS}</style></head><body>
-<div class="bar noprint"><button onclick="window.close()">Close</button><button class="primary" onclick="window.print()">Print or save PDF</button></div>
+<div class="bar noprint"><button data-doc="close">Close</button><button class="primary" data-doc="print">Print or save PDF</button></div>
 <div class="sheet">${body}</div>
-<script>document.fonts.ready.then(function(){ setTimeout(function(){ window.print(); }, 150); });</script>
 </body></html>`;
 }
 
@@ -192,4 +191,11 @@ export function writeDocument(w: Window, html: string) {
   w.document.open();
   w.document.write(html);
   w.document.close();
+  // The tab shares this page's Content-Security-Policy, which runs no inline
+  // scripts or onclick attributes, so its buttons and the print are wired up from here.
+  w.document.querySelector('[data-doc="close"]')?.addEventListener('click', () => w.close());
+  w.document.querySelector('[data-doc="print"]')?.addEventListener('click', () => w.print());
+  if (w.document.querySelector('[data-doc="print"]')) {
+    w.document.fonts.ready.then(() => setTimeout(() => w.print(), 150)).catch(() => {});
+  }
 }

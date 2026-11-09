@@ -416,7 +416,7 @@
   hero.addEventListener('focusout',function(e){ if(!hero.contains(e.relatedTarget)) play(); });
 })();
 </script>
-<script src="assets/js/catalogue.js?v=20261107a"></script>
+<script src="assets/js/catalogue.js?v=20261108a"></script>
 <script type="text/axia-deferred" src="assets/js/axia.js?v=20261107b"></script>
 <script type="text/axia-deferred">
 (function(){
@@ -426,7 +426,7 @@
   function card(p){ if(!p) return '';
     const deal=false; // no strikethrough "was" prices (ACL: nothing has sold at a higher price)
     const was='';
-    const price=(p.singlePrice?'':'From ')+fmtA(p.fromPriceAUD);
+    const price=p.hidden?'Coming soon':(p.singlePrice?'':'From ')+fmtA(p.fromPriceAUD);
     const gen=p.art==='tennis'?'tennis':p.art==='cross'?'cross':p.art==='cubanBracelet'?'cubanBracelet':'cuban';
     const vb=p.art==='cross'?'0 0 300 430':'0 0 1000 620';
     const meta=(p.col&&p.col.length>1)?p.col.join(' / '):'925 silver';
