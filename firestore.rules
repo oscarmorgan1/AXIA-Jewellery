@@ -2,7 +2,10 @@ rules_version = '2';
 
 // AXIA Firestore security rules.
 //
-//   products/{id}        public catalogue: anyone can read, only admins write
+//   products/{id}        the catalogue: admins only. Browsers get the public view from
+//                        GET /api/catalogue (server/catalogue.js): live pieces in full,
+//                        hidden (Coming soon) pieces as teasers with no prices or
+//                        description, archived ones not at all (server/public-catalogue.js).
 //   productCosts/{id}    PRIVATE factory costs and margins: admins only
 //   internal/{doc}       PRIVATE cost assumptions, launch plan: admins only
 //   collections/{slug}   public: anyone can read, only admins write
@@ -45,7 +48,7 @@ service cloud.firestore {
     }
 
     match /products/{productId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin()
         && request.resource.data.keys().hasAll(['id', 'name'])
         && request.resource.data.id == productId

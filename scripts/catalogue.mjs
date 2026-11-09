@@ -1,15 +1,52 @@
-// Reads the static catalogue (assets/data/products.js) the way a browser would.
-import { readFileSync } from 'node:fs';
+// The catalogue files.
+//
+//   private/catalogue.json     the full catalogue, Coming soon pieces included: the
+//                              seed source. private/ is git-ignored (this repo is
+//                              public) and never served.
+//   assets/data/products.js    the storefront's offline fallback: the PUBLIC view
+//                              only (server/public-catalogue.js), the same thing
+//                              GET /api/catalogue sends. Committed.
+// Both are written by `npm run export:products`. Without private/catalogue.json,
+// seeding uses the public view, so Coming soon pieces arrive as teasers.
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import vm from 'node:vm';
+import { publicProducts } from '../server/public-catalogue.js';
 
+export const FULL_PATH = new URL('../private/catalogue.json', import.meta.url);
 export const CATALOGUE_PATH = new URL('../assets/data/products.js', import.meta.url);
 
 export function loadStaticCatalogue() {
+  if (existsSync(FULL_PATH)) {
+    const products = JSON.parse(readFileSync(FULL_PATH, 'utf8'));
+    if (!Array.isArray(products)) throw new Error('private/catalogue.json is not a list of products');
+    return products;
+  }
+  console.warn('No private/catalogue.json (run `npm run export:products -- --prod`): seeding the public view, Coming soon pieces as teasers.');
   const ctx = { window: {} };
   vm.runInNewContext(readFileSync(CATALOGUE_PATH, 'utf8'), ctx);
   const products = ctx.window.AXIA_PRODUCTS;
   if (!Array.isArray(products)) throw new Error('assets/data/products.js did not define window.AXIA_PRODUCTS');
   return JSON.parse(JSON.stringify(products));
+}
+
+const HEADER = `/* ============================================================
+   AXIA, PUBLIC PRODUCT CATALOGUE (offline fallback)
+   The live catalogue is the Firestore "products" collection, edited in
+   the admin portal (/admin). Browsers get it from GET /api/catalogue;
+   this file is only used if that can't be reached.
+   Written by \`npm run export:products\`: do not edit by hand.
+   PUBLIC VIEW ONLY (server/public-catalogue.js): live pieces with their
+   retail prices, Coming soon pieces as teasers with no prices or
+   description. The full catalogue (the seed source) is
+   private/catalogue.json, which is never committed or served.
+   ============================================================ */
+`;
+
+/** Writes both files from a full product list (portal order, no bookkeeping). */
+export function writeCatalogueFiles(products) {
+  mkdirSync(new URL('../private/', import.meta.url), { recursive: true });
+  writeFileSync(FULL_PATH, JSON.stringify(products, null, 2) + '\n');
+  writeFileSync(CATALOGUE_PATH, HEADER + 'window.AXIA_PRODUCTS = ' + JSON.stringify(publicProducts(products), null, 2) + ';\n');
 }
 
 // Starting collections. Products join a collection by listing its slug in

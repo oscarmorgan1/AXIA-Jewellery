@@ -5,7 +5,8 @@ The storefront is the static site in this folder (HTML/CSS/vanilla JS). Products
 ```
 index.html, product.html, ...   storefront pages (unchanged look)
 assets/js/catalogue.js          loads products from Firestore, then runs page scripts
-assets/data/products.js         offline fallback + seed source (public prices only)
+assets/data/products.js         offline fallback: the public view (Coming soon pieces as teasers)
+private/catalogue.json          full catalogue, the seed source (git-ignored, written by export:products)
 admin-portal/                   admin portal source (React + TS), builds to /admin
 server/                         web server: serves the site, Stripe checkout + webhook, Resend emails
 apphosting.yaml                 App Hosting settings and the secrets it reads
@@ -47,7 +48,7 @@ Pages show web-sized WebP copies of the photos in `assets/img` (600px and 1200px
 
 | Collection | Who can read | Who can write | Holds |
 | --- | --- | --- | --- |
-| `products/{id}` | everyone | admins | The public catalogue, same fields as `products.js`, plus `sort`, `archived`, `updatedAt`. `coll` lists the collection slugs it belongs to |
+| `products/{id}` | admins | admins | The catalogue. Browsers get the public view from `GET /api/catalogue` (live pieces in full, Coming soon pieces as teasers with no prices or description), same fields as `products.js`, plus `sort`, `archived`, `updatedAt`. `coll` lists the collection slugs it belongs to |
 | `collections/{slug}` | everyone | admins | Reusable groups of products. `showInShop` ones become the Shop All tabs, in `sort` order |
 | `site/shop` | everyone | admins | The Open shop switch (`open: true/false`), under Website in the portal. Missing or false means closed: buttons say "Reserve your spot" and the server refuses checkout |
 | `site/countdown` | everyone | admins | The launch countdown (timer, text or hidden), edited under Website in the portal. Without it the site shows "Dropping soon" |
@@ -120,7 +121,7 @@ Any change to `firestore.rules` (for example the `site` rule that the Website co
 
 The server uses clean URLs (`/collection` rather than `/collection.html`; old `.html` links redirect). Pages, scripts and styles are served with `Cache-Control: no-cache`, so visitors get a new deploy on their next page load. Only the root pages, `assets/` and `admin/` are ever served.
 
-Before later deploys, refresh the offline fallback so it matches Firestore: `npm run export:products -- --prod`.
+Before later deploys, refresh the offline fallback so it matches Firestore: `npm run export:products -- --prod` (it also writes the full catalogue to `private/catalogue.json` for seeding, which never goes in git).
 
 ## Payments and email
 

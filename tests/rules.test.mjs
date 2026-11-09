@@ -120,3 +120,20 @@ test('orders and suppliers are deleted through the server, not the browser', asy
   await assertFails(getDoc(doc(admin(), 'deletedOrders/o1')));
   await assertFails(getDoc(doc(admin(), 'erasures/e1')));
 });
+
+test('products: only verified admins read or write them; visitors use /api/catalogue', async () => {
+  await env.withSecurityRulesDisabled(async ctx => {
+    await setDoc(doc(ctx.firestore(), 'products/live'), { id: 'live', name: 'Live', hidden: false });
+    await setDoc(doc(ctx.firestore(), 'products/soon'), { id: 'soon', name: 'Soon', hidden: true });
+  });
+  const visitor = env.unauthenticatedContext().firestore();
+  await assertFails(getDoc(doc(visitor, 'products/soon')));
+  await assertFails(getDoc(doc(visitor, 'products/live')));
+  await assertFails(getDocs(collection(visitor, 'products')));
+  await assertFails(getDocs(collection(customer('ana'), 'products')));
+  await assertFails(getDocs(collection(customer('ana', { admin: true, auth_time: 5 }), 'products')));
+  await assertSucceeds(getDocs(collection(admin(), 'products')));
+  await assertSucceeds(setDoc(doc(admin(), 'products/new'), { id: 'new', name: 'New', hidden: true }));
+  await assertFails(setDoc(doc(admin(), 'products/new2'), { id: 'new2', name: 'New', factoryCostAUD: 1 }));
+  await assertFails(setDoc(doc(visitor, 'products/x'), { id: 'x', name: 'X' }));
+});
