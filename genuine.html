@@ -31,6 +31,8 @@
     color:var(--on-dark);background:transparent;border:0;border-radius:0;padding:.55em 0;caret-color:var(--ice)}
   .gen-field input::placeholder{font-family:var(--font-sans);font-weight:400;font-size:var(--t-body);color:var(--on-dark-3);letter-spacing:0;text-transform:none}
   .gen-field input:focus-visible{outline:none}
+  .gen-pre{align-self:center;font-family:var(--font-display);font-weight:600;font-size:var(--t-24);letter-spacing:.08em;color:var(--on-dark-2);padding-right:.08em;user-select:none}
+  .gen-field input::placeholder{font-family:var(--font-display);font-weight:600;font-size:var(--t-24);letter-spacing:.08em;color:var(--obsidian-3)}
   .gen-go{flex:none;display:inline-flex;align-items:center;gap:.6em;margin:0;padding:0 0 0 var(--s-4);background:none;border:0;font-family:var(--font-sans);font-size:var(--t-label);font-weight:600;color:var(--on-dark);cursor:pointer;transition:color var(--dur-2) var(--ease)}
   .gen-go svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;transition:transform var(--dur-2) var(--ease)}
   .gen-go:hover{color:var(--ice)}.gen-go:hover svg{transform:translateX(3px)}
@@ -46,13 +48,10 @@
   .gv__stage{position:relative;display:grid;place-items:center}
   .acard{position:relative;width:min(100%,30rem);aspect-ratio:85.6 / 54;border-radius:16px;padding:clamp(1.1rem,4.2%,1.9rem) clamp(1.2rem,5%,2.1rem);
     display:flex;flex-direction:column;justify-content:space-between;color:var(--on-dark);overflow:hidden;
-    background:radial-gradient(120% 140% at 15% 0,var(--deep-25),var(--deep-08) 55%,var(--deep-01));
+    background:var(--deep-04);
     box-shadow:0 0 0 1px var(--line-dark) inset,0 30px 50px -30px var(--black)}
-  /* the guilloche swirl, fading out from its centre */
-  .acard__guil{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;fill:none;stroke:var(--on-dark);stroke-width:.35;opacity:.32;
-    -webkit-mask:radial-gradient(48% 70% at 70% 41%,transparent,var(--black) 12%,transparent);mask:radial-gradient(48% 70% at 70% 41%,transparent,var(--black) 12%,transparent)}
   .acard__top,.acard__bot{position:relative}
-  .acard__logo{display:block;height:clamp(16px,4.4vw,26px);aspect-ratio:2000 / 404;background:linear-gradient(180deg,var(--white),var(--titanium) 60%,var(--titanium-2));
+  .acard__logo{display:block;height:clamp(16px,4.4vw,26px);aspect-ratio:2000 / 404;background:var(--titanium-2);
     -webkit-mask:url("assets/img/axia-logo.png?v=20260801i") left center/contain no-repeat;mask:url("assets/img/axia-logo.png?v=20260801i") left center/contain no-repeat}
   .acard__t{display:block;margin-top:clamp(.9rem,3.2vw,1.5rem);font-family:var(--font-sans);font-weight:500;font-size:clamp(.6rem,1.6vw,.82rem);letter-spacing:.32em;text-transform:uppercase;color:var(--titanium-2)}
   .acard__s{display:block;margin-top:.55em;font-family:var(--font-sans);font-size:clamp(.5rem,1.25vw,.66rem);letter-spacing:.32em;text-transform:uppercase;color:var(--on-dark-3)}
@@ -61,7 +60,7 @@
   .acard__id{display:flex;flex-direction:column;align-items:flex-end;min-width:0;text-align:right}
   .acard__sn{font-family:var(--font-sans);font-weight:500;font-size:clamp(1rem,3.4vw,1.55rem);font-variant-numeric:tabular-nums;letter-spacing:.02em;line-height:1.1;
     max-width:100%;white-space:nowrap;overflow:hidden;color:var(--on-dark)}
-  .acard__sn.is-ghost{color:var(--obsidian-3);text-shadow:0 1px 0 var(--line-dark)}
+  .acard__sn .is-ghost{color:var(--obsidian-3);text-shadow:0 1px 0 var(--line-dark)}
   .acard__url{margin-top:.35em;font-family:var(--font-serif);font-weight:500;font-size:clamp(.62rem,1.6vw,.85rem);letter-spacing:.02em;color:var(--titanium-2)}
 
   /* ---- one of one ---- */
@@ -91,7 +90,9 @@
   .gx__bar{position:relative;width:min(200px,50vw);height:1px;margin:var(--s-5) auto;background:var(--line-dark);overflow:hidden}
   .gx__bar::after{content:"";position:absolute;inset:0;width:40%;background:var(--on-dark);transform:translateX(-100%);animation:gxSweep 1.1s var(--ease) infinite}
   @keyframes gxSweep{to{transform:translateX(250%)}}
-  .gx__wait{font-size:var(--t-body-s);color:var(--on-dark-2)}
+  .gx__wait{position:relative;height:1.6em;overflow:hidden;font-size:var(--t-body-s);color:var(--on-dark-2)}
+  .gx__wait span{display:block;line-height:1.6em;animation:gxFlip .45s var(--ease-out) both}
+  @keyframes gxFlip{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:none}}
 
   /* the certificate */
   .cert{position:relative;overflow:hidden;text-align:left;color:var(--ink);border-radius:2px;
@@ -135,6 +136,7 @@
     .gx,.gx .gx__in{transition:none}
     .gx__bar::after{animation:none;width:100%;transform:none;opacity:.5}
     .gx[data-state] .gx__in{animation:none}
+    .gx__wait span{animation:none}
   }
   @media(max-width:900px){
     .gv{min-height:0}
@@ -181,7 +183,7 @@
         <form class="gen-form" id="genForm" action="genuine" method="get" role="search" novalidate>
           <label for="genSerial">Serial number</label>
           <div class="gen-field">
-            <input id="genSerial" name="serial" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40" placeholder="Printed on your card" aria-describedby="genMsg">
+            <span class="gen-pre" aria-hidden="true">AXIA</span><input id="genSerial" name="serial" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="10" placeholder="000000" aria-label="Serial number, the 6 characters after AXIA" aria-describedby="genMsg">
             <button class="gen-go" type="submit" aria-label="Verify serial"><span aria-hidden="true">Verify</span><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
           </div>
           <p class="gen-msg" id="genMsg" role="status" aria-live="polite"></p>
@@ -195,7 +197,6 @@
 
       <div class="gv__stage" aria-hidden="true">
         <div class="acard" id="acard">
-          <svg class="acard__guil" viewBox="0 0 428 270" preserveAspectRatio="xMidYMid slice"><path d="M300 110Q389 222 560 110M300 110Q381 228 559 128M300 110Q372 233 557 146M300 110Q364 238 554 164M300 110Q355 242 550 182M300 110Q345 246 544 199M300 110Q336 248 538 216M300 110Q326 251 530 232M300 110Q316 252 520 248M300 110Q306 253 510 263M300 110Q296 253 499 277M300 110Q286 252 487 291M300 110Q276 251 474 303M300 110Q266 249 460 315M300 110Q257 246 445 326M300 110Q247 243 430 335M300 110Q238 239 414 344M300 110Q229 234 397 351M300 110Q221 229 380 357M300 110Q213 223 363 362M300 110Q205 217 345 366M300 110Q198 210 327 369M300 110Q191 203 309 370M300 110Q185 195 291 370M300 110Q179 187 273 369M300 110Q174 178 255 366M300 110Q170 169 237 362M300 110Q166 160 220 357M300 110Q163 150 203 351M300 110Q160 141 186 344M300 110Q159 131 170 335M300 110Q157 121 155 326M300 110Q157 111 140 315M300 110Q157 101 126 303M300 110Q158 91 113 291M300 110Q160 81 101 277M300 110Q162 72 90 263M300 110Q165 62 80 248M300 110Q169 53 70 232M300 110Q173 44 62 216M300 110Q178 35 56 199M300 110Q184 27 50 182M300 110Q190 19 46 164M300 110Q196 11 43 146M300 110Q204 4 41 128M300 110Q211 -2 40 110M300 110Q219 -8 41 92M300 110Q228 -13 43 74M300 110Q236 -18 46 56M300 110Q245 -22 50 38M300 110Q255 -26 56 21M300 110Q264 -28 62 4M300 110Q274 -31 70 -12M300 110Q284 -32 80 -28M300 110Q294 -33 90 -43M300 110Q304 -33 101 -57M300 110Q314 -32 113 -71M300 110Q324 -31 126 -83M300 110Q334 -29 140 -95M300 110Q343 -26 155 -106M300 110Q353 -23 170 -115M300 110Q362 -19 186 -124M300 110Q371 -14 203 -131M300 110Q379 -9 220 -137M300 110Q387 -3 237 -142M300 110Q395 3 255 -146M300 110Q402 10 273 -149M300 110Q409 17 291 -150M300 110Q415 25 309 -150M300 110Q421 33 327 -149M300 110Q426 42 345 -146M300 110Q430 51 363 -142M300 110Q434 60 380 -137M300 110Q437 70 397 -131M300 110Q440 79 414 -124M300 110Q441 89 430 -115M300 110Q443 99 445 -106M300 110Q443 109 460 -95M300 110Q443 119 474 -83M300 110Q442 129 487 -71M300 110Q440 139 499 -57M300 110Q438 148 510 -43M300 110Q435 158 520 -28M300 110Q431 167 530 -12M300 110Q427 176 538 4M300 110Q422 185 544 21M300 110Q416 193 550 38M300 110Q410 201 554 56M300 110Q404 209 557 74M300 110Q396 216 559 92"/></svg>
           <div class="acard__top">
             <span class="acard__logo"></span>
             <span class="acard__t">Authenticity card</span>
@@ -203,7 +204,7 @@
           </div>
           <div class="acard__bot">
             <svg class="acard__nfc" viewBox="0 0 24 24"><path d="M8.5 7.5a6.5 6.5 0 0 1 0 9"/><path d="M12 5a10 10 0 0 1 0 14"/><path d="M15.5 2.5a13.5 13.5 0 0 1 0 19"/></svg>
-            <span class="acard__id"><span class="acard__sn is-ghost" id="acardSn">AXIA000000</span><span class="acard__url">axiajewellery.com/genuine</span></span>
+            <span class="acard__id"><span class="acard__sn" id="acardSn">AXIA<span class="is-ghost">000000</span></span><span class="acard__url">axiajewellery.com/genuine</span></span>
           </div>
         </div>
       </div>
@@ -229,7 +230,7 @@
     <div class="gx__state gx__state--loading">
       <h2 class="gx__sn" id="gxTitle"><span class="sr-only">Checking serial </span><span data-gx-sn></span></h2>
       <div class="gx__bar" aria-hidden="true"></div>
-      <p class="gx__wait">Checking the registry</p>
+      <p class="gx__wait" id="gxWait"><span>Checking the registry</span></p>
     </div>
     <div class="gx__state gx__state--found"><div class="gx__in">
       <article class="cert" aria-labelledby="gxName">
@@ -314,9 +315,12 @@
   const gx=$('gx'), gxName=$('gxName'), gxVar=$('gxVar'), gxDate=$('gxDate'), gxOwner=$('gxOwner');
   const gxMain=$('gxMain'), gxFig=$('gxFig'), gxImg=$('gxImg');
   const gxNoneT=$('gxNoneT'), gxNoneP=$('gxNoneP');
-  const cardSn=$('acardSn');
+  const cardSn=$('acardSn'), gxWait=$('gxWait');
   const reduce=matchMedia('(prefers-reduced-motion: reduce)');
-  const clean=v=>String(v||'').trim().toUpperCase().replace(/\s+/g,' ').slice(0,40);
+  /* every serial is AXIA plus up to 6 letters and digits; the field holds only the part after AXIA */
+  const tail=v=>{ let t=String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,''); if(t.startsWith('AXIA')) t=t.slice(4); return t.slice(0,6); };
+  const clean=v=>{ const t=tail(v); return t?'AXIA'+t:''; };
+  const STEPS=['Checking the registry','Getting the details','Loading the certificate'];
   const fmtDate=d=>{ const t=d instanceof Date?d:new Date(d); return isNaN(t)?'':t.toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'}); };
   const wait=ms=>new Promise(r=>setTimeout(r,reduce.matches?Math.min(ms,250):ms));
   const ORD=['','Original','Second','Third','Fourth','Fifth','Sixth','Seventh','Eighth','Ninth','Tenth'];
@@ -337,11 +341,15 @@
 
   /* ---- the card on the stage mirrors the serial as it's typed ---- */
   function mirror(){
-    const v=clean(input.value);
-    cardSn.textContent=v||'AXIA000000';
-    cardSn.classList.toggle('is-ghost',!v);
+    const t=tail(input.value), g=document.createElement('span');
+    g.className='is-ghost'; g.textContent='0'.repeat(6-t.length);
+    cardSn.replaceChildren('AXIA'+t,g);
   }
-  input.addEventListener('input',()=>{ mirror(); msg.textContent=''; msg.classList.remove('err'); });
+  input.addEventListener('input',()=>{
+    const t=tail(input.value); if(input.value!==t) input.value=t; /* a pasted AXIA83E2B1 keeps only 83E2B1 */
+    mirror(); msg.textContent=''; msg.classList.remove('err');
+  });
+  function say(i){ const sp=document.createElement('span'); sp.textContent=STEPS[i]; gxWait.replaceChildren(sp); }
   /* ---- the check ---- */
   function setState(state){ gx.dataset.state=state; }
   function open(serial){
@@ -365,14 +373,20 @@
 
   async function run(serial){
     msg.classList.remove('err'); msg.textContent='';
-    if(!serial){ msg.classList.add('err'); msg.textContent='Enter the serial number from your card.'; input.focus(); return; }
-    input.value=serial; mirror();
+    if(!serial){ msg.classList.add('err'); msg.textContent='Enter the 6 characters after AXIA on your card.'; input.focus(); return; }
+    input.value=tail(serial); mirror();
     const id=++runId;
     open(serial);
     let r, failed=false;
-    /* hold the loader long enough to read as a check, not a flicker */
-    try{ [r]=await Promise.all([lookup(serial),wait(1200)]); }catch(e){ failed=true; await wait(500); }
-    if(id!==runId) return;
+    /* flip through the steps while the lookup runs, long enough to read each one */
+    say(0);
+    const res=lookup(serial).then(v=>{ r=v; },()=>{ failed=true; });
+    await wait(800); if(id!==runId) return;
+    await res; if(id!==runId) return;
+    if(!failed&&r){
+      say(1); await wait(800); if(id!==runId) return;
+      say(2); await wait(800); if(id!==runId) return;
+    }
     if(failed) return none('Try again',"We couldn't check that just now. Give it a moment and try again.");
     if(r===undefined) return none('Coming soon','Piece records are on their way. Keep your card safe with your piece.');
     if(!r) return none('Not on record',"That serial isn't in the registry. Check it against your card, or send us your order number and we'll help.");
@@ -404,7 +418,7 @@
   });
   /* an NFC tap (or a shared record) opens /genuine?serial=... and checks it straight away */
   const pre=clean(new URLSearchParams(location.search).get('serial'));
-  if(pre){ input.value=pre; run(pre); } else mirror();
+  if(pre){ input.value=tail(pre); run(pre); } else mirror();
 })();
 </script>
 </body>
