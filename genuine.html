@@ -47,30 +47,31 @@
   /* the authenticity card: mirrors the serial as it's typed */
   .gv__stage{position:relative;display:grid;place-items:center;perspective:1200px}
   .gv__stage::before{content:"";position:absolute;width:80%;aspect-ratio:1;border-radius:50%;background:radial-gradient(closest-side,var(--ice-soft),transparent);filter:blur(30px);z-index:-1}
-  .acard{--rx:0deg;--ry:0deg;position:relative;width:min(100%,30rem);aspect-ratio:85.6 / 54;border-radius:18px;padding:clamp(1.1rem,3.4%,1.7rem) clamp(1.2rem,4%,1.9rem);
-    display:grid;grid-template-rows:auto 1fr auto;color:var(--on-dark);overflow:hidden;
-    background:linear-gradient(140deg,var(--deep-28),var(--obsidian-2) 46%,var(--deep-05));
-    box-shadow:0 0 0 1px var(--line-dark-strong) inset,0 1px 0 var(--ice-rim) inset,0 40px 80px -30px var(--black),0 18px 40px -24px var(--ice-haze);
+  .acard{--rx:0deg;--ry:0deg;position:relative;width:min(100%,30rem);aspect-ratio:85.6 / 54;border-radius:16px;padding:clamp(1.1rem,4.2%,1.9rem) clamp(1.2rem,5%,2.1rem);
+    display:flex;flex-direction:column;justify-content:space-between;color:var(--on-dark);overflow:hidden;
+    background:radial-gradient(120% 140% at 15% 0,var(--deep-25),var(--deep-08) 55%,var(--deep-01));
+    box-shadow:0 0 0 1px var(--line-dark) inset,0 1px 0 var(--line-dark-strong) inset,0 40px 80px -30px var(--black),0 18px 40px -24px var(--ice-haze);
     transform:rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(-4deg);transition:transform var(--dur-4) var(--ease-out)}
   .gv__stage:hover .acard{transition-duration:var(--dur-2)}
-  .acard::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
-    background:repeating-linear-gradient(115deg,transparent 0 3px,var(--line-dark) 3px 4px);-webkit-mask:radial-gradient(70% 90% at 100% 0,var(--black),transparent);mask:radial-gradient(70% 90% at 100% 0,var(--black),transparent)}
-  .acard::after{content:"";position:absolute;inset:-40% -60%;pointer-events:none;background:linear-gradient(105deg,transparent 40%,var(--ice-rim) 50%,transparent 60%);
+  /* the guilloche swirl, fading out from its centre */
+  .acard__guil{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;fill:none;stroke:var(--on-dark);stroke-width:.35;opacity:.32;
+    -webkit-mask:radial-gradient(48% 70% at 70% 41%,transparent,var(--black) 12%,transparent);mask:radial-gradient(48% 70% at 70% 41%,transparent,var(--black) 12%,transparent)}
+  .acard::after{content:"";position:absolute;inset:-40% -60%;pointer-events:none;background:linear-gradient(105deg,transparent 42%,var(--line-dark-strong) 50%,transparent 58%);
     transform:translateX(-60%);animation:cardSheen 7s var(--ease) 1.2s infinite}
   @keyframes cardSheen{0%,70%{transform:translateX(-60%)}100%{transform:translateX(60%)}}
   .acard.is-full::after{animation:cardSheen 1.4s var(--ease) 1}
-  .acard__top{display:flex;justify-content:space-between;align-items:flex-start}
-  .acard__logo{height:clamp(13px,3.2vw,17px);aspect-ratio:2000 / 404;background-color:var(--on-dark);
-    -webkit-mask:url("assets/img/axia-logo.png?v=20260801i") center/contain no-repeat;mask:url("assets/img/axia-logo.png?v=20260801i") center/contain no-repeat}
-  .acard__nfc{width:clamp(20px,5vw,26px);height:auto;stroke:var(--on-dark-2);fill:none;stroke-width:1.4;stroke-linecap:round}
-  .acard__mid{align-self:center}
-  .acard__lbl{display:block;font-size:var(--t-caption);color:var(--on-dark-3)}
-  .acard__sn{display:block;margin-top:.3em;font-family:var(--font-display);font-weight:600;font-size:clamp(1.15rem,4.4vw,2.05rem);font-variant-numeric:tabular-nums;letter-spacing:.12em;line-height:1.1;
-    white-space:nowrap;overflow:hidden;text-overflow:clip;color:var(--on-dark);text-shadow:0 1px 0 var(--black)}
-  .acard__sn.is-ghost{color:var(--obsidian-3);text-shadow:0 1px 0 var(--line-dark)}
+  .acard__top,.acard__bot{position:relative}
+  .acard__logo{display:block;height:clamp(16px,4.4vw,26px);aspect-ratio:2000 / 404;background:linear-gradient(180deg,var(--white),var(--titanium) 60%,var(--titanium-2));
+    -webkit-mask:url("assets/img/axia-logo.png?v=20260801i") left center/contain no-repeat;mask:url("assets/img/axia-logo.png?v=20260801i") left center/contain no-repeat}
+  .acard__t{display:block;margin-top:clamp(.9rem,3.2vw,1.5rem);font-family:var(--font-sans);font-weight:500;font-size:clamp(.6rem,1.6vw,.82rem);letter-spacing:.32em;text-transform:uppercase;color:var(--titanium-2)}
+  .acard__s{display:block;margin-top:.55em;font-family:var(--font-sans);font-size:clamp(.5rem,1.25vw,.66rem);letter-spacing:.32em;text-transform:uppercase;color:var(--on-dark-3)}
   .acard__bot{display:flex;justify-content:space-between;align-items:flex-end;gap:var(--s-4)}
-  .acard__cap{font-size:var(--t-caption);color:var(--on-dark-2);line-height:1.35}
-  .acard__one{font-family:var(--font-display);font-weight:700;font-size:clamp(1.2rem,4vw,1.8rem);line-height:1;color:var(--ice);font-variant-numeric:tabular-nums}
+  .acard__nfc{width:clamp(16px,4vw,22px);height:auto;stroke:var(--titanium-2);fill:none;stroke-width:1.6;stroke-linecap:round}
+  .acard__id{display:flex;flex-direction:column;align-items:flex-end;min-width:0;text-align:right}
+  .acard__sn{font-family:var(--font-sans);font-weight:500;font-size:clamp(1rem,3.4vw,1.55rem);font-variant-numeric:tabular-nums;letter-spacing:.02em;line-height:1.1;
+    max-width:100%;white-space:nowrap;overflow:hidden;color:var(--on-dark)}
+  .acard__sn.is-ghost{color:var(--obsidian-3);text-shadow:0 1px 0 var(--line-dark)}
+  .acard__url{margin-top:.35em;font-family:var(--font-serif);font-weight:500;font-size:clamp(.62rem,1.6vw,.85rem);letter-spacing:.02em;color:var(--titanium-2)}
 
   /* ---- one of one ---- */
   .gw{background:var(--bone);color:var(--ink);padding-block:clamp(var(--s-9),12vh,var(--s-11))}
@@ -233,17 +234,15 @@
 
       <div class="gv__stage" id="gvStage" aria-hidden="true">
         <div class="acard" id="acard">
+          <svg class="acard__guil" viewBox="0 0 428 270" preserveAspectRatio="xMidYMid slice"><path d="M300 110Q389 222 560 110M300 110Q381 228 559 128M300 110Q372 233 557 146M300 110Q364 238 554 164M300 110Q355 242 550 182M300 110Q345 246 544 199M300 110Q336 248 538 216M300 110Q326 251 530 232M300 110Q316 252 520 248M300 110Q306 253 510 263M300 110Q296 253 499 277M300 110Q286 252 487 291M300 110Q276 251 474 303M300 110Q266 249 460 315M300 110Q257 246 445 326M300 110Q247 243 430 335M300 110Q238 239 414 344M300 110Q229 234 397 351M300 110Q221 229 380 357M300 110Q213 223 363 362M300 110Q205 217 345 366M300 110Q198 210 327 369M300 110Q191 203 309 370M300 110Q185 195 291 370M300 110Q179 187 273 369M300 110Q174 178 255 366M300 110Q170 169 237 362M300 110Q166 160 220 357M300 110Q163 150 203 351M300 110Q160 141 186 344M300 110Q159 131 170 335M300 110Q157 121 155 326M300 110Q157 111 140 315M300 110Q157 101 126 303M300 110Q158 91 113 291M300 110Q160 81 101 277M300 110Q162 72 90 263M300 110Q165 62 80 248M300 110Q169 53 70 232M300 110Q173 44 62 216M300 110Q178 35 56 199M300 110Q184 27 50 182M300 110Q190 19 46 164M300 110Q196 11 43 146M300 110Q204 4 41 128M300 110Q211 -2 40 110M300 110Q219 -8 41 92M300 110Q228 -13 43 74M300 110Q236 -18 46 56M300 110Q245 -22 50 38M300 110Q255 -26 56 21M300 110Q264 -28 62 4M300 110Q274 -31 70 -12M300 110Q284 -32 80 -28M300 110Q294 -33 90 -43M300 110Q304 -33 101 -57M300 110Q314 -32 113 -71M300 110Q324 -31 126 -83M300 110Q334 -29 140 -95M300 110Q343 -26 155 -106M300 110Q353 -23 170 -115M300 110Q362 -19 186 -124M300 110Q371 -14 203 -131M300 110Q379 -9 220 -137M300 110Q387 -3 237 -142M300 110Q395 3 255 -146M300 110Q402 10 273 -149M300 110Q409 17 291 -150M300 110Q415 25 309 -150M300 110Q421 33 327 -149M300 110Q426 42 345 -146M300 110Q430 51 363 -142M300 110Q434 60 380 -137M300 110Q437 70 397 -131M300 110Q440 79 414 -124M300 110Q441 89 430 -115M300 110Q443 99 445 -106M300 110Q443 109 460 -95M300 110Q443 119 474 -83M300 110Q442 129 487 -71M300 110Q440 139 499 -57M300 110Q438 148 510 -43M300 110Q435 158 520 -28M300 110Q431 167 530 -12M300 110Q427 176 538 4M300 110Q422 185 544 21M300 110Q416 193 550 38M300 110Q410 201 554 56M300 110Q404 209 557 74M300 110Q396 216 559 92"/></svg>
           <div class="acard__top">
             <span class="acard__logo"></span>
-            <svg class="acard__nfc" viewBox="0 0 24 24"><path d="M8.5 7.5a6.5 6.5 0 0 1 0 9"/><path d="M12 5a10 10 0 0 1 0 14"/><path d="M15.5 2.5a13.5 13.5 0 0 1 0 19"/></svg>
-          </div>
-          <div class="acard__mid">
-            <span class="acard__lbl">Serial</span>
-            <span class="acard__sn is-ghost" id="acardSn">AX 0000 0000</span>
+            <span class="acard__t">Authenticity card</span>
+            <span class="acard__s">One of one</span>
           </div>
           <div class="acard__bot">
-            <span class="acard__cap">Certificate of<br>authenticity</span>
-            <span class="acard__one">1/1</span>
+            <svg class="acard__nfc" viewBox="0 0 24 24"><path d="M8.5 7.5a6.5 6.5 0 0 1 0 9"/><path d="M12 5a10 10 0 0 1 0 14"/><path d="M15.5 2.5a13.5 13.5 0 0 1 0 19"/></svg>
+            <span class="acard__id"><span class="acard__sn is-ghost" id="acardSn">AXIA000000</span><span class="acard__url">axiajewellery.com/genuine</span></span>
           </div>
         </div>
       </div>
@@ -392,7 +391,7 @@
   /* ---- the card on the stage mirrors the serial as it's typed ---- */
   function mirror(){
     const v=clean(input.value);
-    cardSn.textContent=v||'AX 0000 0000';
+    cardSn.textContent=v||'AXIA000000';
     cardSn.classList.toggle('is-ghost',!v);
   }
   input.addEventListener('input',()=>{ mirror(); msg.textContent=''; msg.classList.remove('err'); });
