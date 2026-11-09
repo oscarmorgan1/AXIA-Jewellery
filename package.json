@@ -21,7 +21,7 @@
     "migrate:collections": "node scripts/migrate-collections.mjs",
     "images": "node scripts/images.mjs",
     "test:rules": "firebase emulators:exec --only firestore --project demo-axia-rules \"node --test tests/rules.test.mjs\"",
-    "test": "node --test tests/sync.test.mjs",
+    "test": "node --test tests/sync.test.mjs tests/genuine.test.mjs",
     "test:promos": "firebase emulators:exec --only firestore --project axia-jewellery \"node --test tests/promos.test.mjs\"",
     "test:deletes": "firebase emulators:exec --only firestore,auth --project axia-jewellery \"node --test tests/deletes.test.mjs\""
   },

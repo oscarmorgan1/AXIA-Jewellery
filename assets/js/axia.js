@@ -467,8 +467,8 @@
    suppresses it for 4 days, registering for 60. Offers 15% off (issued on registration; no code shown). */
 (function () {
   var page = (location.pathname.split('/').pop() || '').replace(/\.html$/, '');
-  // Skip the landing (root/index), the register page itself, checkout and legal pages.
-  if (page === '' || page === 'index' || page === 'first-drop' || page === 'checkout' || page === 'terms') return;
+  // Skip the landing (root/index), the register page itself, checkout, legal pages, and the authenticity check.
+  if (page === '' || page === 'index' || page === 'first-drop' || page === 'checkout' || page === 'terms' || page === 'genuine') return;
   var KEY = 'axia_promo';
   function suppressed() {
     try { if (sessionStorage.getItem('axia_promo_s')) return true; } catch (e) {}
