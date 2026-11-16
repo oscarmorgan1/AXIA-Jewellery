@@ -267,15 +267,16 @@ export default function ProductEdit() {
                     <div className="width-block__head">
                       <label className="field">Width<input className="input" value={w.width} onChange={e => setWidth(i, { width: e.target.value })} /></label>
                       <label className="field">Photo path / URL<input className="input" value={w.image ?? ''} onChange={e => setWidth(i, { image: e.target.value || undefined })} /></label>
+                      <WidthColours value={w.col} all={draft.col || []} onChange={col => setWidth(i, { col })} />
                       <label className="check" style={{ paddingBottom: 8 }}><input type="checkbox" checked={!!w.hidden} onChange={e => setWidth(i, { hidden: e.target.checked || undefined })} /> Coming soon</label>
                     </div>
                     {w.images && w.images.length > 1 && <div className="card__sub" style={{ marginBottom: 8 }}>{w.images.length} photos for this width (from the product it was merged from).</div>}
                     <VariantsTable variants={w.variants || []} onChange={v => setWidth(i, { variants: v })}
                       cost={{ width: w.width, costs: cost.variants || {}, onCost: setCost, assumptions, stock, making }} />
-                    {(draft.col || []).length > 1 && (
+                    {(w.col || draft.col || []).length > 1 && (
                       <details className="width-block__photos">
                         <summary>Photos by colour for {w.width || 'this width'}{w.imagesByColor ? '' : ' (not set, every colour shows the photos above)'}</summary>
-                        {(draft.col || []).map((colour, k) => (
+                        {(w.col || draft.col || []).map((colour, k) => (
                           <div key={colour} style={{ marginTop: 14 }}>
                             <div className="card__sub" style={{ marginBottom: 8, color: 'var(--ink)', fontWeight: 500 }}>{colour}</div>
                             <ImageList productId={id} images={w.imagesByColor?.[colour] ?? (k === 0 ? (w.images || (w.image ? [w.image] : [])) : [])} onError={setError}
@@ -410,5 +411,20 @@ export default function ProductEdit() {
       </div>
       {toast.node}
     </>
+  );
+}
+
+/** A width's colours: blank means every colour of the product. Kept as typed until it leaves the box. */
+function WidthColours({ value, all, onChange }: { value?: string[]; all: string[]; onChange: (col: string[] | undefined) => void }) {
+  const [text, setText] = useState((value || []).join(', '));
+  useEffect(() => { setText((value || []).join(', ')); }, [value]);
+  const commit = () => {
+    const col = text.split(',').map(s => s.trim()).filter(Boolean);
+    onChange(col.length ? col : undefined);
+  };
+  return (
+    <label className="field">Colours
+      <input className="input" value={text} placeholder={all.length ? all.join(', ') : 'Silver'} onChange={e => setText(e.target.value)} onBlur={commit} />
+    </label>
   );
 }

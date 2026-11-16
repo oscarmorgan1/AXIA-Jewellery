@@ -63,6 +63,7 @@ function parseSize(size, fallbackWidth) {
 }
 
 /** Whether a product has photos per colour (Silver, Gold, Rose Gold...). */
+const hasCols = p => !!(p && Array.isArray(p.col) && p.col.length);
 const hasColourPhotos = p => !!(p && p.imagesByColor && Object.values(p.imagesByColor).some(a => Array.isArray(a) && a.length));
 
 /** The cheapest live price, and whether every size costs the same. */
@@ -114,12 +115,14 @@ export function buildPlan(data, opts = {}) {
         // The merged product already sells this width (the tennis pieces); the old document only becomes a link.
         if (!have.images && Array.isArray(s.images) && s.images.length > 1) have.images = s.images;
         if (!have.imagesByColor && hasColourPhotos(s)) have.imagesByColor = clone(s.imagesByColor);
+        if (!have.col && hasCols(s)) have.col = [...s.col];
         continue;
       }
       widths.push({
         width: s.width,
         ...(s.images && s.images.length ? { image: s.images[0], images: s.images } : {}),
         ...(hasColourPhotos(s) ? { imagesByColor: clone(s.imagesByColor) } : {}),
+        ...(hasCols(s) ? { col: [...s.col] } : {}),
         ...(s.hidden ? { hidden: true } : {}),
         variants: clone(s.variants || []),
       });
@@ -127,6 +130,7 @@ export function buildPlan(data, opts = {}) {
     // The lead product's own colour photos belong to its width.
     const leadW = widths.find(w => w.width === lead.width);
     if (leadW && !leadW.imagesByColor && hasColourPhotos(lead)) leadW.imagesByColor = clone(lead.imagesByColor);
+    if (leadW && !leadW.col && hasCols(lead)) leadW.col = [...lead.col];
     widths.sort((a, b) => mm(a.width) - mm(b.width));
     group.widths = widths.map(w => ({ width: w.width, status: w.hidden ? 'Coming soon' : 'Live', sizes: (w.variants || []).length }));
 
@@ -144,6 +148,8 @@ export function buildPlan(data, opts = {}) {
       id: targetId,
       name,
       width: widthRange(widths),
+      // Every colour any width comes in (cards and search); each width keeps its own in w.col.
+      ...(widths.some(w => w.col) ? { col: [...new Set(widths.flatMap(w => w.col || base.col || []))] } : {}),
       widths,
       defaultWidth: (existing && existing.defaultWidth) || lead.width || widths.find(w => !w.hidden)?.width || widths[0]?.width,
       coll,
@@ -196,18 +202,22 @@ export function buildPlan(data, opts = {}) {
     put('site', 'reviews', { videos, updatedAt: FieldValue.serverTimestamp() }, true);
   }
 
-  // ---- 1b. Colour photos for products merged by an earlier run, which kept only each width's
-  // default photos. The old documents still hold them, so copy them onto their width.
+  // ---- 1b. Colours and colour photos for products merged by an earlier run, which kept only
+  // each width's default photos and the lead product's colours. The old documents still hold
+  // them, so copy them onto their width.
   for (const src of products) {
     const to = src.mergedInto;
     // A target merged in this same run already has them (step 1).
-    if (!to || !to.id || !to.width || !hasColourPhotos(src) || writes.has(`products/${to.id}`)) continue;
+    if (!to || !to.id || !to.width || writes.has(`products/${to.id}`)) continue;
     const target = byId.get(to.id);
     if (!target || !Array.isArray(target.widths)) continue;
     const w = target.widths.find(x => x && x.width === to.width);
-    if (!w || w.imagesByColor) continue;
-    w.imagesByColor = clone(src.imagesByColor);
-    report.notes.push(`${target.name} ${to.width}: colour photos brought back from ${src.id}.`);
+    if (!w) continue;
+    const fixed = [];
+    if (!w.imagesByColor && hasColourPhotos(src)) { w.imagesByColor = clone(src.imagesByColor); fixed.push('colour photos'); }
+    if (!w.col && hasCols(src)) { w.col = [...src.col]; fixed.push(`colours (${src.col.join(', ')})`); }
+    if (!fixed.length) continue;
+    report.notes.push(`${target.name} ${to.width}: ${fixed.join(' and ')} brought back from ${src.id}.`);
     (report.photoRepairs ||= new Set()).add(to.id);
   }
   for (const id of report.photoRepairs || []) put('products', id, { widths: byId.get(id).widths, updatedAt: FieldValue.serverTimestamp() }, true);
