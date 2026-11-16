@@ -129,8 +129,7 @@
     box.className = 'axc';
     box.setAttribute('role', 'region');
     box.setAttribute('aria-label', 'Analytics choice');
-    var what = CLARITY ? 'pages visited and anonymised recordings of clicks and scrolling, with anything you type hidden' : 'pages visited and where visitors come from';
-    box.innerHTML = '<p>We use ' + tools() + ' to see how the site is used: ' + what + '. <a href="/privacy#analytics">Privacy</a></p>' +
+    box.innerHTML = '<p>We use ' + tools() + '. Find out more in our <a href="/privacy#analytics">privacy policy</a>.</p>' +
       '<div class="axc__row"><button type="button" class="axc__no">Decline</button><button type="button" class="axc__ok">OK</button></div>';
     box.querySelector('.axc__ok').addEventListener('click', function () { choose('yes'); });
     box.querySelector('.axc__no').addEventListener('click', function () { choose('no'); });

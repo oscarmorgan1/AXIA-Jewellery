@@ -41,5 +41,5 @@ export function analyticsFor(page) {
 /** The one <script> tag the page needs (the server adds its nonce). */
 export function analyticsTag(c) {
   const attr = [c.ga && `data-ga="${c.ga}"`, c.clarity && `data-clarity="${c.clarity}"`, `data-consent="${c.consent}"`].filter(Boolean).join(' ');
-  return `<script src="/assets/js/analytics.js?v=20261116a" ${attr} defer></script>`;
+  return `<script src="/assets/js/analytics.js?v=20261116b" ${attr} defer></script>`;
 }
