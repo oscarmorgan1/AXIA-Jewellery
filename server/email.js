@@ -597,3 +597,35 @@ export function returnAlertEmail({ id, name, email, number, orderNumber, items, 
   const text = [`New return request ${number} from ${name} <${email}>`, `Order #${orderNumber}`, `Piece: ${what}`, `Wants: ${outcome === 'exchange' ? `exchange${wanted ? ` (${wanted})` : ''}` : 'refund'}`, `Reason: ${reason}`, note || '', `Open the return: ${link}`].filter(Boolean).join('\n\n');
   return { subject: `Return request from ${name || email} (order ${orderNumber})`, html, text };
 }
+
+/**
+ * Tells the team a new order has been paid (server/webhook.js), sent to
+ * ORDER_ALERT_TO. Plain, like the inquiry alert. Reply-To is the customer.
+ */
+export function orderAlertEmail(order, id) {
+  const link = `${brandUrl()}/admin/orders/${encodeURIComponent(id)}`;
+  const c = order.customer || {};
+  const a = (order.shipping && order.shipping.address) || {};
+  const addr = [order.shipping && order.shipping.name, a.line1, a.line2, [a.city, a.state, a.postal_code].filter(Boolean).join(' '), a.country].filter(Boolean).join(', ');
+  const itemLine = i => `${i.name}${i.qty > 1 ? ` × ${i.qty}` : ''}${i.options ? ` (${i.options})` : ''}${i.engraving ? `, engraving “${i.engraving}”` : ''}: ${aud(i.priceAUD * (i.qty || 1))}`;
+  const lines = [...(order.items || []).map(itemLine), ...(order.gift ? [`${order.gift.name}${order.gift.length ? ` (${order.gift.length})` : ''}: free gift`] : [])];
+  const row = (l, v) => v ? `<tr><td style="padding:4px 14px 4px 0;${font};font-size:13px;color:${C.soft};white-space:nowrap;vertical-align:top">${l}</td><td style="padding:4px 0;${font};font-size:14px;color:${C.ink}">${esc(v)}</td></tr>` : '';
+  const who = c.name || c.email || 'Someone';
+  const test = order.stripe && order.stripe.livemode === false ? ' (Stripe test mode)' : '';
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>New AXIA order</title></head>
+<body style="margin:0;padding:0;background:${C.page}">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.page}"><tr><td align="center" style="padding:32px 14px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px">
+  <tr><td style="background:${C.bone};border:1px solid ${C.line};border-radius:6px;padding:32px 30px">
+    <p style="margin:0 0 6px;${font};font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:${C.soft}">AXIA admin · New order${esc(test)}</p>
+    <h1 style="margin:0 0 16px;${font};font-size:22px;line-height:1.2;color:${C.ink}">#${esc(order.orderNumber)} from ${esc(who)}, ${aud(order.totalAUD)}</h1>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px">${row('Customer', c.email ? `${c.name || ''} <${c.email}>`.trim() : c.name)}${row('Phone', c.phone)}${row('Shipping', [order.shipping && order.shipping.method, addr].filter(Boolean).join(': '))}${row('Promo code', order.promotionCode)}${order.discountAUD ? row('Discount', '-' + aud(order.discountAUD)) : ''}${row('Total', `${aud(order.totalAUD)} ${order.currency || 'AUD'}`)}</table>
+    <div style="border-left:3px solid ${C.line};padding:4px 0 4px 14px;${font};font-size:14.5px;line-height:1.6;color:${C.ink}">${lines.map(esc).join('<br>')}</div>
+    <div style="margin-top:20px">${button(link, 'Open the order')}</div>
+  </td></tr>
+</table></td></tr></table></body></html>`;
+  const text = [`New order #${order.orderNumber}${test} from ${c.name || ''} <${c.email || ''}>`, c.phone ? `Phone: ${c.phone}` : '',
+    lines.join('\n'), `Total: ${aud(order.totalAUD)} ${order.currency || 'AUD'}${order.promotionCode ? ` (code ${order.promotionCode})` : ''}`,
+    addr ? `Ship to: ${addr}${order.shipping.method ? ` (${order.shipping.method})` : ''}` : '', `Open the order: ${link}`].filter(Boolean).join('\n\n');
+  return { subject: `New order #${order.orderNumber} from ${who} (${aud(order.totalAUD)})${test}`, html, text };
+}
