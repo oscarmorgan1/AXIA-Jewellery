@@ -5,10 +5,16 @@ import { aud } from '../lib/format';
 import { orderNo, salesByProduct } from '../lib/orders';
 import { SkeletonRows } from './Skeleton';
 
-/** Sales and order history for one product, from paid orders. */
-export default function ProductSales({ id }: { id: string }) {
+/** Sales and order history for one product, from paid orders. `alsoIds`: old products merged into it. */
+export default function ProductSales({ id, alsoIds = [] }: { id: string; alsoIds?: string[] }) {
   const { data: orders, loading } = useOrders();
-  const s = useMemo(() => salesByProduct(orders).get(id), [orders, id]);
+  const key = alsoIds.join(',');
+  const s = useMemo(() => {
+    const all = salesByProduct(orders);
+    const parts = [id, ...(key ? key.split(',') : [])].map(k => all.get(k)).filter(Boolean) as NonNullable<ReturnType<typeof all.get>>[];
+    if (!parts.length) return undefined;
+    return parts.reduce((a, b) => ({ ...a, units: a.units + b.units, revenueAUD: a.revenueAUD + b.revenueAUD, orders: a.orders + b.orders, lines: [...a.lines, ...b.lines], last: a.last && b.last ? (a.last > b.last ? a.last : b.last) : a.last || b.last }));
+  }, [orders, id, key]);
   const sizes = useMemo(() => {
     const m = new Map<string, number>();
     for (const { item } of s?.lines || []) {

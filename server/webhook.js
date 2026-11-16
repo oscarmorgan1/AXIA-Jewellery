@@ -8,7 +8,7 @@
 // marked sent once Resend accepts it.
 import express from 'express';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
-import { db, stripe } from './services.js';
+import { db, stripe, getProduct } from './services.js';
 import { orderNumber } from './checkout.js';
 import { confirmationEmail, orderAlertEmail, sendEmail } from './email.js';
 import { addressList, sendTeamAlert } from './forms.js';
@@ -18,6 +18,17 @@ import { syncOrder } from './sync.js';
 import { wasDeleted } from './deletes.js';
 
 const cents = n => (n || 0) / 100;
+
+/** The pieces of a set line, from its Stripe metadata (server/checkout.js setMeta). */
+export function parseSet(json) {
+  try {
+    const rows = JSON.parse(json);
+    if (!Array.isArray(rows)) return [];
+    return rows.filter(Array.isArray).map(([id, width, length, priceAUD]) => ({
+      id: String(id || ''), name: '', width: String(width || ''), length: String(length || ''), colour: '', priceAUD: Number(priceAUD) || 0,
+    }));
+  } catch { return []; }
+}
 
 async function buildOrder(sessionId) {
   const s = await stripe.checkout.sessions.retrieve(sessionId, {
@@ -37,9 +48,19 @@ async function buildOrder(sessionId) {
       width: m.width || '', length: m.length || '', colour: m.colour || '', engraving: m.engraving || '',
       qty: li.quantity || 1,
       priceAUD: cents(li.price && li.price.unit_amount),
+      ...(Number(m.listPrice) > 0 ? { listPriceAUD: Number(m.listPrice) } : {}),
       image: (product.images || [])[0] || '',
+      ...(m.set ? { components: parseSet(m.set) } : {}),
     };
   });
+  // Name each piece of a set from its product (the metadata only has ids, to stay short).
+  for (const item of items) {
+    for (const c of item.components || []) {
+      const p = c.id ? await getProduct(c.id).catch(() => null) : null;
+      c.name = (p && p.name) || c.id;
+      c.colour = (p && Array.isArray(p.col) && p.col[0]) || 'Silver';
+    }
+  }
   const paid = s.payment_status === 'paid' || s.payment_status === 'no_payment_required';
   return {
     orderNumber: orderNumber(s.id),
@@ -55,6 +76,7 @@ async function buildOrder(sessionId) {
     gift: s.metadata && s.metadata.gift ? { id: s.metadata.gift, name: s.metadata.giftName || '', length: s.metadata.giftLength || '' } : null,
     subtotalAUD: cents(s.amount_subtotal),
     discountAUD: cents(s.total_details && s.total_details.amount_discount),
+    ...(Number(s.metadata && s.metadata.storeDiscountPct) > 0 ? { storeDiscountPct: Number(s.metadata.storeDiscountPct) } : {}),
     promotionCode: (promoObj && promoObj.code) || '',
     promotionCodeId: (promoObj && promoObj.id) || '',
     totalAUD: cents(s.amount_total),

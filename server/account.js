@@ -243,6 +243,7 @@ export function cleanCart(lines) {
     id: str(l.id, 100), name: str(l.name, 160), price: Math.round(num(l.price, 0, 100000) * 100) / 100, opt: str(l.opt, 200),
     img: imgPath(l.img), width: str(l.width, 40), length: str(l.length, 40), colour: str(l.colour, 40), engraving: str(l.engraving, 60),
     q: Math.round(num(l.q, 1, 20)),
+    ...(Array.isArray(l.parts) ? { parts: l.parts.slice(0, 10).map(x => ({ width: str(x && x.width, 40), length: str(x && x.length, 40) })) } : {}),
   }));
 }
 

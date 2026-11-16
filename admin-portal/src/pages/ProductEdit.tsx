@@ -3,16 +3,18 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Lock, Plus, Trash2 } from 'lucide-react';
 import { doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { db, siteUrl } from '../firebase';
-import { useAssumptions, useCollections, useProducts } from '../lib/data';
+import { useAssumptions, useCollections, useCosts, usePieces, useProducts } from '../lib/data';
 import { allPrices, slugify, statusOf, withDerivedPrices } from '../lib/catalogue';
 import { economics, retailAtSize } from '../lib/economics';
 import { aud, pct, timeAgo } from '../lib/format';
 import ImageList from '../components/ImageList';
 import ProductVideo from '../components/ProductVideo';
 import VariantsTable from '../components/VariantsTable';
+import SetEditor from '../components/SetEditor';
+import { costOf, hasWidths, makingBySize, setRange, stockBySize } from '../lib/variants';
 import { useToast } from '../components/Toast';
 import ProductSales from '../components/ProductSales';
-import type { Product, ProductCost, WidthOption } from '../types';
+import type { Product, ProductCost, SetConfig, VariantCost, WidthOption } from '../types';
 import { useConfirm } from '../components/Confirm';
 
 const BLANK: Product = {
@@ -44,9 +46,11 @@ export default function ProductEdit() {
   const { data: products } = useProducts();
   const { data: assumptions } = useAssumptions();
   const { data: collections } = useCollections();
+  const { byId: allCosts } = useCosts();
+  const { data: pieces } = usePieces();
 
   const [draft, setDraft] = useState<Product | null>(isNew ? { ...BLANK } : null);
-  const [cost, setCost] = useState<Partial<ProductCost>>({});
+  const [cost, setCostState] = useState<Partial<ProductCost>>({});
   const [json, setJson] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -54,14 +58,14 @@ export default function ProductEdit() {
 
   // Load once (not live) so in-progress edits aren't overwritten by snapshots.
   useEffect(() => {
-    if (isNew) { setDraft({ ...BLANK }); setCost({}); return; }
+    if (isNew) { setDraft({ ...BLANK }); setCostState({}); return; }
     let off = false;
     (async () => {
       const [ps, cs] = await Promise.all([getDoc(doc(db, 'products', routeId!)), getDoc(doc(db, 'productCosts', routeId!))]);
       if (off) return;
       if (!ps.exists()) { setNotFound(true); return; }
       setDraft({ ...(ps.data() as Product), id: ps.id });
-      setCost((cs.data() as ProductCost) || {});
+      setCostState((cs.data() as ProductCost) || {});
     })().catch(e => setError(e.message));
     return () => { off = true; };
   }, [routeId, isNew]);
@@ -75,6 +79,15 @@ export default function ProductEdit() {
     const p = withDerivedPrices(draft);
     return economics(retailAtSize(p, cost.representativeSize), cost.factoryCostAUD ?? null, assumptions);
   }, [draft, cost, assumptions]);
+  const perSize = !!(cost.variants && Object.keys(cost.variants).length);
+  const stock = useMemo(() => stockBySize(pieces, routeId || ''), [pieces, routeId]);
+  const making = useMemo(() => makingBySize(pieces, routeId || ''), [pieces, routeId]);
+  const aliases = useMemo(() => products.filter(p => p.mergedInto?.id === routeId).map(p => p.id), [products, routeId]);
+  const setCost = (key: string, v: VariantCost | null) => setCostState(c => {
+    const variants = { ...(c.variants || {}) };
+    if (v) variants[key] = v; else delete variants[key];
+    return { ...c, variants };
+  });
 
   if (notFound) return <div className="card empty"><b>Product not found</b><Link className="btn" to="/products">Back to products</Link></div>;
   if (!draft) return <div className="card empty">Loading…</div>;
@@ -87,9 +100,23 @@ export default function ProductEdit() {
 
   async function save() {
     setError(null);
-    const p = withDerivedPrices({ ...draft!, id });
+    let p = withDerivedPrices({ ...draft!, id });
     if (!p.name.trim()) return setError('Name is required.');
     if (!id) return setError('Name must contain letters or numbers.');
+    if (p.set) {
+      // A set: checkout prices it from its pieces. The cards need its From price, and the
+      // old bundle fields keep older pages listing what's inside.
+      const comps = p.set.components.filter(c => c.productId);
+      if (!comps.length) return setError('Add the pieces in this set.');
+      const range = setRange({ ...p.set, components: comps }, x => products.find(q => q.id === x));
+      if (!range || !(range.from > 0)) return setError('The set needs a price above zero for every size the buyer can pick. Check the pieces and the price.');
+      p = {
+        ...p, set: { ...p.set, components: comps },
+        variants: [{ length: null, priceAUD: range.from }], widths: undefined, fromPriceAUD: range.from, singlePrice: range.from === range.to,
+        bundleOf: comps.map(c => c.productId),
+        bundle: comps.map(c => { const q = products.find(x => x.id === c.productId); return [q?.name || c.productId, [c.width, c.length].filter(Boolean).join(' · ')].filter(Boolean).join(', '); }),
+      };
+    }
     const prices = allPrices(p);
     if (!prices.length) return setError('Add at least one size with a price.');
     if (prices.some(n => !(n > 0))) return setError('Every size needs a price above zero.');
@@ -105,18 +132,26 @@ export default function ProductEdit() {
     try {
       const b = writeBatch(db);
       b.set(doc(db, 'products', id), out, { merge: false });
-      const hasCost = cost.factoryCostAUD != null || cost.representativeSize || cost.notes;
+      const hasCost = cost.factoryCostAUD != null || cost.representativeSize || cost.notes || perSize;
       if (hasCost) {
+        // With costs per size, the one-cost fields follow the default size, for screens that read those.
+        let single = { representativeSize: cost.representativeSize ?? null, factoryCostAUD: cost.factoryCostAUD ?? null, factoryCostEstimated: !!cost.factoryCostEstimated };
+        if (perSize) {
+          const w = hasWidths(p) ? (p.widths!.find(x => x.width === p.defaultWidth) || p.widths![0]) : null;
+          const vs = w ? w.variants : p.variants || [];
+          const l = (vs.find(v => v.length === (p.defaultLength || (p.cat === 'chain' ? '20"' : '7"'))) || vs[0])?.length ?? null;
+          const vc = costOf(cost as ProductCost, w ? w.width : p.width, l);
+          if (vc && vc.factoryCostAUD != null) single = { representativeSize: w ? `${w.width} / ${l || 'one size'}` : (l || 'one size'), factoryCostAUD: vc.factoryCostAUD, factoryCostEstimated: !!vc.estimated };
+        }
         b.set(doc(db, 'productCosts', id), {
           ...clean({
-            id, name: p.name,
-            representativeSize: cost.representativeSize ?? null,
-            factoryCostAUD: cost.factoryCostAUD ?? null,
-            factoryCostEstimated: !!cost.factoryCostEstimated,
+            id, name: p.name, ...single,
+            ...(cost.category !== undefined ? { category: cost.category } : {}),
             notes: cost.notes || '',
+            ...(perSize ? { variants: cost.variants } : {}),
           }),
           updatedAt: serverTimestamp(),
-        }, { merge: true });
+        }, { merge: !perSize });
       }
       await b.commit();
       toast.show('Saved. The storefront now shows this version.');
@@ -206,28 +241,42 @@ export default function ProductEdit() {
             </div>
           </div>
 
+          {draft.mergedInto?.id && (
+            <div className="notice notice--warn">
+              Merged into <Link to={`/products/${encodeURIComponent(draft.mergedInto.id)}`}>{products.find(x => x.id === draft.mergedInto!.id)?.name || draft.mergedInto.id}</Link>
+              {draft.mergedInto.width ? ` as its ${draft.mergedInto.width} width` : ''}. Kept so past orders and old links still work; links to it open the merged product.
+            </div>
+          )}
           <div className="card">
             <div className="card__head">
-              <div><h2>Pricing</h2><div className="card__sub">From-price is worked out from the cheapest size when you save.</div></div>
+              <div><h2>{draft.set ? 'Set' : 'Pricing'}</h2><div className="card__sub">{draft.set ? 'The pieces in this set, which sizes the buyer picks, and its price.' : 'From-price is worked out from the cheapest size on sale when you save. Costs are private and never reach the storefront.'}</div></div>
               <span className="spacer" />
-              <label className="field" style={{ width: 170 }}>Compare-at (A$)
-                <input className="input" type="number" min="0" value={draft.compareAtAUD ?? ''} onChange={e => set({ compareAtAUD: e.target.value === '' ? undefined : Number(e.target.value) })} />
-              </label>
+              <label className="check"><input type="checkbox" checked={!!draft.set} onChange={e => set({ set: e.target.checked ? ({ components: [], sharedWidth: false, pricing: { mode: 'fixed', priceAUD: draft.fromPriceAUD || 0 } } as SetConfig) : null })} /> This is a set</label>
+              {!draft.set && (
+                <label className="field" style={{ width: 170 }}>Compare-at (A$)
+                  <input className="input" type="number" min="0" value={draft.compareAtAUD ?? ''} onChange={e => set({ compareAtAUD: e.target.value === '' ? undefined : Number(e.target.value) })} />
+                </label>
+              )}
             </div>
-            {draft.widths?.length ? (
+            {draft.set ? (
+              <SetEditor value={draft.set} onChange={v => set({ set: v })} products={products} costs={allCosts} assumptions={assumptions} selfId={id} />
+            ) : draft.widths?.length ? (
               <>
                 {draft.widths.map((w, i) => (
-                  <div className="width-block" key={i}>
-                    <div className="form-grid" style={{ marginBottom: 10 }}>
+                  <div className={`width-block${w.hidden ? ' width-block--soon' : ''}`} key={i}>
+                    <div className="width-block__head">
                       <label className="field">Width<input className="input" value={w.width} onChange={e => setWidth(i, { width: e.target.value })} /></label>
                       <label className="field">Photo path / URL<input className="input" value={w.image ?? ''} onChange={e => setWidth(i, { image: e.target.value || undefined })} /></label>
+                      <label className="check" style={{ paddingBottom: 8 }}><input type="checkbox" checked={!!w.hidden} onChange={e => setWidth(i, { hidden: e.target.checked || undefined })} /> Coming soon</label>
                     </div>
-                    <VariantsTable variants={w.variants || []} onChange={v => setWidth(i, { variants: v })} />
+                    {w.images && w.images.length > 1 && <div className="card__sub" style={{ marginBottom: 8 }}>{w.images.length} photos for this width (from the product it was merged from).</div>}
+                    <VariantsTable variants={w.variants || []} onChange={v => setWidth(i, { variants: v })}
+                      cost={{ width: w.width, costs: cost.variants || {}, onCost: setCost, assumptions, stock, making }} />
                     <button type="button" className="btn btn--sm btn--danger" style={{ marginTop: 8 }} onClick={() => set({ widths: draft.widths!.filter((_, k) => k !== i) })}><Trash2 size={14} /> Remove width</button>
                   </div>
                 ))}
-                <div style={{ display: 'flex', gap: 12, alignItems: 'end' }}>
-                  <button type="button" className="btn btn--sm" onClick={() => set({ widths: [...draft.widths!, { width: '', variants: [{ length: '', priceAUD: 0 }] }] })}><Plus size={14} /> Add width</button>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'end', flexWrap: 'wrap' }}>
+                  <button type="button" className="btn btn--sm" onClick={() => set({ widths: [...draft.widths!, { width: '', hidden: true, variants: [{ length: '', priceAUD: 0 }] }] })}><Plus size={14} /> Add width</button>
                   <label className="field" style={{ width: 160 }}>Default width
                     <select className="select" value={draft.defaultWidth ?? ''} onChange={e => set({ defaultWidth: e.target.value || undefined })}>
                       <option value="">First</option>{draft.widths.map(w => <option key={w.width}>{w.width}</option>)}
@@ -237,12 +286,16 @@ export default function ProductEdit() {
               </>
             ) : (
               <>
-                <VariantsTable variants={draft.variants || []} onChange={v => set({ variants: v })} />
-                <label className="field" style={{ width: 200, marginTop: 12 }}>Default length
-                  <select className="select" value={draft.defaultLength ?? ''} onChange={e => set({ defaultLength: e.target.value || undefined })}>
-                    <option value="">First</option>{(draft.variants || []).filter(v => v.length).map(v => <option key={v.length!}>{v.length}</option>)}
-                  </select>
-                </label>
+                <VariantsTable variants={draft.variants || []} onChange={v => set({ variants: v })}
+                  cost={{ width: draft.width ?? null, costs: cost.variants || {}, onCost: setCost, assumptions, stock, making }} />
+                <div style={{ display: 'flex', gap: 12, alignItems: 'end', flexWrap: 'wrap', marginTop: 12 }}>
+                  <label className="field" style={{ width: 200 }}>Default length
+                    <select className="select" value={draft.defaultLength ?? ''} onChange={e => set({ defaultLength: e.target.value || undefined })}>
+                      <option value="">First</option>{(draft.variants || []).filter(v => v.length).map(v => <option key={v.length!}>{v.length}</option>)}
+                    </select>
+                  </label>
+                  {draft.width && <button type="button" className="btn btn--sm" onClick={() => set({ widths: [{ width: draft.width!, variants: draft.variants || [] }], defaultWidth: draft.width! })}><Plus size={14} /> Sell in more widths</button>}
+                </div>
               </>
             )}
           </div>
@@ -295,24 +348,25 @@ export default function ProductEdit() {
             </div>
           </div>
 
-          {!isNew && <ProductSales id={routeId!} />}
+          {!isNew && <ProductSales id={routeId!} alsoIds={aliases} />}
 
           <div className="card">
             <div className="private-note"><Lock size={14} /> Private. Never shown on the storefront.</div>
             <div className="card__head"><h2>Cost and margin</h2></div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {perSize && <p className="card__sub" style={{ marginTop: 0 }}>Costs are kept per size in the {draft.set ? 'pieces’ own products' : 'pricing grid'}. Below: the default size.</p>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }} hidden={perSize}>
               <label className="field">Factory cost (A$)
                 <input className="input" type="number" min="0" step="0.01" value={cost.factoryCostAUD ?? ''}
-                  onChange={e => setCost(c => ({ ...c, factoryCostAUD: e.target.value === '' ? null : Number(e.target.value) }))} />
+                  onChange={e => setCostState(c => ({ ...c, factoryCostAUD: e.target.value === '' ? null : Number(e.target.value) }))} />
               </label>
               <label className="field">Quoted for size
-                <select className="select" value={cost.representativeSize ?? ''} onChange={e => setCost(c => ({ ...c, representativeSize: e.target.value || null }))}>
+                <select className="select" value={cost.representativeSize ?? ''} onChange={e => setCostState(c => ({ ...c, representativeSize: e.target.value || null }))}>
                   <option value="">From-price size</option>
                   {[...new Set([...(cost.representativeSize ? [cost.representativeSize] : []), ...sizeOptions(draft)])].map(s => <option key={s}>{s}</option>)}
                 </select>
               </label>
-              <label className="check"><input type="checkbox" checked={!!cost.factoryCostEstimated} onChange={e => setCost(c => ({ ...c, factoryCostEstimated: e.target.checked }))} /> Cost is an estimate</label>
-              <label className="field">Notes<input className="input" value={cost.notes ?? ''} onChange={e => setCost(c => ({ ...c, notes: e.target.value }))} /></label>
+              <label className="check"><input type="checkbox" checked={!!cost.factoryCostEstimated} onChange={e => setCostState(c => ({ ...c, factoryCostEstimated: e.target.checked }))} /> Cost is an estimate</label>
+              <label className="field">Notes<input className="input" value={cost.notes ?? ''} onChange={e => setCostState(c => ({ ...c, notes: e.target.value }))} /></label>
             </div>
             {live ? (
               <dl className="kv" style={{ marginTop: 16 }}>

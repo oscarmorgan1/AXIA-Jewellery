@@ -9,7 +9,7 @@ import { aud, pct, timeAgo } from '../lib/format';
 import { siteUrl } from '../firebase';
 import { SkeletonRows } from '../components/Skeleton';
 
-const STATUS_CHIP: Record<Status, string> = { Live: 'chip--good', 'Coming soon': 'chip--warn', Redirect: 'chip--muted', Archived: 'chip--bad' };
+const STATUS_CHIP: Record<Status, string> = { Live: 'chip--good', 'Coming soon': 'chip--warn', Redirect: 'chip--muted', Archived: 'chip--bad', Merged: 'chip--muted' };
 type Filter = 'all' | 'live' | 'soon' | 'archived';
 
 export default function Products() {
@@ -18,7 +18,18 @@ export default function Products() {
   const { data: collections } = useCollections();
   const { data: assumptions } = useAssumptions();
   const { data: orders } = useOrders();
-  const sales = useMemo(() => salesByProduct(orders), [orders]);
+  const sales = useMemo(() => {
+    // A merged product's sales include those made under its old ids.
+    const raw = salesByProduct(orders);
+    for (const p of products) {
+      const to = p.mergedInto?.id;
+      const s = raw.get(p.id);
+      if (!to || !s) continue;
+      const t = raw.get(to) || { units: 0, revenueAUD: 0, orders: 0, lines: [] };
+      raw.set(to, { ...t, units: t.units + s.units, revenueAUD: t.revenueAUD + s.revenueAUD, orders: t.orders + s.orders, lines: [...t.lines, ...s.lines] });
+    }
+    return raw;
+  }, [orders, products]);
   const [params, setParams] = useSearchParams();
   const nav = useNavigate();
   const [filter, setFilter] = useState<Filter>('all');
@@ -29,10 +40,10 @@ export default function Products() {
     const s = q.trim().toLowerCase();
     return products.filter(p => {
       const st = statusOf(p);
-      if (filter === 'all' && st === 'Archived') return false;
+      if (filter === 'all' && (st === 'Archived' || st === 'Merged')) return false;
       if (filter === 'live' && st !== 'Live') return false;
       if (filter === 'soon' && st !== 'Coming soon') return false;
-      if (filter === 'archived' && st !== 'Archived') return false;
+      if (filter === 'archived' && st !== 'Archived' && st !== 'Merged') return false;
       if (coll && !(p.coll || []).includes(coll)) return false;
       if (s && !`${p.name} ${p.id} ${p.width || ''} ${(p.col || []).join(' ')} ${p.badge || ''}`.toLowerCase().includes(s)) return false;
       return true;
@@ -80,7 +91,7 @@ export default function Products() {
                   <tr key={p.id} className="clickable" onClick={() => nav(`/products/${encodeURIComponent(p.id)}`)}>
                     <td><div className="prod-cell">
                       {img ? <img className="thumb" src={siteUrl(img)} alt="" loading="lazy" /> : <span className="thumb" />}
-                      <div>{p.name}{p.width ? `, ${p.width}` : ''}<small>{p.id}{p.badge ? ` · ${p.badge}` : ''}</small></div>
+                      <div>{p.name}{p.width ? `, ${p.width}` : ''}<small>{p.id}{p.set ? ' · Set' : ''}{p.badge ? ` · ${p.badge}` : ''}{p.mergedInto ? ` · now ${p.mergedInto.id}${p.mergedInto.width ? ` (${p.mergedInto.width})` : ''}` : ''}</small></div>
                     </div></td>
                     <td>{(p.coll || []).length ? <span className="chip chip--muted chip--plain">{collectionLabel(primaryCollection(p, collections))}{(p.coll || []).length > 1 ? ` +${p.coll!.length - 1}` : ''}</span> : '–'}</td>
                     <td><span className={`chip ${STATUS_CHIP[st]}`}>{st}</span></td>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { collection, doc, onSnapshot, query, where, type DocumentData } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Collection, CostAssumptions, Message, Order, Piece, Return, Product, Supplier, ProductCost, Signup, Countdown, ShopSettings, MaintenanceSettings, SiteMedia, Visit, ReviewVideo } from '../types';
+import type { Collection, CostAssumptions, Message, Order, Piece, Return, Product, Supplier, ProductCost, Signup, Countdown, ShopSettings, MaintenanceSettings, SiteMedia, Visit, ReviewVideo, StoreDiscount } from '../types';
 import { DEFAULT_ASSUMPTIONS } from './economics';
 
 interface Live<T> { data: T; loading: boolean; error: Error | null }
@@ -50,6 +50,18 @@ export function useCountdown(): Live<Countdown> & { saved: boolean } {
   useEffect(() => onSnapshot(
     doc(db, 'site', 'countdown'),
     snap => setState({ data: { ...DEFAULT_COUNTDOWN, ...(snap.data() as Partial<Countdown> | undefined) }, loading: false, error: null, saved: snap.exists() }),
+    error => setState(s => ({ ...s, loading: false, error })),
+  ), []);
+  return state;
+}
+
+/** The store discount (`site/discount`): a site-wide % off, read by the server at checkout. Off unless set. */
+export const DEFAULT_DISCOUNT: StoreDiscount = { on: false, pct: 10, endsAt: '', allowPromos: true };
+export function useStoreDiscount(): Live<StoreDiscount> & { saved: boolean } {
+  const [state, setState] = useState<Live<StoreDiscount> & { saved: boolean }>({ data: DEFAULT_DISCOUNT, loading: true, error: null, saved: false });
+  useEffect(() => onSnapshot(
+    doc(db, 'site', 'discount'),
+    snap => setState({ data: { ...DEFAULT_DISCOUNT, ...(snap.data() as Partial<StoreDiscount> | undefined) }, loading: false, error: null, saved: snap.exists() }),
     error => setState(s => ({ ...s, loading: false, error })),
   ), []);
   return state;

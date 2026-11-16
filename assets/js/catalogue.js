@@ -75,7 +75,7 @@
       var list = tidy(j.products || []);
       if (!list.length) throw new Error('Catalogue is empty');
       var s = j.site || {};
-      return { p: list, c: tidyCollections(j.collections), s: { countdown: s.countdown || null, shop: s.shop || null } };
+      return { p: list, c: tidyCollections(j.collections), s: { countdown: s.countdown || null, shop: s.shop || null, discount: s.discount || null }, m: j.merged || {} };
     });
   }
 
@@ -98,11 +98,11 @@
   function readCache() {
     try {
       var c = JSON.parse(sessionStorage.getItem(CACHE_KEY));
-      if (c && c.src === source && Date.now() - c.t < CACHE_TTL && Array.isArray(c.p) && Array.isArray(c.c)) return { p: c.p, c: c.c, s: c.s || {} };
+      if (c && c.src === source && Date.now() - c.t < CACHE_TTL && Array.isArray(c.p) && Array.isArray(c.c)) return { p: c.p, c: c.c, s: c.s || {}, m: c.m || {} };
     } catch (e) {}
     return null;
   }
-  function writeCache(d) { try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), src: source, p: d.p, c: d.c, s: d.s })); } catch (e) {} }
+  function writeCache(d) { try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), src: source, p: d.p, c: d.c, s: d.s, m: d.m })); } catch (e) {} }
 
   try { sessionStorage.removeItem('axia_catalogue_v4'); } catch (e) {} /* the old full copy, before Coming soon pieces became teasers */
   var cached = source === 'static' ? null : readCache();
@@ -303,11 +303,63 @@
   }
   if ('requestIdleCallback' in window) requestIdleCallback(trackVisit, { timeout: 4000 }); else setTimeout(trackVisit, 1500);
 
+
+  /* ---- One width of a product sold in several (p.widths), as a card-ready product:
+     that width's name, photos, prices and link. AXIA_VIEW(id) also resolves an old
+     product id that was merged into another, so pages that list pieces by id keep
+     showing the same piece. ---- */
+  window.AXIA_WIDTH = function (p, width) {
+    if (!p || !width || !Array.isArray(p.widths)) return p;
+    var w = null;
+    for (var i = 0; i < p.widths.length; i++) if (p.widths[i] && p.widths[i].width === width) w = p.widths[i];
+    if (!w) return p;
+    var prices = (w.variants || []).map(function (v) { return v.priceAUD; }).filter(function (n) { return n > 0; });
+    var imgs = (w.images && w.images.length) ? w.images : (w.image ? [w.image] : p.images);
+    var out = {};
+    for (var k in p) out[k] = p[k];
+    out.width = w.width; out.variants = w.variants || []; out.images = imgs; out.showBoth = false;
+    out.fromPriceAUD = prices.length ? Math.min.apply(null, prices) : 0;
+    out.singlePrice = prices.length > 0 && prices.every(function (n) { return n === prices[0]; });
+    out.hidden = !!(p.hidden || w.hidden);
+    out.linkTo = p.linkTo || ('product?id=' + encodeURIComponent(p.id) + '&width=' + encodeURIComponent(w.width));
+    delete out.widths; delete out.imagesByColor;
+    return out;
+  };
+  window.AXIA_VIEW = function (id) {
+    var P = window.AXIA_PRODUCTS || [], m = (window.AXIA_MERGED || {})[id], i;
+    for (i = 0; i < P.length; i++) if (P[i].id === id) return P[i];
+    if (!m) return null;
+    for (i = 0; i < P.length; i++) if (P[i].id === m.id) return window.AXIA_WIDTH(P[i], m.width);
+    return null;
+  };
+
+  /* The store discount (admin: Website > Store discount), published in site.discount while it runs.
+     AXIA_SALE.price(n) takes it off a price to the whole dollar, exactly as the server does at
+     checkout (server/variants.js salePrice); AXIA_SALE.html(n, 'From ') is the shown price, with
+     the original crossed out while a discount runs. Bag lines keep the original price. */
+  var fmtSale = function (n) { return 'A$' + Number(n).toLocaleString('en-AU'); };
+  window.AXIA_SALE = {
+    pct: function () {
+      var d = window.AXIA_SITE && window.AXIA_SITE.discount;
+      if (!d || !(d.pct > 0)) return 0;
+      if (d.endsAt && !(Date.parse(d.endsAt) > Date.now())) return 0;
+      return d.pct;
+    },
+    price: function (n) { var p = window.AXIA_SALE.pct(); return p ? Math.round(n * (100 - p) / 100) : n; },
+    html: function (n, prefix) {
+      prefix = prefix || '';
+      if (!window.AXIA_SALE.pct() || !(n > 0)) return prefix + fmtSale(n);
+      return prefix + '<s class="price-was">' + fmtSale(n) + '</s> ' + fmtSale(window.AXIA_SALE.price(n));
+    },
+  };
+
   window.AXIA_SOURCE = source;
   window.AXIA_READY = Promise.all([catalogue, domReady]).then(function (r) {
     window.AXIA_PRODUCTS = r[0].p;
     window.AXIA_COLLECTIONS = r[0].c;
     window.AXIA_SITE = r[0].s || {};
+    /* old product ids merged into another: { oldId: { id, width } } (product page, bag links) */
+    window.AXIA_MERGED = r[0].m || {};
     return runDeferred();
   }).then(function () {
     document.dispatchEvent(new CustomEvent('axia:catalogue', { detail: { products: window.AXIA_PRODUCTS, collections: window.AXIA_COLLECTIONS, source: source } }));

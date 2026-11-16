@@ -22,7 +22,7 @@
     "images": "node scripts/images.mjs",
     "check:media": "node scripts/check-media.mjs",
     "test:rules": "firebase emulators:exec --only firestore,storage --project demo-axia-rules \"node --test tests/rules.test.mjs tests/storage-rules.test.mjs\"",
-    "test": "node --test tests/sync.test.mjs tests/catalogue.test.mjs tests/csp.test.mjs tests/genuine.test.mjs",
+    "test": "node --test tests/sync.test.mjs tests/catalogue.test.mjs tests/csp.test.mjs tests/genuine.test.mjs tests/variants.test.mjs",
     "test:promos": "firebase emulators:exec --only firestore --project axia-jewellery \"node --test tests/promos.test.mjs\"",
     "test:deletes": "firebase emulators:exec --only firestore,auth --project axia-jewellery \"node --test tests/deletes.test.mjs\""
   },

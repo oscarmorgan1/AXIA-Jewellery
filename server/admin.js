@@ -22,6 +22,7 @@ import { adminReturnRoutes } from './returns.js';
 import { deletePromo, deleteSupplier, deleteOrder, eraseCustomer } from './deletes.js';
 import { systemStatus } from './status.js';
 import { adminMarketingRoutes } from './marketing.js';
+import { previewMigration, applyMigration, undoMigration, listMigrations } from './migrate-variants.js';
 
 /**
  * Statuses an admin can set. `refunded` only comes from Stripe, with the money;
@@ -399,6 +400,8 @@ const handle = fn => async (req, res) => {
 
 export function adminRoutes() {
   const router = express.Router();
+  // The migration preview carries the cost spreadsheet (about 30 KB), so it gets more room.
+  router.use('/api/admin/migrations', requireAdmin, express.json({ limit: '512kb' }));
   router.use('/api/admin', express.json({ limit: '32kb' }), requireAdmin);
   router.post('/api/admin/orders/:id/status', handle(changeStatus));
   // Deletes (server/deletes.js). Orders and customers need the order number or email typed back.
@@ -449,5 +452,11 @@ export function adminRoutes() {
   router.post('/api/admin/promos/:id/active', handle(setPromoActive));
   router.post('/api/admin/promos/:id/edit', handle(editPromo));
   router.get('/api/admin/status', handle(systemStatus));
+  // Temporary: the product merge and cost import (server/migrate-variants.js). The
+  // spreadsheet rows come in the body, so these take a bigger body than the rest.
+  router.get('/api/admin/migrations', handle(() => listMigrations()));
+  router.post('/api/admin/migrations/variants/preview', handle(req => previewMigration(req.body || {})));
+  router.post('/api/admin/migrations/variants/apply', handle(req => applyMigration(req.body || {}, req.admin.email || req.admin.uid)));
+  router.post('/api/admin/migrations/:id/undo', handle(req => undoMigration(str(req.params.id, 100), req.admin.email || req.admin.uid)));
   return router;
 }

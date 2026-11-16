@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { Search, Shuffle } from 'lucide-react';
 import Drawer from './Drawer';
 import { useProducts, useSuppliers } from '../lib/data';
-import { STATE_CHIP, STATE_LABEL, colourOptions, newSerial, productGroups, sizeOptions, createPiece, draftError, dueOn, isMaking, linkPiece, markReceived, pieceState, serialKey, shortDate, today, updatePiece, type PieceDraft } from '../lib/pieces';
+import { STATE_CHIP, STATE_LABEL, colourOptions, newSerial, productGroups, sizeOptions, createPiece, draftError, dueOn, isMaking, linkPiece, markReceived, orderSlots, pieceState, serialKey, shortDate, today, updatePiece, type PieceDraft } from '../lib/pieces';
 import type { Order, OrderItem, Piece } from '../types';
 
 const variantOf = (i?: OrderItem) => i ? [i.width, i.length, i.colour].filter(Boolean).join(' · ') || i.options || '' : '';
@@ -217,17 +217,29 @@ export function PieceDrawer({ piece, pieces, onClose, onDone }: {
   );
 }
 
-/** From an order line: pick a piece already in the registry, or add a new one and assign it. */
+/**
+ * From an order line: pick a piece already in the registry, or add a new one and assign it.
+ * On a set line it fills the first piece of the set still without a serial.
+ */
 export function AssignPieceDrawer({ order, line, pieces, onClose, onDone }: {
   order: Order; line: number; pieces: Piece[]; onClose: () => void; onDone: (msg: string) => void;
 }) {
-  const item = order.items?.[line];
+  const { data: products } = useProducts();
+  const line0 = order.items?.[line];
+  const component = useMemo(() => orderSlots(order, pieces)[line]?.next ?? null, [order, pieces, line]);
+  // A set's piece stands in for the line; an old (merged) product id points to the product it's part of now.
+  const part = component != null ? line0?.components?.[component] : undefined;
+  const raw: OrderItem | undefined = part ? { id: part.id, name: part.name, width: part.width, length: part.length, colour: part.colour, qty: 1, priceAUD: part.priceAUD, engraving: line0?.engraving } : line0;
+  const merged = products.find(p => p.id === raw?.id)?.mergedInto;
+  const item: OrderItem | undefined = raw && merged ? { ...raw, id: merged.id, width: raw.width || merged.width || '' } : raw;
   const free = useMemo(() => pieces.filter(p => !p.orderId), [pieces]);
   const sameProduct = free.filter(p => p.productId === item?.id);
   const [mode, setMode] = useState<'pick' | 'new'>(sameProduct.length ? 'pick' : 'new');
   const [q, setQ] = useState('');
   const [all, setAll] = useState(!sameProduct.length);
   const [draft, setDraft] = useState<PieceDraft>(blank(item));
+  // products load after the first render: once a merged id resolves, start the form from it
+  useEffect(() => { setDraft(d => (d.serial ? d : blank(item))); }, [item?.id, item?.width]); // eslint-disable-line react-hooks/exhaustive-deps
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const existing = useMemo(() => new Set(pieces.map(p => p.key)), [pieces]);
@@ -240,7 +252,7 @@ export function AssignPieceDrawer({ order, line, pieces, onClose, onDone }: {
 
   async function pick(p: Piece) {
     setBusy(true); setError('');
-    try { await linkPiece(p.key, { order, line }); onDone(`Assigned ${p.serial} to ${item?.name || 'this item'}`); }
+    try { await linkPiece(p.key, { order, line, component }); onDone(`Assigned ${p.serial} to ${item?.name || 'this item'}`); }
     catch (e) { setError((e as Error).message); setBusy(false); }
   }
 
@@ -248,12 +260,12 @@ export function AssignPieceDrawer({ order, line, pieces, onClose, onDone }: {
     const bad = draftError(draft);
     if (bad) return setError(bad);
     setBusy(true); setError('');
-    try { await createPiece(draft, { order, line }); onDone(`Added ${draft.serial.trim()} and assigned it`); }
+    try { await createPiece(draft, { order, line, component }); onDone(`Added ${draft.serial.trim()} and assigned it`); }
     catch (e) { setError((e as Error).message); setBusy(false); }
   }
 
   return (
-    <Drawer title={`Piece for ${item?.name || 'item'}`} onClose={onClose} footer={mode === 'new' ? <>
+    <Drawer title={`Piece for ${item?.name || 'item'}${part ? ` (${line0?.name})` : ''}`} onClose={onClose} footer={mode === 'new' ? <>
       <button className="btn" onClick={onClose}>Cancel</button>
       <span className="spacer" style={{ flex: 1 }} />
       <button className="btn btn--primary" onClick={add} disabled={busy}>{busy ? 'Saving…' : 'Add and assign'}</button>

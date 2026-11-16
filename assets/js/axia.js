@@ -8,6 +8,8 @@
   const $$ = (s, c = document) => Array.from(c.querySelectorAll(s));
   const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
   const fmt = n => '$' + n.toLocaleString('en-AU');
+  // Bag lines keep the original price; a running store discount comes off here, as at checkout.
+  const sale = n => (window.AXIA_SALE ? window.AXIA_SALE.price(n) : n);
   // Bag lines come from localStorage, so anything shown from them is escaped.
   const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
@@ -159,10 +161,10 @@
       const id = idFor(it); const href = id ? `product.html?id=${encodeURIComponent(id)}` : null;
       const mHtml = href ? `<a class="ci__m" href="${href}">${m}</a>` : `<div class="ci__m">${m}</div>`;
       const nHtml = href ? `<a class="ci__n" href="${href}">${esc(it.name)}</a>` : `<div class="ci__n">${esc(it.name)}</div>`;
-      return `<div class="ci">${mHtml}<div>${nHtml}<div class="ci__o">${esc(it.opt)}</div><button class="ci__rm" data-rm="${i}">Remove</button></div><div class="ci__p num">${fmt(it.price)}</div></div>`;
+      return `<div class="ci">${mHtml}<div>${nHtml}<div class="ci__o">${esc(it.opt)}</div><button class="ci__rm" data-rm="${i}">Remove</button></div><div class="ci__p num">${sale(it.price) !== it.price ? `<s class="price-was">${fmt(it.price)}</s> ` : ''}${fmt(sale(it.price))}</div></div>`;
     }).join('');
     // Free gift: a Classic Tennis Bracelet, unlocked once the bag passes A$999.
-    const paid = cart.reduce((a, i) => a + i.price * i.q, 0);
+    const paid = cart.reduce((a, i) => a + sale(i.price) * i.q, 0);
     const gift = P.find(p => p.id === 'tennis-bracelet');
     if (paid > 999 && gift) {
       const gimg = (gift.images && gift.images[0]) || 'assets/img/products/tennis-bracelet-4mm/1.jpg';
@@ -204,7 +206,8 @@
     let opt = btn.dataset.opt || '';
     if (host) { const c = $('.chip.is-active', host); if (c) opt = c.textContent.trim(); }
     const d = btn.dataset;
-    cart.push({ id: d.id || '', name: d.name, price: +d.price, opt, img: d.img || '', width: d.width || '', length: d.length || '', colour: d.colour || '', engraving: d.engraving || '', q: 1 });
+    let parts = null; try { parts = d.parts ? JSON.parse(d.parts) : null; } catch (err) { parts = null; }
+    cart.push({ id: d.id || '', name: d.name, price: +d.price, opt, img: d.img || '', width: d.width || '', length: d.length || '', colour: d.colour || '', engraving: d.engraving || '', q: 1, ...(Array.isArray(parts) ? { parts } : {}) });
     save(); say(shopOpen() ? 'Added to bag' : 'Reserved'); openC();
   });
 
@@ -244,7 +247,7 @@
     ];
     const items = P.map(p => ({
       n: p.name + (p.width ? ', ' + p.width : ''),
-      m: [catName(p), (p.singlePrice ? '' : 'From ') + fmtASearch(p.fromPriceAUD)].join(' · '),
+      m: [catName(p), (p.singlePrice ? '' : 'From ') + fmtASearch(sale(p.fromPriceAUD))].join(' · '),
       h: p.linkTo || ('product?id=' + p.id),
       art: p.art || 'cuban',
       img: firstPhoto(p),

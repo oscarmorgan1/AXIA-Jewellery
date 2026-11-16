@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Fragment, useCallback, useEffect, useState, type FormEvent } from 'react';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Activity, Construction, Lock, PowerOff, RefreshCw, Rocket, ShoppingBag } from 'lucide-react';
@@ -17,6 +18,9 @@ const FIELDS: { key: keyof CostAssumptions; label: string; pct?: boolean; step: 
   { key: 'packagingPerUnitAUD', label: 'Packaging per order (A$)', step: '0.01' },
   { key: 'shippingAUD', label: 'Shipping cost to AXIA (A$)', step: '0.01' },
   { key: 'returnsReservePct', label: 'Returns reserve (%)', pct: true, step: '0.1' },
+  { key: 'gstPct', label: 'GST in retail prices (%)', pct: true, step: '0.1' },
+  { key: 'freightUSD', label: 'Freight per piece (US$)', step: '0.01' },
+  { key: 'usdPerAud', label: 'US$ per A$1 (exchange rate)', step: '0.0001' },
 ];
 
 type SiteMode = MaintenanceSettings['mode'];
@@ -237,7 +241,7 @@ export default function Settings() {
   const [plan, setPlan] = useState<{ units?: Record<string, number>; total_units?: number; note?: string } | null>(null);
 
   useEffect(() => {
-    setForm(Object.fromEntries(FIELDS.map(f => [f.key, String(+(f.pct ? data[f.key] * 100 : data[f.key]).toFixed(4))])));
+    setForm(Object.fromEntries(FIELDS.map(f => [f.key, String(+(f.pct ? (data[f.key] ?? 0) * 100 : data[f.key] ?? 0).toFixed(4))])));
   }, [data]);
   useEffect(() => { getDoc(doc(db, 'internal', 'firstDropPlan')).then(s => setPlan(s.data() ?? null)).catch(() => setPlan(null)); }, []);
 
@@ -260,7 +264,7 @@ export default function Settings() {
       <div className="grid-2">
         <div className="settings-col">
         <form className="card" onSubmit={save}>
-          <div className="card__head"><div><h2>Cost assumptions</h2><div className="card__sub">Used to work out contribution, break-even ROAS and max ad spend.</div></div></div>
+          <div className="card__head"><div><h2>Cost assumptions</h2><div className="card__sub">Used to work out margins, contribution, break-even ROAS and max ad spend. Margins take GST off the retail price and add freight (in A$ at that exchange rate) to the factory cost, like the cost sheet.</div></div></div>
           <div className="form-grid">
             {FIELDS.map(f => (
               <label key={f.key} className="field">{f.label}
@@ -270,6 +274,10 @@ export default function Settings() {
           </div>
           <div style={{ marginTop: 18 }}><button className="btn btn--primary">Save assumptions</button></div>
         </form>
+        <div className="card">
+          <div className="card__head"><div><h2>Catalogue migration</h2><div className="card__sub">Temporary. Merges products sold in several widths into one, sets up sets, and imports the cost sheet. Preview first.</div></div></div>
+          <Link className="btn" style={{ alignSelf: 'flex-start' }} to="/migration">Open the migration</Link>
+        </div>
         <SystemStatusCard status={status} />
         </div>
 

@@ -9,10 +9,11 @@
 import express from 'express';
 import { Timestamp } from 'firebase-admin/firestore';
 import { db } from './services.js';
-import { publicProducts } from './public-catalogue.js';
+import { publicProducts, mergedIds } from './public-catalogue.js';
+import { activeDiscount } from './variants.js';
 
 const TTL = 15_000;
-const SITE_DOCS = ['countdown', 'shop', 'media', 'reviews'];
+const SITE_DOCS = ['countdown', 'shop', 'media', 'reviews', 'discount'];
 
 // Firestore Timestamps as ISO strings, the way the REST API used to give them.
 function plain(v) {
@@ -29,12 +30,18 @@ async function build() {
     ...SITE_DOCS.map(id => db.collection('site').doc(id).get()),
   ]);
   const cols = collections.docs.map(d => { const { updatedAt, ...c } = d.data(); return plain(c); });
+  const all = products.docs.map(d => ({ ...d.data(), id: d.id }));
   const out = {
-    products: publicProducts(products.docs.map(d => ({ ...d.data(), id: d.id }))).map(plain),
+    products: publicProducts(all).map(plain),
+    // Old product ids merged into another, so old links land on the right width.
+    merged: mergedIds(all),
     collections: cols,
     site: {},
   };
   SITE_DOCS.forEach((id, i) => { out.site[id] = site[i].exists ? plain(site[i].data()) : null; });
+  // Only a running store discount goes out: { pct, allowPromos, endsAt }. The storefront
+  // takes it off every price the way the server does at checkout.
+  out.site.discount = activeDiscount(site[SITE_DOCS.indexOf('discount')].exists ? site[SITE_DOCS.indexOf('discount')].data() : null);
   return out;
 }
 

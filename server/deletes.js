@@ -113,7 +113,7 @@ async function unassignPiece(doc) {
   const t = doc.get('transfer');
   if (t && t.id) await closeTransfer(t.id, 'cancelled', { cancelledBy: 'admin' });
   await doc.ref.update({
-    orderId: null, orderNumber: null, orderLine: null, shippedOn: null, transfer: null,
+    orderId: null, orderNumber: null, orderLine: null, orderComponent: null, shippedOn: null, transfer: null,
     ownerUid: FieldValue.delete(), ownerEmail: FieldValue.delete(), ownerOrderId: FieldValue.delete(),
     transferredOn: FieldValue.delete(), owners: FieldValue.delete(),
     updatedAt: FieldValue.serverTimestamp(),
