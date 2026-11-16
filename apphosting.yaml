@@ -47,15 +47,16 @@ env:
     availability: [RUNTIME]
 
   # Who gets an email for each new support-page inquiry (comma-separate for
-  # more than one). Server-side only: never sent to the browser.
+  # more than one). A secret so the address isn't in this (public) repo;
+  # server-side only, never sent to the browser.
   - variable: INQUIRY_ALERT_TO
-    value: "dear.konrad@gmail.com"
+    secret: inquiry-alert-to
     availability: [RUNTIME]
 
   # Who gets an email for each new paid order (comma-separate for more than
-  # one; leave empty to turn order alerts off). Server-side only.
+  # one). A secret like INQUIRY_ALERT_TO; server-side only.
   - variable: ORDER_ALERT_TO
-    value: "dear.konrad@gmail.com"
+    secret: order-alert-to
     availability: [RUNTIME]
 
   # Public address used in Stripe return links and email images. Pinned so a
