@@ -155,3 +155,16 @@ test('collections and site settings: only verified admins read them; visitors us
   await assertSucceeds(setDoc(doc(admin(), 'site/countdown'), { mode: 'text', text: 'Now' }));
   await assertFails(setDoc(doc(visitor, 'site/countdown'), { mode: 'text', text: 'x' }));
 });
+
+test('server-only collections: no browser reads or writes them, admins included', async () => {
+  const server = ['customers/a', 'accountInvites/a', 'adminSignInCodes/a', 'pieceTransfers/a', 'deletedOrders/a', 'erasures/a',
+    'promoCodes/a', 'campaigns/a', 'campaignEmails/a', 'resendEvents/a', 'serverConfig/resendWebhook', 'somethingNew/a'];
+  await env.withSecurityRulesDisabled(async ctx => { for (const p of server) await setDoc(doc(ctx.firestore(), p), { x: 1 }); });
+  for (const db of [env.unauthenticatedContext().firestore(), customer('ana'), admin()]) {
+    for (const p of server) {
+      await assertFails(getDoc(doc(db, p)));
+      await assertFails(getDocs(collection(db, p.split('/')[0])));
+      await assertFails(setDoc(doc(db, p), { x: 2 }));
+    }
+  }
+});

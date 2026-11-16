@@ -34,6 +34,16 @@ rules_version = '2';
 //   deletedOrders/{id}   ids of orders deleted in the portal, so a re-sent Stripe webhook
 //                        doesn't bring one back: server only (no rule below)
 //   erasures/{id}        log of privacy erasures (when, by whom, counts; not whose): server only
+//   customers/{email}    one record per buyer (address, notes): server only (admin portal via /api/admin/customers)
+//   promoCodes/{id}      promo codes mirrored from Stripe: server only (/api/admin/promos)
+//   campaigns/{id}       marketing emails: server only (/api/admin/marketing)
+//   campaignEmails/{id}  which Resend email belongs to which campaign: server only
+//   resendEvents/{id}    Resend webhook events already counted (de-duplication): server only
+//   serverConfig/{doc}   server settings, e.g. the Resend webhook: server only
+//
+// "Server only" collections have no rule below, so the catch-all at the end
+// refuses every browser, admins included. The server uses the Admin SDK,
+// which these rules don't apply to.
 //
 // "Admin" means a signed-in user whose ID token carries the custom claim
 // admin == true (set with `npm run set-admin -- <email>`) AND who has entered
