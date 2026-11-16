@@ -80,7 +80,7 @@ function Marketing({ account }: { account: Account }) {
   }
   return (
     <div className="card">
-      <div className="card__head"><div><h2>Emails</h2><p className="card__sub">Order updates and replies from us always reach you.</p></div></div>
+      <div className="card__head"><div><h2>Emails</h2><p className="card__sub">Order updates and replies from us always reach you. <a href="/privacy" target="_blank" rel="noreferrer">Privacy policy</a></p></div></div>
       <div className="pt-row">
         <div><b>New drops and offers</b><p className="card__sub">First word on new pieces, restocks and member offers. A few emails a month at most.</p></div>
         <button type="button" className="switch" role="switch" aria-checked={on} aria-label="New drops and offers" disabled={busy} onClick={toggle} />

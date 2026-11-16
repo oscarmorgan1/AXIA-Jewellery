@@ -36,20 +36,44 @@ const AUTH_FRAME = 'https://axia-jewellery.firebaseapp.com'; // Firebase Auth's 
 export const OFFLINE_SCRIPT_HASH = "'sha256-8IHwa3lfXd7uocWGn33L6hrcY0R9mZSRYd2K9Xfn+Mc='";
 const STORAGE_MEDIA = ['https://firebasestorage.googleapis.com', 'https://storage.googleapis.com'];
 
-export function policy(nonce) {
+// Analytics, added only to storefront pages that load it (server/analytics.js),
+// and only for the tool that's configured. /admin, /portal and /api never get these.
+// GA4: gtag.js, and the collection endpoints it posts to (region1 is the one
+// Google routes most traffic through). Clarity: its tag and script, and
+// uploads to a numbered/lettered *.clarity.ms host Microsoft picks per project,
+// so that one is a wildcard on clarity.ms only.
+export const GA_HOSTS = {
+  script: ['https://www.googletagmanager.com'],
+  connect: ['https://www.google-analytics.com', 'https://region1.google-analytics.com', 'https://analytics.google.com', 'https://region1.analytics.google.com', 'https://www.googletagmanager.com'],
+  img: ['https://www.google-analytics.com', 'https://www.googletagmanager.com'],
+};
+export const CLARITY_HOSTS = {
+  script: ['https://www.clarity.ms', 'https://scripts.clarity.ms'],
+  connect: ['https://*.clarity.ms'],
+  img: ['https://*.clarity.ms'],
+};
+
+/**
+ * The policy for one response.
+ * @param {string} nonce
+ * @param {{ga?: string, clarity?: string}|null} analytics  the page's analytics (storefront pages only)
+ */
+export function policy(nonce, analytics = null) {
+  const extra = [analytics && analytics.ga && GA_HOSTS, analytics && analytics.clarity && CLARITY_HOSTS].filter(Boolean);
+  const more = k => extra.flatMap(h => h[k]);
   const dev = EMULATING() ? EMULATORS : [];
   const site = SITE();
   const d = {
     'default-src': ["'self'"],
     // The same hosts as before the nonce (proven with Google sign-in and App Check), minus 'unsafe-inline'.
-    'script-src': ["'self'", `'nonce-${nonce}'`, OFFLINE_SCRIPT_HASH, 'https://apis.google.com', 'https://www.gstatic.com', 'https://*.firebaseapp.com', ...RECAPTCHA],
+    'script-src': ["'self'", `'nonce-${nonce}'`, OFFLINE_SCRIPT_HASH, 'https://apis.google.com', 'https://www.gstatic.com', 'https://*.firebaseapp.com', ...RECAPTCHA, ...more('script')],
     'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
     'font-src': ["'self'", 'data:', 'https://fonts.gstatic.com'],
     // Google profile photos (portal), reCAPTCHA images, Storage uploads, and the
     // live site's absolute image links in email previews.
-    'img-src': ["'self'", 'data:', 'blob:', site, ...STORAGE_MEDIA, 'https://*.googleusercontent.com', 'https://www.gstatic.com', 'https://www.google.com', ...dev],
+    'img-src': ["'self'", 'data:', 'blob:', site, ...STORAGE_MEDIA, 'https://*.googleusercontent.com', 'https://www.gstatic.com', 'https://www.google.com', ...more('img'), ...dev],
     'media-src': ["'self'", 'blob:', site, ...STORAGE_MEDIA, ...dev],
-    'connect-src': ["'self'", ...FIREBASE_API, 'https://www.google.com/recaptcha/', 'https://apis.google.com', ...dev],
+    'connect-src': ["'self'", ...FIREBASE_API, 'https://www.google.com/recaptcha/', 'https://apis.google.com', ...more('connect'), ...dev],
     'frame-src': ["'self'", AUTH_FRAME, ...RECAPTCHA],
     'worker-src': ["'self'"],
     'manifest-src': ["'self'"],
@@ -69,6 +93,11 @@ export function cspMiddleware(req, res, next) {
   res.locals.nonce = nonce;
   res.set('Content-Security-Policy', policy(nonce));
   next();
+}
+
+/** Widens this response's CSP for the analytics a storefront page loads. */
+export function allowAnalytics(res, analytics) {
+  if (analytics) res.set('Content-Security-Policy', policy(res.locals.nonce, analytics));
 }
 
 /** The page with this response's nonce on every <script> tag. */
