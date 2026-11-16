@@ -9,6 +9,7 @@ import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import Stripe from 'stripe';
 import { Resend } from 'resend';
+import { activeDiscount } from './variants.js';
 
 const app = initializeApp(process.env.FIRESTORE_EMULATOR_HOST ? { projectId: 'axia-jewellery' } : undefined);
 export const db = getFirestore(app);
@@ -27,6 +28,12 @@ export async function getProduct(id) {
 export async function isShopOpen() {
   const snap = await db.collection('site').doc('shop').get();
   return snap.exists && snap.get('open') === true;
+}
+
+/** The store discount running now (site/discount), or null. See activeDiscount in variants.js. */
+export async function getStoreDiscount() {
+  const snap = await db.collection('site').doc('discount').get();
+  return activeDiscount(snap.exists ? snap.data() : null);
 }
 
 /**

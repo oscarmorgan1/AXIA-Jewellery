@@ -194,3 +194,34 @@ test('public catalogue: Coming soon widths have no prices, merged ids are listed
   assert.deepEqual(s.set.components[0].options.map(o => o.width), ['2mm', '4mm']); // not the Coming soon width
   assert.equal(s.set.components[1].options[0].lengths[0].priceAUD, 399);
 });
+
+test('store discount: running window, rounding and cart pricing', async () => {
+  const { activeDiscount, salePrice } = await import('../server/variants.js');
+  const { priceCart } = await import('../server/pricing.js');
+  const now = Date.parse('2026-11-16T00:00:00Z');
+  assert.equal(activeDiscount(null, now), null);
+  assert.equal(activeDiscount({ on: false, pct: 10 }, now), null);
+  assert.equal(activeDiscount({ on: true, pct: 0 }, now), null);
+  assert.equal(activeDiscount({ on: true, pct: 95 }, now), null);
+  assert.equal(activeDiscount({ on: true, pct: 10, endsAt: '2026-11-15T00:00:00Z' }, now), null);
+  assert.deepEqual(activeDiscount({ on: true, pct: 10, endsAt: '2026-11-20T00:00:00Z', allowPromos: false }, now), { pct: 10, allowPromos: false, endsAt: '2026-11-20T00:00:00Z' });
+  assert.equal(salePrice(199, 10), 179);
+  assert.equal(salePrice(1299, 15), 1104);
+  assert.equal(salePrice(199, 0), 199);
+
+  const products = {
+    chain: { id: 'chain', name: 'Chain', widths: [{ width: '2mm', variants: [{ length: '20"', priceAUD: 600 }] }] },
+    bracelet: { id: 'bracelet', name: 'Bracelet', widths: [{ width: '2mm', variants: [{ length: '7"', priceAUD: 400 }] }] },
+    set: { id: 'set', name: 'Set', set: { components: [{ productId: 'chain', width: '2mm', length: '20"' }, { productId: 'bracelet', width: '2mm', length: '7"' }], pricing: { mode: 'fixed', priceAUD: 800 } } },
+  };
+  const get = async id => products[id] || null;
+  const { lines, subtotalAUD } = await priceCart([{ id: 'chain', width: '2mm', length: '20"' }, { id: 'set' }], get, { discountPct: 10 });
+  assert.equal(lines[0].priceAUD, 540);
+  assert.equal(lines[0].listPriceAUD, 600);
+  assert.equal(lines[1].priceAUD, 720);
+  assert.deepEqual(lines[1].components.map(c => c.priceAUD), [540, 360]);
+  assert.equal(subtotalAUD, 1260);
+  const full = await priceCart([{ id: 'chain', width: '2mm', length: '20"' }], get);
+  assert.equal(full.lines[0].priceAUD, 600);
+  assert.equal(full.lines[0].listPriceAUD, undefined);
+});

@@ -151,3 +151,19 @@ export function setRefund(item, back, before = []) {
   };
   return Math.max(0, unitRefund(back) - unitRefund(before));
 }
+
+/**
+ * The site-wide store discount (site/discount, Website in the admin portal) when it's running:
+ * { pct, allowPromos, endsAt }, otherwise null. Off, outside 1-90%, or past its end date is null.
+ */
+export function activeDiscount(d, now = Date.now()) {
+  if (!d || d.on !== true) return null;
+  const pct = Math.round(Number(d.pct) * 100) / 100;
+  if (!(pct >= 1 && pct <= 90)) return null;
+  const end = d.endsAt && typeof d.endsAt.toDate === 'function' ? d.endsAt.toDate().toISOString() : (d.endsAt || '');
+  if (end && !(Date.parse(end) > now)) return null;
+  return { pct, allowPromos: d.allowPromos !== false, endsAt: end };
+}
+
+/** A price with the store discount taken off, to the whole dollar. The storefront rounds the same way (assets/js/catalogue.js AXIA_SALE). */
+export const salePrice = (aud, pct) => (pct ? Math.round((aud * (100 - pct)) / 100) : aud);

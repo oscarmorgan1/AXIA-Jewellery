@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="assets/css/tokens.css?v=20260930a">
-<link rel="stylesheet" href="assets/css/axia.css?v=20261107b">
+<link rel="stylesheet" href="assets/css/axia.css?v=20261116c">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111315'/%3E%3Cg fill='%23F4F1EA'%3E%3Cpolygon points='16,5 6,27 9.5,27'/%3E%3Cpolygon points='16,5 22.5,27 26,27'/%3E%3Crect x='9' y='20.4' width='14' height='1.7'/%3E%3C/g%3E%3C/svg%3E">
 <style>
   body{background:var(--bone-2)}
@@ -174,7 +174,7 @@
 </div>
 
 <script>
-(function(){
+(async function(){
   const $=s=>document.querySelector(s);
   const KEY='axia_cart';
   const fmtA=n=>'A$'+Number(n).toLocaleString('en-AU',{maximumFractionDigits:2});
@@ -187,12 +187,17 @@
   if(!cart.length){ $('#coEmpty').hidden=false; return; }
   $('#coWrap').hidden=false;
 
-  const subtotal=cart.reduce((a,i)=>a+i.price*(i.q||1),0);
+  // The store discount, if one is running: the bag keeps original prices and the server takes
+  // the discount off at checkout, so the summary shows the same sale prices (assets/js/catalogue.js AXIA_SALE).
+  let salePct=0;
+  try{ const r=await fetch('/api/catalogue'); const d=r.ok&&(await r.json()).site.discount; if(d&&d.pct>0&&(!d.endsAt||Date.parse(d.endsAt)>Date.now())) salePct=d.pct; }catch(e){}
+  const sale=n=>salePct?Math.round(n*(100-salePct)/100):n;
+  const subtotal=cart.reduce((a,i)=>a+sale(i.price)*(i.q||1),0);
   let giftLen=''; try{ giftLen=localStorage.getItem('axia_gift_len')||''; }catch(e){}
   $('#coItems').innerHTML=cart.map(it=>
     '<div class="ci"><div class="ci__m">'+thumb(it)+((it.q||1)>1?'<span class="ci__q">'+it.q+'</span>':'')+'</div>'+
     '<div class="ci__t"><div class="ci__n">'+esc(it.name)+'</div>'+(it.opt?'<div class="ci__o">'+esc(it.opt)+'</div>':'')+'</div>'+
-    '<div class="ci__p">'+fmtA(it.price*(it.q||1))+'</div></div>').join('')+
+    '<div class="ci__p">'+(salePct?'<s class="price-was">'+fmtA(it.price*(it.q||1))+'</s> ':'')+fmtA(sale(it.price)*(it.q||1))+'</div></div>').join('')+
     // Free gift over A$999, matching the bag drawer. The server checks this again.
     (subtotal>999?'<div class="ci"><div class="ci__m"><img src="assets/img/products/tennis-bracelet-4mm/1.jpg" alt="" loading="lazy"></div><div class="ci__t"><div class="ci__n">Classic Tennis Bracelet</div><div class="ci__o">'+(giftLen?esc(giftLen)+' · ':'')+'Free with orders over A$999</div><span class="ci__gift">Free gift</span></div><div class="ci__p">Free</div></div>':'');
   $('#sumSub').textContent=fmtA(subtotal);

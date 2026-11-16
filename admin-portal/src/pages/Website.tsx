@@ -5,6 +5,7 @@ import { db, siteUrl } from '../firebase';
 import { DEFAULT_COUNTDOWN, useCountdown } from '../lib/data';
 import { useToast } from '../components/Toast';
 import VideosCard from '../components/VideosCard';
+import StoreDiscountCard from '../components/StoreDiscountCard';
 import type { Countdown } from '../types';
 
 const MODES: { key: Countdown['mode']; label: string; icon: React.ReactNode; hint: string }[] = [
@@ -61,10 +62,12 @@ export default function Website() {
   return (
     <>
       <div className="page-head">
-        <div><h1>Website</h1><p className="lede" style={{ margin: 0 }}>The launch countdown on the landing page, the Cuban and First Drop pages, and the bar across the shop.</p></div>
+        <div><h1>Website</h1><p className="lede" style={{ margin: 0 }}>The store discount, the site film, and the launch countdown on the landing page, the Cuban and First Drop pages, and the bar across the shop.</p></div>
         <span className="spacer" />
         <a className="btn" href={siteUrl('/')} target="_blank" rel="noreferrer">Open site <ArrowUpRight size={15} /></a>
       </div>
+
+      <StoreDiscountCard />
 
       <VideosCard />
 

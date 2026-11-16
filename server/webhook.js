@@ -48,6 +48,7 @@ async function buildOrder(sessionId) {
       width: m.width || '', length: m.length || '', colour: m.colour || '', engraving: m.engraving || '',
       qty: li.quantity || 1,
       priceAUD: cents(li.price && li.price.unit_amount),
+      ...(Number(m.listPrice) > 0 ? { listPriceAUD: Number(m.listPrice) } : {}),
       image: (product.images || [])[0] || '',
       ...(m.set ? { components: parseSet(m.set) } : {}),
     };
@@ -75,6 +76,7 @@ async function buildOrder(sessionId) {
     gift: s.metadata && s.metadata.gift ? { id: s.metadata.gift, name: s.metadata.giftName || '', length: s.metadata.giftLength || '' } : null,
     subtotalAUD: cents(s.amount_subtotal),
     discountAUD: cents(s.total_details && s.total_details.amount_discount),
+    ...(Number(s.metadata && s.metadata.storeDiscountPct) > 0 ? { storeDiscountPct: Number(s.metadata.storeDiscountPct) } : {}),
     promotionCode: (promoObj && promoObj.code) || '',
     promotionCodeId: (promoObj && promoObj.id) || '',
     totalAUD: cents(s.amount_total),

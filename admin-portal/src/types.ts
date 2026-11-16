@@ -443,3 +443,15 @@ export interface Supplier {
   createdAt?: Ts;
   updatedAt?: Ts;
 }
+
+/** site/discount: a site-wide % off every price, shown crossed out on the storefront and charged at checkout. */
+export interface StoreDiscount {
+  on: boolean;
+  /** Percent off, 1 to 90. Prices round to the whole dollar. */
+  pct: number;
+  /** ISO time it stops on its own, or '' to run until switched off. */
+  endsAt: string;
+  /** Whether promo codes still work on top of it at checkout. */
+  allowPromos: boolean;
+  updatedAt?: { toDate(): Date };
+}

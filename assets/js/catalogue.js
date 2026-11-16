@@ -75,7 +75,7 @@
       var list = tidy(j.products || []);
       if (!list.length) throw new Error('Catalogue is empty');
       var s = j.site || {};
-      return { p: list, c: tidyCollections(j.collections), s: { countdown: s.countdown || null, shop: s.shop || null }, m: j.merged || {} };
+      return { p: list, c: tidyCollections(j.collections), s: { countdown: s.countdown || null, shop: s.shop || null, discount: s.discount || null }, m: j.merged || {} };
     });
   }
 
@@ -331,6 +331,26 @@
     if (!m) return null;
     for (i = 0; i < P.length; i++) if (P[i].id === m.id) return window.AXIA_WIDTH(P[i], m.width);
     return null;
+  };
+
+  /* The store discount (admin: Website > Store discount), published in site.discount while it runs.
+     AXIA_SALE.price(n) takes it off a price to the whole dollar, exactly as the server does at
+     checkout (server/variants.js salePrice); AXIA_SALE.html(n, 'From ') is the shown price, with
+     the original crossed out while a discount runs. Bag lines keep the original price. */
+  var fmtSale = function (n) { return 'A$' + Number(n).toLocaleString('en-AU'); };
+  window.AXIA_SALE = {
+    pct: function () {
+      var d = window.AXIA_SITE && window.AXIA_SITE.discount;
+      if (!d || !(d.pct > 0)) return 0;
+      if (d.endsAt && !(Date.parse(d.endsAt) > Date.now())) return 0;
+      return d.pct;
+    },
+    price: function (n) { var p = window.AXIA_SALE.pct(); return p ? Math.round(n * (100 - p) / 100) : n; },
+    html: function (n, prefix) {
+      prefix = prefix || '';
+      if (!window.AXIA_SALE.pct() || !(n > 0)) return prefix + fmtSale(n);
+      return prefix + '<s class="price-was">' + fmtSale(n) + '</s> ' + fmtSale(window.AXIA_SALE.price(n));
+    },
   };
 
   window.AXIA_SOURCE = source;

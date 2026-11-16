@@ -2,7 +2,7 @@
 // GET  /api/checkout/session?id=cs_...  what the confirmation page shows.
 import express from 'express';
 import { priceCart, CartError } from './pricing.js';
-import { stripe, getProduct, isShopOpen, getSiteMode } from './services.js';
+import { stripe, getProduct, isShopOpen, getSiteMode, getStoreDiscount } from './services.js';
 
 export const SHIPPING = [
   { id: 'standard', name: 'Standard shipping', amountAUD: 0, min: 3, max: 6 },
@@ -36,7 +36,8 @@ export function checkoutRoutes() {
       const mode = await getSiteMode();
       if (mode !== 'production') return res.status(503).json({ error: mode === 'offline' ? 'AXIA is offline.' : 'AXIA is unavailable for a moment. Your bag is saved, please try again soon.' });
       if (!(await isShopOpen())) return res.status(403).json({ error: "The shop isn't open yet. Your bag is saved for when it is." });
-      const { lines, gift } = await priceCart(req.body && req.body.items, getProduct, { giftLength: req.body && req.body.giftLength });
+      const sale = await getStoreDiscount();
+      const { lines, gift } = await priceCart(req.body && req.body.items, getProduct, { giftLength: req.body && req.body.giftLength, discountPct: sale ? sale.pct : 0 });
       const origin = siteOrigin(req);
       const session = await stripe.checkout.sessions.create({
         mode: 'payment',
@@ -50,7 +51,7 @@ export function checkoutRoutes() {
               name: l.name,
               ...(l.options ? { description: l.options } : {}),
               ...(l.image && origin.startsWith('https://') ? { images: [`${origin}/${encodeURI(l.image)}`] } : {}),
-              metadata: compact({ productId: l.id, width: l.width, length: l.length, colour: l.colour, engraving: l.engraving, set: setMeta(l) }),
+              metadata: compact({ productId: l.id, width: l.width, length: l.length, colour: l.colour, engraving: l.engraving, set: setMeta(l), listPrice: l.listPriceAUD }),
             },
           },
         })),
@@ -65,13 +66,14 @@ export function checkoutRoutes() {
           },
         })),
         phone_number_collection: { enabled: true },
-        allow_promotion_codes: true,
+        // During a store discount, promo codes work on top only if the discount allows it.
+        allow_promotion_codes: sale ? sale.allowPromos : true,
         billing_address_collection: 'auto',
         custom_text: {
           submit: { message: 'Every piece is hand-set and made to order. Allow approximately 3-5 weeks before dispatch.' },
           ...(gift ? { shipping_address: { message: `Your free ${gift.name}${gift.length ? ' (' + gift.length + ')' : ''} ships with this order.` } } : {}),
         },
-        metadata: gift ? compact({ gift: gift.id, giftName: gift.name, giftLength: gift.length }) : {},
+        metadata: compact({ ...(gift ? { gift: gift.id, giftName: gift.name, giftLength: gift.length } : {}), storeDiscountPct: sale ? sale.pct : '' }),
         success_url: `${origin}/checkout?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/checkout`,
       });
