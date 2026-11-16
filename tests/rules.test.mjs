@@ -137,3 +137,21 @@ test('products: only verified admins read or write them; visitors use /api/catal
   await assertFails(setDoc(doc(admin(), 'products/new2'), { id: 'new2', name: 'New', factoryCostAUD: 1 }));
   await assertFails(setDoc(doc(visitor, 'products/x'), { id: 'x', name: 'X' }));
 });
+
+test('collections and site settings: only verified admins read them; visitors use /api/catalogue', async () => {
+  await env.withSecurityRulesDisabled(async ctx => {
+    await setDoc(doc(ctx.firestore(), 'collections/titans'), { slug: 'titans', name: 'Titans' });
+    await setDoc(doc(ctx.firestore(), 'site/countdown'), { mode: 'text', text: 'Soon' });
+  });
+  const visitor = env.unauthenticatedContext().firestore();
+  for (const db of [visitor, customer('ana'), customer('ana', { admin: true, auth_time: 5 })]) {
+    await assertFails(getDoc(doc(db, 'collections/titans')));
+    await assertFails(getDocs(collection(db, 'collections')));
+    await assertFails(getDoc(doc(db, 'site/countdown')));
+    await assertFails(getDocs(collection(db, 'site')));
+  }
+  await assertSucceeds(getDocs(collection(admin(), 'collections')));
+  await assertSucceeds(getDoc(doc(admin(), 'site/countdown')));
+  await assertSucceeds(setDoc(doc(admin(), 'site/countdown'), { mode: 'text', text: 'Now' }));
+  await assertFails(setDoc(doc(visitor, 'site/countdown'), { mode: 'text', text: 'x' }));
+});

@@ -8,11 +8,12 @@ rules_version = '2';
 //                        description, archived ones not at all (server/public-catalogue.js).
 //   productCosts/{id}    PRIVATE factory costs and margins: admins only
 //   internal/{doc}       PRIVATE cost assumptions, launch plan: admins only
-//   collections/{slug}   public: anyone can read, only admins write
+//   collections/{slug}   admins only. Visitors get them from GET /api/catalogue (server).
 //   signups/{id}         waitlist sign-ups: written by the server, only admins read
 //   messages/{id}        support form: written by the server, only admins read
 //   visits/{day_vid}     anonymous unique-visitor counts: written by the server, only admins read
-//   site/{doc}           public site settings (launch countdown, shop open, maintenance): anyone reads, only admins write
+//   site/{doc}           site settings (launch countdown, shop open, maintenance, videos): admins only.
+//                        The storefront gets what it needs through the server (/api/catalogue).
 //   orders/{id}          admins only (Stripe webhooks will write via the Admin SDK)
 //   pieces/{key}         PRIVATE piece registry (serial, supplier, order): admins only.
 //                        The public /genuine check never reads it from the browser: it
@@ -39,6 +40,11 @@ rules_version = '2';
 // the code emailed to them for this sign-in: the server adds the token's
 // auth_time to the `mfa` claim once the code checks out (server/twofactor.js).
 // adminSignInCodes/{uid} holds those codes (hashed); only the server touches it.
+//
+// No browser reads Firestore without signing in: the public storefront goes
+// through the server (Admin SDK), which Firebase App Check doesn't gate. So
+// App Check enforcement on Firestore can only affect the two portals, whose
+// visitors already need a verified App Check token to sign in (Auth is enforced).
 service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin() {
@@ -58,7 +64,7 @@ service cloud.firestore {
     }
 
     match /collections/{slug} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin()
         && request.resource.data.slug == slug
         && request.resource.data.name is string
@@ -91,10 +97,11 @@ service cloud.firestore {
       allow read, delete: if isAdmin();
     }
 
-    // Public site settings edited in the portal (e.g. site/countdown).
-    // Never put anything private here: the whole collection is world-readable.
+    // Site settings edited in the portal (e.g. site/countdown). The storefront
+    // reads them through the server, which publishes them in /api/catalogue,
+    // so treat what's here as public anyway.
     match /site/{docId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow write: if isAdmin()
         && !request.resource.data.keys().hasAny(['economics', 'factory_cost_AUD', 'factoryCostAUD', 'cost']);
     }

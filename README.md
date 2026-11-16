@@ -49,10 +49,10 @@ Pages show web-sized WebP copies of the photos in `assets/img` (600px and 1200px
 | Collection | Who can read | Who can write | Holds |
 | --- | --- | --- | --- |
 | `products/{id}` | admins | admins | The catalogue. Browsers get the public view from `GET /api/catalogue` (live pieces in full, Coming soon pieces as teasers with no prices or description), same fields as `products.js`, plus `sort`, `archived`, `updatedAt`. `coll` lists the collection slugs it belongs to |
-| `collections/{slug}` | everyone | admins | Reusable groups of products. `showInShop` ones become the Shop All tabs, in `sort` order |
-| `site/shop` | everyone | admins | The Open shop switch (`open: true/false`), under Website in the portal. Missing or false means closed: buttons say "Reserve your spot" and the server refuses checkout |
-| `site/countdown` | everyone | admins | The launch countdown (timer, text or hidden), edited under Website in the portal. Without it the site shows "Dropping soon" |
-| `site/media` | everyone | the server | The site film uploaded under Website > Site film (`store`, used on the home/waitlist and store pages; an older `landing` entry is only used if `store` is empty), with 1080p and 720p MP4 links, a poster and sizes. A missing slot uses the built-in film in `assets/video/` |
+| `collections/{slug}` | admins (visitors via `/api/catalogue`) | admins | Reusable groups of products. `showInShop` ones become the Shop All tabs, in `sort` order |
+| `site/shop` | admins (visitors via `/api/catalogue`) | admins | The Open shop switch (`open: true/false`), under Website in the portal. Missing or false means closed: buttons say "Reserve your spot" and the server refuses checkout |
+| `site/countdown` | admins (visitors via `/api/catalogue`) | admins | The launch countdown (timer, text or hidden), edited under Website in the portal. Without it the site shows "Dropping soon" |
+| `site/media` | admins (visitors via `/api/catalogue`) | the server | The site film uploaded under Website > Site film (`store`, used on the home/waitlist and store pages; an older `landing` entry is only used if `store` is empty), with 1080p and 720p MP4 links, a poster and sizes. A missing slot uses the built-in film in `assets/video/` |
 | `visits/{day}_{id}` | admins | server only (`POST /api/visit`, rate limited) | Anonymous unique visitors: one entry per browser per day (Sydney time) with landing page, referring site and device. Shown on the dashboard. Admins who have signed in to the portal aren't counted |
 | `signups/{id}` | admins | server only (`POST /api/signup`, rate limited) | Waitlist registrations from the landing and First Drop pages. Shown under Customers |
 | `messages/{id}` | admins | server only (`POST /api/message`, rate limited) | Support page contact form. Shown in the Inbox |
@@ -84,6 +84,17 @@ The portal can be installed like an app. On iPhone or iPad open `/admin` in Safa
 The files are in `admin-portal/public/` (manifest, `sw.js`, `offline.html`, icons; regenerate the icons with `node scripts/admin-icons.mjs`). The service worker is scoped to `/admin/` so the storefront is untouched, and it caches nothing from the signed-in portal: no pages, API responses, Firestore data or images. The only stored file is the "You're offline" page shown when a page load fails with no connection.
 
 The raw `AXIA-backend-data.json` must never be committed or deployed: `.gitignore` and the Hosting `ignore` list both exclude it.
+
+### App Check
+
+App Check (reCAPTCHA Enterprise, `admin-portal/src/appCheck.ts`) proves Firebase requests come from this site. No storefront page talks to Firestore or the Storage API: products, collections and site settings come from the server (`/api/catalogue`, Admin SDK, which App Check doesn't gate), and photos and videos load from download URLs that carry their own token. So enforcement only touches the two portals, whose visitors already need App Check to sign in once Authentication is enforced.
+
+To enforce, in Firebase console > App Check > APIs:
+
+1. **Authentication**, then **Cloud Firestore**: the portals keep working; requests from scripts using the public API key are refused.
+2. **Cloud Storage**: about 15 minutes later, run `npm run check:media` (a plain, token-free request to every Storage URL the storefront uses, like a shopper's browser makes). Every line should pass. If one fails, unenforce Storage and the site recovers within minutes.
+
+Locally, the emulators ignore App Check. A local build pointed at production needs a debug token (see `appCheck.ts`).
 
 ## Going live (one time)
 
