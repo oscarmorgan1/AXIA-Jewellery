@@ -34,6 +34,8 @@ rules_version = '2';
 //   deletedOrders/{id}   ids of orders deleted in the portal, so a re-sent Stripe webhook
 //                        doesn't bring one back: server only (no rule below)
 //   erasures/{id}        log of privacy erasures (when, by whom, counts; not whose): server only
+//   migrations/{id}      catalogue migration runs (Admin > Migration) with a copy of every
+//                        document before it changed, for undo: server only (no rule below)
 //
 // "Admin" means a signed-in user whose ID token carries the custom claim
 // admin == true (set with `npm run set-admin -- <email>`) AND who has entered

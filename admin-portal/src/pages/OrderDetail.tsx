@@ -180,7 +180,7 @@ function StatusDrawer({ order, pieces, initial, onClose, onDone, onAssign, onRet
               <ul>
                 {slots.map(s => (
                   <li key={s.line}>
-                    <span>{s.item.name} <small>× {s.item.qty || 1}</small><br />
+                    <span>{s.item.name} <small>× {s.item.qty || 1}{s.parts.length ? `, ${s.parts.length} pieces each` : ''}</small><br />
                       {s.assigned.length ? <small className="mono">{s.assigned.map(p => p.serial).join(', ')}</small> : null}</span>
                     {s.missing
                       ? <button className="btn btn--sm" onClick={() => onAssign(s.line)}><span className="no">{s.missing} without a serial</span></button>
@@ -316,7 +316,12 @@ export default function OrderDetail() {
                   <div className="order-item__img">{i.image ? <img src={img(i.image)} alt="" /> : null}</div>
                   <div className="order-item__body">
                     <b>{i.id ? <Link to={`/products/${encodeURIComponent(i.id)}`}>{i.name}</Link> : i.name}</b>
-                    <small>{[i.width, i.length, i.colour].filter(Boolean).join(' · ') || i.options}</small>
+                    <small>{i.components?.length ? 'Set' : [i.width, i.length, i.colour].filter(Boolean).join(' · ') || i.options}</small>
+                    {!!i.components?.length && (
+                      <ul className="set-lines">
+                        {i.components.map((c, k) => <li key={k}><Link to={`/products/${encodeURIComponent(c.id)}`}>{c.name}</Link> <small>{[c.width, c.length].filter(Boolean).join(' · ')} · {aud(c.priceAUD)} on its own</small></li>)}
+                      </ul>
+                    )}
                     {i.engraving && <div className="engrave-line"><PenLine size={13} /> Engraving: <span className="engrave-text">{i.engraving}</span></div>}
                     <div className="piece-slots">
                       {slots[n]?.assigned.map(p => (
@@ -325,7 +330,7 @@ export default function OrderDetail() {
                           <Gem size={12} /> <span className="mono">{p.serial}</span>{isMaking(p) ? <small>With maker</small> : null}{p.returnId ? <small>In return</small> : p.shippedOn ? <Check size={12} /> : null}
                         </button>
                       ))}
-                      {!!slots[n]?.missing && <button className="piece-tag piece-tag--missing" onClick={() => setAssigning(n)}><Plus size={12} /> Assign piece{slots[n].missing > 1 ? ` (${slots[n].missing} left)` : ''}</button>}
+                      {!!slots[n]?.missing && <button className="piece-tag piece-tag--missing" onClick={() => setAssigning(n)}><Plus size={12} /> Assign {slots[n].next != null ? slots[n].parts[slots[n].next].name : 'piece'}{slots[n].missing > 1 ? ` (${slots[n].missing} left)` : ''}</button>}
                     </div>
                   </div>
                   <div className="order-item__qty">× {i.qty}</div>

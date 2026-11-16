@@ -9,7 +9,7 @@
 import express from 'express';
 import { Timestamp } from 'firebase-admin/firestore';
 import { db } from './services.js';
-import { publicProducts } from './public-catalogue.js';
+import { publicProducts, mergedIds } from './public-catalogue.js';
 
 const TTL = 15_000;
 const SITE_DOCS = ['countdown', 'shop', 'media', 'reviews'];
@@ -29,8 +29,11 @@ async function build() {
     ...SITE_DOCS.map(id => db.collection('site').doc(id).get()),
   ]);
   const cols = collections.docs.map(d => { const { updatedAt, ...c } = d.data(); return plain(c); });
+  const all = products.docs.map(d => ({ ...d.data(), id: d.id }));
   const out = {
-    products: publicProducts(products.docs.map(d => ({ ...d.data(), id: d.id }))).map(plain),
+    products: publicProducts(all).map(plain),
+    // Old product ids merged into another, so old links land on the right width.
+    merged: mergedIds(all),
     collections: cols,
     site: {},
   };

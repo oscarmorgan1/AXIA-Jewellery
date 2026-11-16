@@ -6,8 +6,23 @@ export interface Variant {
 export interface WidthOption {
   width: string;
   image?: string;
+  /** Photos of this width (the first is `image`). */
+  images?: string[];
+  /** Coming soon: shown on the product page, can't be bought yet. */
+  hidden?: boolean;
   fromPriceAUD?: number;
   variants: Variant[];
+}
+
+/** One piece of a set: a product, and either a size the admin fixed or null for "the buyer picks". */
+export interface SetComponent { productId: string; width: string | null; length: string | null }
+export type SetPricing = { mode: 'fixed'; priceAUD: number } | { mode: 'discount'; amountAUD: number } | { mode: 'percent'; pct: number };
+/** A set product (server/variants.js): made of other products. */
+export interface SetConfig {
+  components: SetComponent[];
+  /** Every piece the buyer picks a width for takes the same width. */
+  sharedWidth?: boolean;
+  pricing: SetPricing;
 }
 
 /** One customer review video, converted by the server (server/media.js, slot 'review') and kept in `site/reviews`. */
@@ -55,6 +70,11 @@ export interface Product {
   singlePrice?: boolean;
   bundle?: string[];
   bundleOf?: string[];
+  set?: SetConfig | null;
+  /** An old product merged into another: kept, archived, so past orders and links resolve. */
+  mergedInto?: { id: string; width: string | null } | null;
+  /** Collection slug -> width: the product opens on that width from that collection. */
+  collWidth?: Record<string, string>;
   hidden?: boolean;
   linkTo?: string;
   titan?: boolean;
@@ -74,7 +94,19 @@ export interface ProductCost {
   factoryCostAUD: number | null;
   factoryCostEstimated?: boolean;
   notes?: string;
+  /** Cost of each size, keyed "width|length" ("|" for one size, "|20\"" with no width). */
+  variants?: Record<string, VariantCost>;
   updatedAt?: unknown;
+}
+
+export interface VariantCost {
+  factoryCostAUD: number | null;
+  factoryCostUSD?: number | null;
+  estimated?: boolean;
+  basis?: string;
+  notes?: string;
+  /** The retail price the cost sheet proposed for this size. */
+  sheetRetailAUD?: number;
 }
 
 export interface CostAssumptions {
@@ -83,13 +115,22 @@ export interface CostAssumptions {
   packagingPerUnitAUD: number;
   shippingAUD: number;
   returnsReservePct: number;
+  /** From the cost sheet: USD per A$1, freight allowance per piece (USD), GST on retail. */
+  usdPerAud?: number;
+  freightUSD?: number;
+  gstPct?: number;
 }
 
 type Stamp = { toDate(): Date };
 
+/** One piece of a set line, at the price it sells for on its own (for set refunds). */
+export interface OrderComponent { id: string; name: string; width?: string; length?: string; colour?: string; priceAUD: number }
+
 export interface OrderItem {
   id: string; name: string; qty: number; priceAUD: number;
   options?: string; width?: string; length?: string; colour?: string; engraving?: string; image?: string;
+  /** A set: its pieces. Each unit of the line is one piece of each. */
+  components?: OrderComponent[];
 }
 
 export interface OrderEmail { type: string; to: string; subject: string; resendId: string | null; status: 'sent' | 'skipped'; sentAt?: Stamp; body?: string; by?: string; inquiryId?: string; orderId?: string }
@@ -135,7 +176,7 @@ export interface Order {
 export type ReturnStatus = 'requested' | 'label_created' | 'received' | 'refunded' | 'replacement_sent' | 'closed' | 'declined' | 'withdrawn';
 
 /** One unit coming back: an order line, and its registry piece when it has a serial. */
-export interface ReturnItem { line: number; key: string | null; serial: string; productId: string; productName: string; variant: string; engraving?: string }
+export interface ReturnItem { line: number; key: string | null; serial: string; productId: string; productName: string; variant: string; engraving?: string; component?: number; setId?: string }
 
 /** A return (Firestore `returns/{id}`): admins read, the server writes (server/returns.js). */
 export interface Return {
@@ -355,6 +396,8 @@ export interface Piece {
   orderNumber?: string | null;
   /** Which line of the order's items it fills (index into order.items). */
   orderLine?: number | null;
+  /** On a set line: which piece of the set (index into the line's components). */
+  orderComponent?: number | null;
   /** The customer account its portal copy is in (server/sync.js). */
   portalUid?: string | null;
   /** Set once a customer transfers it to another account (server/transfers.js). */

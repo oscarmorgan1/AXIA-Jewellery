@@ -47,6 +47,7 @@ import { returnEmail, returnAlertEmail, sendEmail, brandUrl } from './email.js';
 import { alertTeam, sydneyDay } from './forms.js';
 import { requireCustomer } from './account.js';
 import { rateLimit } from './limit.js';
+import { partsOf, unitKey } from './variants.js';
 
 export const RETURN_REASONS = {
   fit: 'It doesn’t fit',
@@ -89,9 +90,13 @@ function cleanLabel(l) {
   return out.number || out.url ? out : null;
 }
 
-/** Units per order line already returned in earlier, closed returns. */
-const returnedOn = (o, line) => Number((o.returnedQty || {})[String(line)]) || 0;
-const totalQty = o => (o.items || []).reduce((a, i) => a + (Number(i.qty) || 1), 0);
+/**
+ * Pieces already returned in earlier, closed returns, per order line (or per piece
+ * of a set line: "line:component", see variants.js unitKey).
+ */
+const returnedOn = (o, line, component) => Number((o.returnedQty || {})[unitKey(line, component)]) || 0;
+/** Pieces in the whole order: a set line counts each of its pieces. */
+const totalQty = o => (o.items || []).reduce((a, i) => a + (Number(i.qty) || 1) * partsOf(i), 0);
 
 /**
  * Opens a return on an order. `picks` are the units coming back: {line, key}
@@ -120,6 +125,9 @@ export async function openReturn({ orderId, picks, outcome, wanted, reason, note
       if (!item) throw new HttpError(400, 'That item isn’t on this order.');
       const key = str(pick.key, 40).toUpperCase().replace(/[^A-Z0-9]/g, '');
       let serial = '';
+      const comps = Array.isArray(item.components) && item.components.length ? item.components : null;
+      // Which piece of a set: from the registry piece, else from the pick.
+      let component = comps ? Number(pick.component) : null;
       let variant = [item.width, item.length, item.colour].filter(Boolean).join(' · ');
       if (key) {
         if (keys.has(key)) throw new HttpError(400, 'A piece is in the list twice.');
@@ -131,12 +139,20 @@ export async function openReturn({ orderId, picks, outcome, wanted, reason, note
         if (p.get('transfer.id')) throw new HttpError(409, `${p.get('serial')} has a transfer waiting. Cancel the transfer first.`);
         serial = p.get('serial') || key;
         variant = p.get('variant') || variant;
+        if (comps && Number.isInteger(p.get('orderComponent'))) component = p.get('orderComponent');
         pieceRefs.push(pref);
       }
-      const n = (perLine.get(line) || 0) + 1;
-      perLine.set(line, n);
-      if (n + returnedOn(o, line) > (Number(item.qty) || 1)) throw new HttpError(400, `More of ${item.name} than were ordered.`);
-      items.push({ line, key: key || null, serial, productId: item.id || '', productName: item.name || '', variant, engraving: item.engraving || '' });
+      if (comps && !(Number.isInteger(component) && comps[component])) throw new HttpError(400, `Say which piece of ${item.name} is coming back.`);
+      const part = comps ? comps[component] : null;
+      if (part && !key) variant = [part.width, part.length, part.colour].filter(Boolean).join(' · ');
+      const k = unitKey(line, comps ? component : null);
+      const n = (perLine.get(k) || 0) + 1;
+      perLine.set(k, n);
+      if (n + returnedOn(o, line, comps ? component : null) > (Number(item.qty) || 1)) throw new HttpError(400, `More of ${part ? part.name : item.name} than were ordered.`);
+      items.push({
+        line, key: key || null, serial, productId: part ? part.id : (item.id || ''), productName: part ? `${part.name} (${item.name})` : (item.name || ''), variant, engraving: item.engraving || '',
+        ...(comps ? { component, setId: item.id || '' } : {}),
+      });
     }
     const already = Object.values(o.returnedQty || {}).reduce((a, n) => a + (Number(n) || 0), 0);
     const full = items.length + already >= totalQty(o);
@@ -191,7 +207,7 @@ function backToStock(p, id, r, day) {
   const owners = (p.get('owners') || []).length ? p.get('owners')
     : p.get('ownerEmail') || (r.customer && r.customer.email) ? [{ uid: p.get('ownerUid') || null, email: p.get('ownerEmail') || customerId(r.customer.email), via: 'order', at: null }] : [];
   return {
-    returnId: null, orderId: null, orderNumber: null, orderLine: null, shippedOn: null,
+    returnId: null, orderId: null, orderNumber: null, orderLine: null, orderComponent: null, shippedOn: null,
     ownerUid: null, ownerEmail: null, transfer: null, owners: [], returnedOn: day,
     replacesReturnId: FieldValue.delete(), replaces: FieldValue.delete(),
     returns: FieldValue.arrayUnion({
@@ -242,7 +258,10 @@ async function finish(id, to, by, note, emailed = false) {
         statusHistory: push(historyEntry(back, by, { returnId: id, ...(to === 'closed' ? {} : { note: `Return ${r.number} ${to}` }) })) };
       if (to === 'closed' && outcomeOf(r) === 'refund') {
         const qty = { ...(o.returnedQty || {}) };
-        for (const i of r.items || []) qty[String(i.line)] = (Number(qty[String(i.line)]) || 0) + 1;
+        for (const i of r.items || []) {
+          const k = unitKey(i.line, Number.isInteger(i.component) ? i.component : null);
+          qty[k] = (Number(qty[k]) || 0) + 1;
+        }
         update.returnedQty = qty;
       }
       tx.update(orderRef, update);
@@ -275,7 +294,7 @@ async function placeReplacements(id, r, keys, by) {
     const snaps = await Promise.all(wanted.map(x => tx.get(db.collection('pieces').doc(x.key))));
     const old = await Promise.all(dropped.map(k => tx.get(db.collection('pieces').doc(k))));
     old.filter(p => p.exists && p.get('replacesReturnId') === id && p.get('orderId') === r.orderId).forEach(p => tx.update(p.ref, {
-      orderId: null, orderNumber: null, orderLine: null, shippedOn: null, replacesReturnId: FieldValue.delete(), replaces: FieldValue.delete(), updatedAt: FieldValue.serverTimestamp(),
+      orderId: null, orderNumber: null, orderLine: null, orderComponent: null, shippedOn: null, replacesReturnId: FieldValue.delete(), replaces: FieldValue.delete(), updatedAt: FieldValue.serverTimestamp(),
     }));
     const out = [];
     snaps.forEach((p, n) => {
@@ -285,7 +304,7 @@ async function placeReplacements(id, r, keys, by) {
       if (!already && (p.get('orderId') || p.get('returnId'))) throw new HttpError(409, `${p.get('serial')} is already on an order.`);
       if (p.get('receivedOn') === null) throw new HttpError(400, `${p.get('serial')} is still with the maker.`);
       tx.update(p.ref, {
-        orderId: r.orderId, orderNumber: r.orderNumber, orderLine: item.line, shippedOn: day, replacesReturnId: id,
+        orderId: r.orderId, orderNumber: r.orderNumber, orderLine: item.line, orderComponent: Number.isInteger(item.component) ? item.component : null, shippedOn: day, replacesReturnId: id,
         ...(item.key ? { replaces: item.key } : {}), updatedAt: FieldValue.serverTimestamp(),
       });
       out.push({ key, serial: p.get('serial') || key, productName: p.get('productName') || '', variant: p.get('variant') || '', line: item.line, replaces: item.key || null, replacesSerial: item.serial || item.key || null });

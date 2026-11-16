@@ -8,9 +8,10 @@ export function primaryCollection(p: Product, cols: Collection[]): Collection | 
 
 export const collectionLabel = (c?: Collection) => (c ? c.tab || c.name.replace(/^The /, '') : 'Unsorted');
 
-export type Status = 'Live' | 'Coming soon' | 'Redirect' | 'Archived';
+export type Status = 'Live' | 'Coming soon' | 'Redirect' | 'Archived' | 'Merged';
 
 export function statusOf(p: Product): Status {
+  if (p.mergedInto?.id) return 'Merged';
   if (p.archived) return 'Archived';
   if (p.hidden) return 'Coming soon';
   if (p.linkTo) return 'Redirect';
@@ -41,8 +42,10 @@ export function withDerivedPrices(p: Product): Product {
   }
   const prices = allPrices(out);
   if (prices.length) {
-    out.fromPriceAUD = Math.min(...prices);
-    out.singlePrice = new Set(prices).size === 1;
+    // From-price: the cheapest size on sale (a Coming soon width doesn't count unless every width is).
+    const live = out.widths?.length ? out.widths.filter(w => !w.hidden).flatMap(w => (w.variants || []).map(v => v.priceAUD)).filter(n => typeof n === 'number' && !Number.isNaN(n)) : prices;
+    out.fromPriceAUD = Math.min(...(live.length ? live : prices));
+    out.singlePrice = !out.widths?.length && new Set(prices).size === 1;
   }
   return out;
 }

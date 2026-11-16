@@ -1,4 +1,5 @@
 import type { Order, Piece, Return, ReturnStatus } from '../types';
+import { partsOf, returnedOf, setRefund } from './variants';
 
 export type Outcome = 'refund' | 'exchange';
 export const outcomeOf = (r: Pick<Return, 'outcome'>): Outcome => (r.outcome === 'exchange' ? 'exchange' : 'refund');
@@ -77,25 +78,34 @@ export function stepAt(r: Return, key: string) {
   return hits.length ? hits[hits.length - 1].at!.toDate() : null;
 }
 
-/** One pick-able unit of an order: a registry piece, or a unit without a serial. */
-export interface ReturnUnit { id: string; line: number; key: string | null; serial: string; name: string; variant: string; engraving: string; busy: string }
+/** One pick-able unit of an order: a registry piece, or a unit without a serial. `component`: which piece of a set line. */
+export interface ReturnUnit { id: string; line: number; key: string | null; serial: string; name: string; variant: string; engraving: string; busy: string; component?: number }
 
-/** Every unit of an order that could go into a return, line by line. */
+/** Every unit of an order that could go into a return, line by line (each piece of a set on its own). */
 export function returnUnits(order: Order, pieces: Piece[]): ReturnUnit[] {
   const out: ReturnUnit[] = [];
   (order.items || []).forEach((item, line) => {
-    const variant = [item.width, item.length, item.colour].filter(Boolean).join(' · ') || item.options || '';
     const assigned = pieces.filter(p => p.orderId === order.id && p.orderLine === line);
-    const back = Number(order.returnedQty?.[String(line)]) || 0;
-    assigned.forEach(p => out.push({
-      id: p.key, line, key: p.key, serial: p.serial, name: item.name, variant: p.variant || variant, engraving: item.engraving || '',
-      busy: p.returnId ? 'Already in a return' : p.transfer?.id ? 'Transfer waiting' : '',
-    }));
-    const left = Math.max(0, (item.qty || 1) - assigned.length - back);
-    for (let n = 0; n < left; n++) out.push({ id: `${line}-${n}`, line, key: null, serial: '', name: item.name, variant, engraving: item.engraving || '', busy: '' });
+    const parts = item.components?.length ? item.components.map((c, k) => ({ k, c })) : [{ k: null as number | null, c: null }];
+    for (const { k, c } of parts) {
+      const variant = c ? [c.width, c.length, c.colour].filter(Boolean).join(' · ') : [item.width, item.length, item.colour].filter(Boolean).join(' · ') || item.options || '';
+      const name = c ? `${c.name} (${item.name})` : item.name;
+      const mine = c ? assigned.filter(p => p.orderComponent === k) : assigned;
+      const back = returnedOf(order, line, k);
+      mine.forEach(p => out.push({
+        id: p.key, line, key: p.key, serial: p.serial, name, variant: p.variant || variant, engraving: item.engraving || '',
+        busy: p.returnId ? 'Already in a return' : p.transfer?.id ? 'Transfer waiting' : '', ...(k != null ? { component: k } : {}),
+      }));
+      const left = Math.max(0, (item.qty || 1) - mine.length - back);
+      for (let n = 0; n < left; n++) out.push({ id: `${line}-${k ?? ''}-${n}`, line, key: null, serial: '', name, variant, engraving: item.engraving || '', busy: '', ...(k != null ? { component: k } : {}) });
+    }
   });
   return out;
 }
+
+/** Pieces in the whole order (a set line counts each of its pieces), and how many came back already. */
+export const piecesInOrder = (o: Order) => (o.items || []).reduce((a, i) => a + (i.qty || 1) * partsOf(i), 0);
+export const piecesReturned = (o: Order) => Object.values(o.returnedQty || {}).reduce((a, n) => a + (Number(n) || 0), 0);
 
 /**
  * What to refund for a return: the whole order (with shipping) when everything
@@ -111,7 +121,15 @@ export function suggestedRefund(order: Order, r: Return) {
   let amount: number;
   if (r.full) amount = left;
   else {
-    const lines = r.items.reduce((a, i) => a + (order.items?.[i.line]?.priceAUD || 0), 0);
+    // A piece of a set: the set price less the full price of what's kept (variants.ts setRefund).
+    const plain = r.items.filter(i => !order.items?.[i.line]?.components?.length);
+    let lines = plain.reduce((a, i) => a + (order.items?.[i.line]?.priceAUD || 0), 0);
+    for (const line of new Set(r.items.filter(i => !plain.includes(i)).map(i => i.line))) {
+      const item = order.items![line];
+      const before = item.components!.map((_, k) => returnedOf(order, line, k));
+      const back = before.map((n, k) => n + r.items.filter(i => i.line === line && i.component === k).length);
+      lines += setRefund(item, back, before);
+    }
     const share = order.subtotalAUD ? 1 - (order.discountAUD || 0) / order.subtotalAUD : 1;
     amount = lines * share;
   }

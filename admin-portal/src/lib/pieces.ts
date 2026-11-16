@@ -68,7 +68,7 @@ export function draftError(d: PieceDraft): string {
  * Adds a piece. Fails if the serial is already in the registry, so two records can
  * never share a serial. `link` assigns it to an order line straight away.
  */
-export async function createPiece(d: PieceDraft, link?: { order: Order; line: number }): Promise<string> {
+export async function createPiece(d: PieceDraft, link?: PieceLink): Promise<string> {
   const key = serialKey(d.serial);
   const ref = doc(db, 'pieces', key);
   await runTransaction(db, async tx => {
@@ -79,6 +79,7 @@ export async function createPiece(d: PieceDraft, link?: { order: Order; line: nu
       ...variantFields(d), ...supplierFields(d), purchasedOn: d.purchasedOn,
       receivedOn: d.receivedOn || null, shippedOn: d.shippedOn || null, notes: d.notes.trim(),
       orderId: link ? link.order.id : null, orderNumber: link ? orderNo(link.order) : null, orderLine: link ? link.line : null,
+      orderComponent: link && link.component != null ? link.component : null,
       createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
     });
   });
@@ -103,24 +104,44 @@ export function markReceived(key: string, on = today()) {
   return updateDoc(doc(db, 'pieces', key), { receivedOn: on, updatedAt: serverTimestamp() });
 }
 
+/** An order line a piece fills, and for a set line, which piece of the set (index into its components). */
+export interface PieceLink { order: Order; line: number; component?: number | null }
+
 /** Ties a piece to one line of an order, or frees it (order null). */
-export async function linkPiece(key: string, link: { order: Order; line: number } | null) {
+export async function linkPiece(key: string, link: PieceLink | null) {
   await updateDoc(doc(db, 'pieces', key), {
     orderId: link ? link.order.id : null,
     orderNumber: link ? orderNo(link.order) : null,
     orderLine: link ? link.line : null,
+    orderComponent: link && link.component != null ? link.component : null,
     ...(link ? {} : { shippedOn: null }),
     updatedAt: serverTimestamp(),
   });
   await syncPortal(key);
 }
 
-/** Each order line with the pieces assigned to it and how many it still needs. */
+/**
+ * Each order line with the pieces assigned to it and how many it still needs. A set
+ * line needs one piece per component per unit: `parts` says which are still missing,
+ * and `next` is the first component without enough pieces.
+ */
 export function orderSlots(order: Order, pieces: Piece[]) {
   const mine = pieces.filter(p => p.orderId === order.id);
   return (order.items || []).map((item, line) => {
     const assigned = mine.filter(p => p.orderLine === line);
-    return { item, line, assigned, missing: Math.max(0, (item.qty || 1) - assigned.length) };
+    const qty = item.qty || 1;
+    const comps = item.components || [];
+    const parts = comps.map((c, component) => {
+      const got = assigned.filter(p => p.orderComponent === component).length;
+      return { component, name: c.name, size: [c.width, c.length].filter(Boolean).join(' · '), missing: Math.max(0, qty - got) };
+    });
+    // pieces assigned before the line knew its components still count toward it
+    const loose = comps.length ? assigned.filter(p => p.orderComponent == null || !comps[p.orderComponent]).length : 0;
+    const missing = comps.length
+      ? Math.max(0, parts.reduce((a, x) => a + x.missing, 0) - loose)
+      : Math.max(0, qty - assigned.length);
+    const next = parts.find(x => x.missing > 0)?.component ?? null;
+    return { item, line, assigned, missing, parts, next };
   });
 }
 

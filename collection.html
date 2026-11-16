@@ -310,8 +310,8 @@
 
 <div class="toast" id="toast"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
 
-<script src="assets/js/catalogue.js?v=20261108a"></script>
-<script type="text/axia-deferred" src="assets/js/axia.js?v=20261107b"></script>
+<script src="assets/js/catalogue.js?v=20261116a"></script>
+<script type="text/axia-deferred" src="assets/js/axia.js?v=20261116a"></script>
 <script type="text/axia-deferred">
 (function(){
   const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
@@ -373,9 +373,11 @@
   function metaText(p){ const c=(p.col&&p.col.length>1)?p.col.join(' / '):'925 silver'; return [p.width,c].filter(Boolean).join(' \u00b7 '); }
   function render(){
     let list=P.slice().filter(p=>!p.hidden); // hidden products (per-width variants rolled into a combined listing) stay out of the grid
-    if(state.width) list=list.filter(p=>p.width===state.width);
+    // a product sold in several widths shows as that width (a width filter, or a collection of one width)
+    const asWidth=(p,w)=>(w&&Array.isArray(p.widths)&&window.AXIA_WIDTH)?window.AXIA_WIDTH(p,w):p;
+    if(state.width) list=list.filter(p=>p.width===state.width||(Array.isArray(p.widths)&&p.widths.some(w=>w.width===state.width&&!w.hidden))).map(p=>asWidth(p,state.width));
     else if(state.q){ const qq=state.q.toLowerCase(); list=list.filter(p=>kw(p).includes(qq)); }
-    if(state.cat!=='All') list=list.filter(p=>inCol(p,state.cat));
+    if(state.cat!=='All') list=list.filter(p=>inCol(p,state.cat)).map(p=>asWidth(p,p.collWidth&&p.collWidth[state.cat])).filter(p=>!p.hidden);
     if(state.sort==='low') list.sort((a,b)=>a.fromPriceAUD-b.fromPriceAUD);
     else if(state.sort==='high') list.sort((a,b)=>b.fromPriceAUD-a.fromPriceAUD);
     else list.sort((a,b)=> (a.level-b.level) || ((b.badge==='Bestseller')-(a.badge==='Bestseller')) || (a.fromPriceAUD-b.fromPriceAUD));
@@ -401,6 +403,7 @@
   (function(){
     const COMING=['classic-cuban-bracelet-15mm','cross-link-cuban-bracelet-15mm','fire-bezel-cuban-bracelet-15mm','fire-bezel-cuban-chain-15mm','micro-pave-cuban-bracelet-15mm','micro-pave-cuban-chain-15mm','prong-cuban-bracelet-15mm','prong-cuban-bracelet-16mm','single-row-prong-cuban-chain-10mm','prong-cuban-chain-16mm','the-titan','the-emperor','the-requiem','the-ascendant'];
     const byId={}; P.forEach(p=>byId[p.id]=p);
+    COMING.forEach(id=>{ if(!byId[id]&&window.AXIA_VIEW){ const v=window.AXIA_VIEW(id); if(v&&v.hidden) byId[id]=v; } }); // old ids merged into a product: its Coming soon width
     const firstPhoto=p=>(p.images&&p.images[0])||(p.imagesByColor&&(Object.values(p.imagesByColor).find(a=>a&&a.length)||[])[0])||(p.widths&&((p.widths.find(w=>w.image)||{}).image))||'';
     /* only teaser pieces that actually have a photo - never show a blank/placeholder card */
     const items=COMING.map(id=>byId[id]).filter(p=>p&&firstPhoto(p));

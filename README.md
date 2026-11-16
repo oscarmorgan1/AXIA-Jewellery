@@ -48,7 +48,7 @@ Pages show web-sized WebP copies of the photos in `assets/img` (600px and 1200px
 
 | Collection | Who can read | Who can write | Holds |
 | --- | --- | --- | --- |
-| `products/{id}` | admins | admins | The catalogue. Browsers get the public view from `GET /api/catalogue` (live pieces in full, Coming soon pieces as teasers with no prices or description), same fields as `products.js`, plus `sort`, `archived`, `updatedAt`. `coll` lists the collection slugs it belongs to |
+| `products/{id}` | admins | admins | The catalogue. Browsers get the public view from `GET /api/catalogue` (live pieces in full, Coming soon pieces as teasers with no prices or description), same fields as `products.js`, plus `sort`, `archived`, `updatedAt`. `coll` lists the collection slugs it belongs to. Sizes live in `widths: [{width, hidden, images, variants: [{length, priceAUD}]}]`: every width × length has its own price, and a `hidden` width shows as Coming soon. A set has `set: {components: [{productId, width, length}], sharedWidth, pricing}` (a null width or length means the buyer picks; pricing is a fixed price, pieces less an amount, or pieces less a percentage). A product merged into another keeps its document with `archived: true` and `mergedInto: {id, width}`, so old orders, bags and links (302 to the new page) still work |
 | `collections/{slug}` | admins (visitors via `/api/catalogue`) | admins | Reusable groups of products. `showInShop` ones become the Shop All tabs, in `sort` order |
 | `site/shop` | admins (visitors via `/api/catalogue`) | admins | The Open shop switch (`open: true/false`), under Website in the portal. Missing or false means closed: buttons say "Reserve your spot" and the server refuses checkout |
 | `site/countdown` | admins (visitors via `/api/catalogue`) | admins | The launch countdown (timer, text or hidden), edited under Website in the portal. Without it the site shows "Dropping soon" |
@@ -56,8 +56,9 @@ Pages show web-sized WebP copies of the photos in `assets/img` (600px and 1200px
 | `visits/{day}_{id}` | admins | server only (`POST /api/visit`, rate limited) | Anonymous unique visitors: one entry per browser per day (Sydney time) with landing page, referring site and device. Shown on the dashboard. Admins who have signed in to the portal aren't counted |
 | `signups/{id}` | admins | server only (`POST /api/signup`, rate limited) | Waitlist registrations from the landing and First Drop pages. Shown under Customers |
 | `messages/{id}` | admins | server only (`POST /api/message`, rate limited) | Support page contact form. Shown in the Inbox |
-| `productCosts/{id}` | admins | admins | Factory cost, quoted size, notes. **Private** |
-| `internal/costAssumptions` | admins | admins | Payment fee, packaging, returns reserve |
+| `productCosts/{id}` | admins | admins | Factory cost, quoted size, notes, and `variants["width\|length"]` with each size's own cost. **Private** |
+| `internal/costAssumptions` | admins | admins | Payment fee, packaging, returns reserve, GST, freight per piece (US$) and the USD rate |
+| `migrations/{id}` | nobody | server only (`/api/admin/migrations`) | Runs of the temporary catalogue migration (Settings > Catalogue migration): what changed and a copy of every document before, for Undo |
 | `internal/firstDropPlan` | admins | admins | Internal unit plan |
 | `orders/{id}` | admins | admins | Paid Stripe orders, keyed by Checkout session id. Written by the webhook and the admin API with the Admin SDK. Holds each line's engraving, the promo code used, `statusHistory`, and `emails` (every customer email with its Resend ID) |
 | `pieces/{key}` | admins | admins | The piece registry: one physical piece per serial (key = serial in capitals, letters and digits only), with its product, supplier, supplier order date, the order line it fills and its shipped date (set when the order is marked Shipped). The public `/genuine` check goes through `GET /api/genuine`, which returns only the product name and the customer's purchase date (the order's date), and only for a piece in a paid order that wasn't cancelled or refunded; anything else is a 404. Rate limited |

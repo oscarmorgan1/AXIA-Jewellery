@@ -23,6 +23,10 @@ function siteOrigin(req) {
 // Stripe metadata can't hold empty values, so leave those keys out.
 const compact = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== '' && v != null));
 
+// A set line's pieces for the webhook: [[productId, width, length, retail], ...].
+// Stripe metadata values hold 500 characters, plenty for a few pieces.
+export const setMeta = l => (l.components ? JSON.stringify(l.components.map(c => [c.id, c.width, c.length, c.priceAUD])).slice(0, 500) : '');
+
 export function checkoutRoutes() {
   const router = express.Router();
 
@@ -46,7 +50,7 @@ export function checkoutRoutes() {
               name: l.name,
               ...(l.options ? { description: l.options } : {}),
               ...(l.image && origin.startsWith('https://') ? { images: [`${origin}/${encodeURI(l.image)}`] } : {}),
-              metadata: compact({ productId: l.id, width: l.width, length: l.length, colour: l.colour, engraving: l.engraving }),
+              metadata: compact({ productId: l.id, width: l.width, length: l.length, colour: l.colour, engraving: l.engraving, set: setMeta(l) }),
             },
           },
         })),

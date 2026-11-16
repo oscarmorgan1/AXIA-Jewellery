@@ -1,4 +1,5 @@
 import type { CostAssumptions, Product, ProductCost } from '../types';
+import { costOf } from './variants';
 
 export const DEFAULT_ASSUMPTIONS: CostAssumptions = {
   paymentFeePct: 0.026,
@@ -30,7 +31,11 @@ export function retailAtSize(p: Product, size?: string | null): number | null {
 
 export interface Economics {
   retailAUD: number;
+  /** Retail less GST (when the cost sheet's GST setting is on). */
+  netRetailAUD: number;
   factoryCostAUD: number;
+  /** Freight allowance per piece, in A$. */
+  freightAUD: number;
   grossProfitAUD: number;
   grossMarginPct: number;
   markup: number;
@@ -41,18 +46,27 @@ export interface Economics {
   maxAdPerSaleAUD: number;
 }
 
-/** Same formulas as the owner's margins sheet. */
+/**
+ * Same formulas as the owner's margins sheet: gross margin = (retail less GST − factory
+ * cost − freight) ÷ retail less GST. GST and freight come from the sheet's settings
+ * (internal/costAssumptions gstPct, freightUSD, usdPerAud); without them they're 0.
+ */
 export function economics(retail: number | null, cost: number | null, a: CostAssumptions = DEFAULT_ASSUMPTIONS): Economics | null {
   if (retail == null || cost == null || retail <= 0) return null;
-  const gp = retail - cost;
+  const net = retail / (1 + (a.gstPct || 0));
+  const freight = a.freightUSD && a.usdPerAud ? a.freightUSD / a.usdPerAud : 0;
+  const landed = cost + freight;
+  const gp = net - landed;
   const fee = retail * a.paymentFeePct + a.paymentFeeFixedAUD;
   const contribution = gp - fee - a.packagingPerUnitAUD - a.shippingAUD;
   return {
     retailAUD: retail,
+    netRetailAUD: net,
     factoryCostAUD: cost,
+    freightAUD: freight,
     grossProfitAUD: gp,
-    grossMarginPct: (gp / retail) * 100,
-    markup: cost > 0 ? retail / cost : 0,
+    grossMarginPct: (gp / net) * 100,
+    markup: landed > 0 ? gp / landed : 0,
     paymentFeeAUD: fee,
     contributionAUD: contribution,
     contributionMarginPct: (contribution / retail) * 100,
@@ -64,4 +78,10 @@ export function economics(retail: number | null, cost: number | null, a: CostAss
 export function productEconomics(p: Product, c: ProductCost | undefined, a: CostAssumptions) {
   if (!c) return null;
   return economics(retailAtSize(p, c.representativeSize), c.factoryCostAUD, a);
+}
+
+/** Margins of one size, from its own cost. */
+export function sizeEconomics(retail: number, c: ProductCost | undefined, width: string | null, length: string | null, a: CostAssumptions) {
+  const v = costOf(c, width, length);
+  return v && v.factoryCostAUD != null ? economics(retail, v.factoryCostAUD, a) : null;
 }

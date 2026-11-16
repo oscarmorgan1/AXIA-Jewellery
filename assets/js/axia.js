@@ -204,7 +204,8 @@
     let opt = btn.dataset.opt || '';
     if (host) { const c = $('.chip.is-active', host); if (c) opt = c.textContent.trim(); }
     const d = btn.dataset;
-    cart.push({ id: d.id || '', name: d.name, price: +d.price, opt, img: d.img || '', width: d.width || '', length: d.length || '', colour: d.colour || '', engraving: d.engraving || '', q: 1 });
+    let parts = null; try { parts = d.parts ? JSON.parse(d.parts) : null; } catch (err) { parts = null; }
+    cart.push({ id: d.id || '', name: d.name, price: +d.price, opt, img: d.img || '', width: d.width || '', length: d.length || '', colour: d.colour || '', engraving: d.engraving || '', q: 1, ...(Array.isArray(parts) ? { parts } : {}) });
     save(); say(shopOpen() ? 'Added to bag' : 'Reserved'); openC();
   });
 

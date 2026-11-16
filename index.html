@@ -505,7 +505,7 @@
   </div>
 </div>
 
-<script src="assets/js/catalogue.js?v=20261108a"></script>
+<script src="assets/js/catalogue.js?v=20261116a"></script>
 <script type="text/axia-deferred">
 /* ============================================================
    AXIA - First Drop landing
@@ -623,7 +623,7 @@ track.addEventListener('click', function(e){
 render(); start();
 
 /* ---- product lightbox: a contained listing view (photos, finish selector, prev/next) ---- */
-var PROD = {}; (window.AXIA_PRODUCTS||[]).forEach(function(p){ PROD[p.id]=p; });
+var PROD = {}; (window.AXIA_PRODUCTS||[]).forEach(function(p){ PROD[p.id]=p; }); Object.keys(window.AXIA_MERGED||{}).forEach(function(id){ if(!PROD[id]&&window.AXIA_VIEW){ var v=window.AXIA_VIEW(id); if(v) PROD[id]=v; } });
 var DROPIDS = DROP.map(function(d){ return d.id; });
 var lb=document.getElementById('lb'), lbImg=document.getElementById('lbImg'), lbThumbs=document.getElementById('lbThumbs'),
     lbMade=document.getElementById('lbMade'), lbName=document.getElementById('lbName'), lbPrice=document.getElementById('lbPrice'),

@@ -16,7 +16,7 @@ import { SkeletonPage } from './Skeleton';
 
 const TITLES: [RegExp, string][] = [
   [/^\/$/, 'Dashboard'], [/^\/products\/new/, 'New product'], [/^\/products\//, 'Edit product'], [/^\/products/, 'Products'],
-  [/^\/collections/, 'Collections'], [/^\/customers\//, 'Customer'], [/^\/customers/, 'Customers'], [/^\/inbox/, 'Inbox'], [/^\/margins/, 'Margins'],
+  [/^\/collections/, 'Collections'], [/^\/customers\//, 'Customer'], [/^\/customers/, 'Customers'], [/^\/inbox/, 'Inbox'], [/^\/margins/, 'Margins'], [/^\/migration/, 'Migration'],
   [/^\/orders\//, 'Order'], [/^\/orders/, 'Orders'], [/^\/returns\//, 'Return'], [/^\/returns/, 'Returns'], [/^\/promos/, 'Promo codes'], [/^\/marketing\//, 'Email'], [/^\/marketing/, 'Marketing'], [/^\/website/, 'Website'], [/^\/settings/, 'Settings'],
 ];
 

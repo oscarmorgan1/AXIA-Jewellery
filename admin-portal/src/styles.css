@@ -438,6 +438,22 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--text-md);
 .notice--error { background: var(--bad-soft); color: var(--bad); }
 .notice--ok { background: var(--good-soft); color: var(--good); }
 .width-block { border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+.width-block--soon { border-style: dashed; }
+.width-block__head { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-bottom: 10px; }
+.width-block__head .field { flex: 1 1 160px; }
+.variants-table__note { font-size: var(--text-xs); color: var(--muted); margin-top: 2px; }
+.variants-table .chip { white-space: nowrap; }
+/* Set editor (ProductEdit): one row per piece in the set */
+.set-parts { display: flex; flex-direction: column; gap: 10px; }
+.set-part { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: 10px; align-items: end; border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; }
+.set-part__sub { grid-column: 1 / -1; font-size: var(--text-sm); color: var(--muted); }
+@media (max-width: 720px) { .set-part { grid-template-columns: 1fr 1fr; } .set-part > :first-child { grid-column: 1 / -1; } }
+/* Migration page */
+.set-lines { margin: 4px 0 0; padding-left: 16px; font-size: var(--text-sm); display: flex; flex-direction: column; gap: 2px; }
+.set-lines small { color: var(--muted); }
+.mig-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: var(--text-md); }
+.mig-list small { color: var(--muted); }
+.mig-widths { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .savebar { position: sticky; bottom: 16px; z-index: 15; display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 20px; border-radius: var(--radius); background: var(--obsidian); color: var(--bone); box-shadow: var(--shadow-lift); align-self: center; }
 .savebar .btn { border-color: transparent; }
 .savebar .btn--primary { background: var(--ice); color: var(--obsidian); }

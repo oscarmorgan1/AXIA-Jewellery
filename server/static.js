@@ -9,6 +9,7 @@ import path from 'node:path';
 import express from 'express';
 import { getSiteMode, isShopOpen } from './services.js';
 import { renderPage } from './seo.js';
+import { catalogue } from './catalogue.js';
 import { withNonce, allowAnalytics } from './csp.js';
 import { analyticsFor, analyticsTag } from './analytics.js';
 
@@ -44,6 +45,16 @@ export async function siteMode() {
 }
 // Still reachable while the site is down: unsubscribing from emails must always work.
 const WHILE_DOWN = new Set(['unsubscribe']);
+
+/** Where an old (merged) product id now lives, as a /product link, or null. */
+async function mergedTarget(id) {
+  try {
+    const body = await catalogue();
+    const to = body && body.merged && body.merged[id];
+    if (!to || !to.id) return null;
+    return `/product?id=${encodeURIComponent(to.id)}${to.width ? '&width=' + encodeURIComponent(to.width) : ''}`;
+  } catch { return null; }
+}
 
 export function staticSite(root) {
   const router = express.Router();
@@ -119,6 +130,12 @@ export function staticSite(root) {
     if (!m || !pages.has(m[1])) return next();
     if (m[2]) return res.redirect(301, (m[1] === 'index' ? '/' : '/' + m[1]) + qs);
     if (m[1] === 'index') return res.redirect(301, '/' + qs);
+    // A product merged into another: send its old link to the new page, on the width it was.
+    if (m[1] === 'product' && typeof req.query.id === 'string') {
+      const to = await mergedTarget(req.query.id);
+      // 302 and cached for a day, not a permanent 301: undoing the merge must bring the old page back.
+      if (to) return res.set('Cache-Control', 'public, max-age=86400').redirect(302, to);
+    }
     sendSitePage(req, res, m[1]).catch(next);
   });
 

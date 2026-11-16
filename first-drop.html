@@ -269,12 +269,12 @@
 </div>
 <div class="toast" id="toast"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
 
-<script src="assets/js/catalogue.js?v=20261108a"></script>
-<script type="text/axia-deferred" src="assets/js/axia.js?v=20261107b"></script>
+<script src="assets/js/catalogue.js?v=20261116a"></script>
+<script type="text/axia-deferred" src="assets/js/axia.js?v=20261116a"></script>
 <script type="text/axia-deferred">
 (function(){
   const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
-  const P=window.AXIA_PRODUCTS||[]; const byId=id=>P.find(p=>p.id===id);
+  const P=window.AXIA_PRODUCTS||[]; const byId=id=>(window.AXIA_VIEW?window.AXIA_VIEW(id):P.find(p=>p.id===id)); // an old (merged) id shows that width of the merged piece
   const fmtA=n=>'A$'+Number(n).toLocaleString('en-AU');
 
   /* ---- Launch countdown. Date, text and on/off are set in the admin portal

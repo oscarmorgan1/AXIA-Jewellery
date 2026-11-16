@@ -27,6 +27,7 @@ const Returns = lazy(() => import('./pages/Returns'));
 const ReturnDetail = lazy(() => import('./pages/ReturnDetail'));
 const Marketing = lazy(() => import('./pages/Marketing'));
 const Campaign = lazy(() => import('./pages/Campaign'));
+const Migration = lazy(() => import('./pages/Migration')); // temporary: the product merge (remove once run)
 
 /**
  * Signed in, but not an admin: a customer. Checks once more for a freshly granted
@@ -74,6 +75,7 @@ export default function App() {
         <Route path="marketing/:id" element={<Campaign />} />
         <Route path="website" element={<Website />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="migration" element={<Migration />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

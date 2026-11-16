@@ -3,7 +3,7 @@ import { Mail, Undo2 } from 'lucide-react';
 import Drawer from './Drawer';
 import { adminApi } from '../lib/api';
 import { orderNo } from '../lib/orders';
-import { REASONS, returnUnits } from '../lib/returns';
+import { REASONS, piecesInOrder, piecesReturned, returnUnits } from '../lib/returns';
 import type { Order, Piece, Tracking } from '../types';
 
 /**
@@ -27,8 +27,8 @@ export default function ReturnDrawer({ order, pieces, onClose, onDone }: { order
   const hasLabel = !!(label.number?.trim() || label.url?.trim());
   const chosen = units.filter(u => picked.has(u.id));
   const engraved = chosen.some(u => u.engraving);
-  const total = (order.items || []).reduce((a, i) => a + (i.qty || 1), 0);
-  const already = Object.values(order.returnedQty || {}).reduce((a, n) => a + (Number(n) || 0), 0);
+  const total = piecesInOrder(order);
+  const already = piecesReturned(order);
   const full = chosen.length + already >= total;
 
   const toggle = (id: string) => setPicked(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -37,7 +37,7 @@ export default function ReturnDrawer({ order, pieces, onClose, onDone }: { order
     setBusy(true); setError('');
     try {
       const r = await adminApi<{ id: string; number: string; email: { resendId: string | null } | null }>('/returns', {
-        orderId: order.id, items: chosen.map(u => ({ line: u.line, key: u.key })), outcome, wanted: outcome === 'exchange' ? wanted.trim() : '', reason, note, notify: notify && !!email,
+        orderId: order.id, items: chosen.map(u => ({ line: u.line, key: u.key, ...(u.component != null ? { component: u.component } : {}) })), outcome, wanted: outcome === 'exchange' ? wanted.trim() : '', reason, note, notify: notify && !!email,
         ...(hasLabel ? { label } : {}),
       });
       onDone(`Return ${r.number} opened${r.email ? (r.email.resendId ? `, emailed ${email}` : ', email not sent (Resend isn’t set up)') : ''}`, r.id);
