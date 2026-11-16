@@ -10,6 +10,8 @@ export interface WidthOption {
   images?: string[];
   /** Photos of this width in each colour, when they differ (Gold, Rose Gold...). A colour without its own falls back to `images`. */
   imagesByColor?: Record<string, string[]>;
+  /** The colours this width is made in, when not every colour of the product (e.g. 5mm in Silver only). */
+  col?: string[];
   /** Coming soon: shown on the product page, can't be bought yet. */
   hidden?: boolean;
   fromPriceAUD?: number;

@@ -2,7 +2,7 @@
 // were chosen; every price comes from the Firestore product, so nobody can
 // pay less by editing their cart in the browser.
 
-import { hasWidths, pickVariant, priceSet, salePrice, SetError, sizeLabel } from './variants.js';
+import { hasWidths, pickVariant, priceSet, salePrice, SetError, sizeLabel, widthsOf } from './variants.js';
 
 export const MAX_LINES = 20;
 export const MAX_QTY = 10;
@@ -87,7 +87,9 @@ export async function priceCart(items, getProduct, extra = {}) {
     }
     width = variant.width || '';
 
-    const cols = Array.isArray(p.col) && p.col.length ? p.col : ['Silver'];
+    // The width's own colours when it has them (a 5mm in Silver only), else the product's.
+    const w = many ? widthsOf(p).find(x => x && x.width === width) : null;
+    const cols = w && Array.isArray(w.col) && w.col.length ? w.col : Array.isArray(p.col) && p.col.length ? p.col : ['Silver'];
     const colour = cols.includes(str(raw.colour)) ? str(raw.colour) : cols[0];
     const engraving = canEngrave(p) ? str(String(raw.engraving || '').replace(/[<>]/g, ''), ENGRAVE_MAX) : '';
 

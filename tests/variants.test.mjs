@@ -243,3 +243,28 @@ test('merged widths keep their colour photos, and an earlier merge gets them bac
   assert.deepEqual(fixed.data.widths.find(w => w.width === '10mm').imagesByColor, src.imagesByColor);
   assert.ok(again.report.notes.some(n => n.includes('colour photos')));
 });
+
+test('each width keeps its own colours through the merge, the repair and checkout', async () => {
+  const { priceCart } = await import('../server/pricing.js');
+  const { writes } = buildPlan({ products: clone(CATALOGUE), costs: [], pieces: [], reviews: null });
+  const iced = writes.find(x => x.collection === 'products' && x.id === 'iced-cuban-bracelet').data;
+  const colOf = w => iced.widths.find(x => x.width === w).col;
+  assert.deepEqual(colOf('5mm'), ['Silver']);
+  assert.deepEqual(colOf('10mm'), ['Silver', 'Gold', 'Rose Gold']);
+  assert.deepEqual(iced.col, ['Silver', 'Gold', 'Rose Gold']);
+
+  // An earlier run that lost them: the repair copies each old product's colours onto its width.
+  const merged = clone(iced); merged.widths.forEach(w => { delete w.col; });
+  const after = clone(CATALOGUE).filter(p => p.name !== 'Iced Cuban Bracelet').concat(
+    clone(CATALOGUE).filter(p => p.name === 'Iced Cuban Bracelet').map(p => ({ ...p, archived: true, mergedInto: { id: 'iced-cuban-bracelet', width: p.width } })),
+    [{ ...merged, id: 'iced-cuban-bracelet' }]);
+  const fixed = buildPlan({ products: after, costs: [], pieces: [], reviews: null }).writes.find(x => x.collection === 'products' && x.id === 'iced-cuban-bracelet');
+  assert.deepEqual(fixed.data.widths.find(w => w.width === '5mm').col, ['Silver']);
+
+  // Checkout won't sell a 5mm in Gold: it falls back to the width's own colour.
+  const get = async id => (id === 'iced-cuban-bracelet' ? iced : null);
+  const len = iced.widths.find(w => w.width === '5mm').variants[0].length;
+  const { lines } = await priceCart([{ id: 'iced-cuban-bracelet', width: '5mm', length: len, colour: 'Gold' }, { id: 'iced-cuban-bracelet', width: '10mm', length: iced.widths.find(w => w.width === '10mm').variants[0].length, colour: 'Gold' }], get);
+  assert.equal(lines[0].colour, 'Silver');
+  assert.equal(lines[1].colour, 'Gold');
+});
