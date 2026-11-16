@@ -75,18 +75,16 @@ env:
 
   # Analytics on the public storefront (server/analytics.js). Never on /admin or
   # /portal. Public IDs, kept as secrets only so they can be set or changed with
-  # one command and a rollout. Create both BEFORE merging, or the rollout fails:
+  # one command and a rollout. Create it BEFORE merging, or the rollout fails:
   #   printf '%s' 'G-XXXXXXXXXX' | npx firebase apphosting:secrets:set ga-measurement-id --data-file=- --project axia-jewellery
-  #   printf '%s' 'abcdefghij' | npx firebase apphosting:secrets:set clarity-project-id --data-file=- --project axia-jewellery
   # Google Analytics 4 measurement ID (Firebase > Project settings > Integrations).
   - variable: GA_MEASUREMENT_ID
     secret: ga-measurement-id
     availability: [RUNTIME]
 
-  # Microsoft Clarity project ID (Clarity > Settings > Overview).
-  - variable: CLARITY_PROJECT_ID
-    secret: clarity-project-id
-    availability: [RUNTIME]
+  # Microsoft Clarity (heatmaps, recordings) is built in but off. To turn it on:
+  # create the Clarity project, set the secret clarity-project-id, add it here as
+  # CLARITY_PROJECT_ID (RUNTIME), and add Clarity back to privacy.html.
 
   # "notice": analytics runs unless a visitor declines (Australian Privacy Act
   # allows this). "opt-in": nothing loads until they tap OK.

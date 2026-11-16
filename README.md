@@ -236,7 +236,7 @@ Customers start a return from Pieces (Return, on a delivered piece from their ow
 
 ## Analytics and privacy
 
-The public storefront runs **Google Analytics 4** (the Firebase project's GA4 property: page views, exits, traffic sources, country and city) and **Microsoft Clarity** (click heatmaps and session recordings). Neither runs on `/admin`, `/portal`, `/checkout`, `/unsubscribe` or `/styleguide`, and Clarity is off on `/genuine` because its URL carries the serial.
+The public storefront runs **Google Analytics 4** (the Firebase project's GA4 property: page views, exits, traffic sources, country and city). Support for **Microsoft Clarity** (click heatmaps and session recordings) is built in but **off**: `CLARITY_PROJECT_ID` isn't set in apphosting.yaml. To turn it on, set that secret, add the variable, and add Clarity back to `privacy.html`. Neither runs on `/admin`, `/portal`, `/checkout`, `/unsubscribe` or `/styleguide`, and Clarity is off on `/genuine` because its URL carries the serial.
 
 - `server/analytics.js` reads `GA_MEASUREMENT_ID`, `CLARITY_PROJECT_ID` and `ANALYTICS_CONSENT` (apphosting.yaml) and adds one `<script src="/assets/js/analytics.js">` to each storefront page. A tool with no ID stays off.
 - Only those pages' CSP gets the GA4 and Clarity hosts (`GA_HOSTS`, `CLARITY_HOSTS` in `server/csp.js`). Every other response keeps the tight policy.
