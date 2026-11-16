@@ -8,6 +8,8 @@ export interface WidthOption {
   image?: string;
   /** Photos of this width (the first is `image`). */
   images?: string[];
+  /** Photos of this width in each colour, when they differ (Gold, Rose Gold...). A colour without its own falls back to `images`. */
+  imagesByColor?: Record<string, string[]>;
   /** Coming soon: shown on the product page, can't be bought yet. */
   hidden?: boolean;
   fromPriceAUD?: number;

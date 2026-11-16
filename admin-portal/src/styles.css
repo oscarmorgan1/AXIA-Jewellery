@@ -926,3 +926,8 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--text-md);
 .mk-sent-copy[open] .mk-preview { border: 0; padding: 12px 0 0; }
 @media (max-width: 1100px) { .mk-editor { grid-template-columns: 1fr; } .mk-editor__side { position: static; } }
 @media (max-width: 600px) { .mk-title { font-size: var(--text-2xl); } .mk-funnel__row { grid-template-columns: 64px minmax(0, 1fr) 70px; } }
+
+/* Width block: the colour photos, and Remove width on its own row, apart from Add size. */
+.width-block__photos { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.width-block__photos summary { cursor: pointer; font-size: var(--text-sm); color: var(--muted); }
+.width-block__foot { display: flex; justify-content: flex-end; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
