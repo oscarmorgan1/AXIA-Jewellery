@@ -14,7 +14,14 @@
   .lg-head{border-bottom:1px solid var(--line);padding:.9rem var(--gutter);display:flex;justify-content:space-between;align-items:center;gap:1rem}
   .lg-head a{font-family:var(--font-display);font-weight:800;letter-spacing:.14em;font-size:.9rem;color:var(--ink);text-decoration:none}
   .lg-head span{font-size:.75rem;color:var(--ink-tertiary)}
-  .lg-wrap{max-width:680px;margin-inline:auto;padding:clamp(1.6rem,5vw,2.8rem) var(--gutter) 4rem;font-size:.92rem;line-height:1.7}
+  .lg-wrap{max-width:1200px;margin-inline:auto;padding:clamp(1.6rem,5vw,3.2rem) var(--gutter) 4rem;font-size:.95rem;line-height:1.7;display:grid;grid-template-columns:minmax(0,1fr);gap:2rem}
+  .lg-body{min-width:0;max-width:780px}
+  .lg-side{display:none}
+  .lg-side__h{font-size:.72rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-tertiary);margin:0 0 .7rem}
+  @media (min-width:960px){
+    .lg-wrap{grid-template-columns:220px minmax(0,1fr);gap:clamp(3rem,6vw,6rem)}
+    .lg-side{display:block;position:sticky;top:1.5rem;align-self:start;padding-top:.4rem}
+  }
   .lg-wrap h1{font-family:var(--font-display);font-weight:700;font-size:clamp(1.6rem,4vw,2.1rem);text-transform:uppercase;margin:0 0 .4rem;letter-spacing:.01em}
   .lg-meta{color:var(--ink-tertiary);font-size:.8rem;margin:0 0 1.8rem}
   .lg-wrap h2{font-size:1.02rem;font-weight:700;margin:2.4rem 0 .6rem;color:var(--ink);scroll-margin-top:1rem}
@@ -28,7 +35,8 @@
   .lg-wrap a{color:var(--ice-ink)}
   .lg-glance{background:var(--bone-2);border:1px solid var(--line);border-radius:4px;padding:1.1rem 1.25rem .5rem;margin:0 0 1.4rem}
   .lg-glance h2{margin-top:0}
-  .lg-toc{columns:2;column-gap:2rem;padding-left:1.1rem;font-size:.85rem}
+  .lg-toc{padding-left:1.2rem;font-size:.85rem;line-height:1.5;margin:0}
+  .lg-toc li{margin-bottom:.45rem;color:var(--ink-tertiary)}
   .lg-toc a{text-decoration:none}
   .lg-toc a:hover{text-decoration:underline}
   .lg-table{width:100%;border-collapse:collapse;font-size:.84rem;margin:.6rem 0 1rem}
@@ -40,7 +48,6 @@
   .lg-choice button{font:600 .7rem/1 var(--font-sans);letter-spacing:.14em;text-transform:uppercase;padding:.75rem 1rem;border-radius:2px;border:1px solid var(--ink);background:var(--ink);color:var(--bone);cursor:pointer}
   .lg-choice button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
   @media (max-width:560px){
-    .lg-toc{columns:1}
     .lg-table thead{display:none}
     .lg-table tr{display:block;border-bottom:1px solid var(--line);padding:.6rem 0}
     .lg-table td{display:block;border:0;padding:.1rem 0}
@@ -51,6 +58,22 @@
 <body>
 <header class="lg-head"><a href="/">&larr; AXIA</a><span>Privacy Policy</span></header>
 <main class="lg-wrap">
+  <nav class="lg-side" aria-label="On this page">
+    <p class="lg-side__h">On this page</p>
+    <ol class="lg-toc">
+      <li><a href="#collect">What we collect</a></li>
+      <li><a href="#use">How we use it</a></li>
+      <li><a href="#share">Who we share it with</a></li>
+      <li><a href="#overseas">Storage outside Australia</a></li>
+      <li><a href="#analytics">Analytics, cookies and browser storage</a></li>
+      <li><a href="#marketing">Marketing</a></li>
+      <li><a href="#keep">How long we keep it</a></li>
+      <li><a href="#security">Security</a></li>
+      <li><a href="#rights">Access, correction and deletion</a></li>
+      <li><a href="#contact">Contact and complaints</a></li>
+    </ol>
+  </nav>
+  <article class="lg-body">
   <h1>Privacy Policy</h1>
   <p class="lg-meta">Last updated 16 November 2026</p>
 
@@ -67,18 +90,6 @@
     </ul>
   </div>
 
-  <ol class="lg-toc">
-    <li><a href="#collect">What we collect</a></li>
-    <li><a href="#use">How we use it</a></li>
-    <li><a href="#share">Who we share it with</a></li>
-    <li><a href="#overseas">Storage outside Australia</a></li>
-    <li><a href="#analytics">Analytics, cookies and browser storage</a></li>
-    <li><a href="#marketing">Marketing</a></li>
-    <li><a href="#keep">How long we keep it</a></li>
-    <li><a href="#security">Security</a></li>
-    <li><a href="#rights">Access, correction and deletion</a></li>
-    <li><a href="#contact">Contact and complaints</a></li>
-  </ol>
 
   <h2 id="collect">1. What we collect</h2>
 
@@ -89,7 +100,7 @@
   <p>Checkout runs on Stripe. From Stripe we receive and keep your name, email address, phone number, shipping address, the pieces you ordered (with sizes and any engraving text), the delivery option, any promo code, the amounts paid, and the order's status as it moves from paid to shipped. We also keep a customer record under your email address that links your orders together, with your latest contact details and any notes we add to look after you (for example, about a resize or a delivery request).</p>
 
   <h3>When you have a customer account</h3>
-  <p>If you create or claim an account (with an email and password, or with Google), Firebase Authentication keeps your email address and sign-in details; passwords are stored by Google in hashed form and we never see them. If you sign in with Google, we receive your name, email address and, where Google provides it, your profile photo. Your account holds your name, phone, address, email preferences and the items saved in your bag, plus copies of your orders, pieces and conversations with us so you can see them.</p>
+  <p>If you create or claim an account (with an email and password, or with Google), we keep your email address and sign-in details. We never see your password. If you sign in with Google, we receive your name, email address and, where Google provides it, your profile photo. Your account holds your name, phone, address, email preferences and the items saved in your bag, plus copies of your orders, pieces and conversations with us so you can see them.</p>
 
   <h3>Pieces, transfers, returns and exchanges</h3>
   <ul>
@@ -108,7 +119,7 @@
   <ul>
     <li><b>Visitor count.</b> Our site keeps a random ID in your browser and records one visit per day: the page you landed on, the website that referred you, and whether you're on a phone, tablet or computer. It contains nothing that identifies you.</li>
     <li><b>Google Analytics</b>, explained in <a href="#analytics">section 5</a>.</li>
-    <li><b>Security checks.</b> Google reCAPTCHA (through Firebase App Check) checks that requests come from a real browser on our site. To do this Google collects information about your device and browser and how you interact with the page, under <a href="https://policies.google.com/privacy" rel="noopener">Google's Privacy Policy</a>.</li>
+    <li><b>Security checks.</b> Google reCAPTCHA checks that requests come from a real browser on our site. To do this Google collects information about your device and browser and how you interact with the page, under <a href="https://policies.google.com/privacy" rel="noopener">Google's Privacy Policy</a>.</li>
     <li><b>Server logs.</b> Like any website, our servers briefly process your IP address and browser details to deliver pages, limit abuse (for example, too many sign-ups from one address) and diagnose errors. Our hosting provider keeps these logs for a limited time.</li>
   </ul>
 
@@ -131,7 +142,7 @@
   <table class="lg-table">
     <thead><tr><th>Provider</th><th>What they do for us</th><th>What they receive</th></tr></thead>
     <tbody>
-      <tr><td>Google Firebase and Google Cloud</td><td>Host the website and store our database, files and customer accounts (Firestore, Cloud Storage, Authentication, App Hosting)</td><td>Everything described in section 1</td></tr>
+      <tr><td>Google Firebase and Google Cloud</td><td>Host the website and store our data and customer accounts</td><td>Everything described in section 1</td></tr>
       <tr><td>Stripe</td><td>Card payments, refunds, promo codes and fraud checks</td><td>Your name, email, phone, address, card details (entered directly with Stripe) and order amounts</td></tr>
       <tr><td>Resend</td><td>Sends our order, account and marketing emails</td><td>Your name, email address and the email's content; delivery, open and click events</td></tr>
       <tr><td>Google reCAPTCHA</td><td>Bot and abuse protection</td><td>Device, browser and interaction information</td></tr>
@@ -142,12 +153,12 @@
   <p>We may also disclose information where the law requires or allows it (for example, to a regulator or to law enforcement), or to professional advisers such as our accountant. If AXIA's business is ever sold, customer information may pass to the buyer, who would have to handle it under this policy. We never sell your personal information.</p>
 
   <h2 id="overseas">4. Storage outside Australia</h2>
-  <p>Some of our providers store or process information outside Australia, mainly in the <b>United States</b>, and may use data centres in other countries where they operate (including the European Union). This includes Stripe, Resend, Google Analytics and Google reCAPTCHA, and parts of Google Firebase (such as Authentication). We choose providers with strong security and privacy practices, and take reasonable steps under APP 8 to make sure they handle your information consistently with the Australian Privacy Principles.</p>
+  <p>Some of our providers store or process information outside Australia, mainly in the <b>United States</b>, and may use data centres in other countries where they operate (including the European Union). This includes Stripe, Resend, Google Analytics and Google reCAPTCHA, and parts of Google’s hosting (such as account sign-in). We choose providers with strong security and privacy practices, and take reasonable steps under APP 8 to make sure they handle your information consistently with the Australian Privacy Principles.</p>
 
   <h2 id="analytics">5. Analytics, cookies and browser storage</h2>
   <p>On our public pages we use <span data-consent-tools>Google Analytics</span> to understand how people find and use the site. It doesn't run in your customer account area, on checkout pages, or in our admin tools, and we don't use it for advertising. We don't record your visits or use heatmap tools.</p>
   <ul>
-    <li><b>Google Analytics</b> (Google's analytics for our Firebase project) tells us which pages are viewed, how people move between them and where they leave, which websites and campaigns bring visitors, the type of device and browser, and approximate location (country and city, worked out from your IP address, which Google doesn't store). It sets first-party cookies (<code>_ga</code>, <code>_ga_*</code>). We've turned off Google signals and ad personalisation, and we strip anything you've typed or any serial number from page addresses before they're sent.</li>
+    <li><b>Google Analytics</b> tells us which pages are viewed, how people move between them and where they leave, which websites and campaigns bring visitors, the type of device and browser, and approximate location (country and city, worked out from your IP address, which Google doesn't store). It sets first-party cookies (<code>_ga</code>, <code>_ga_*</code>). We've turned off Google signals and ad personalisation, and we strip anything you've typed or any serial number from page addresses before they're sent.</li>
   </ul>
   <p>Analytics runs when you visit unless you decline. A short notice lets you choose the first time you visit, and you can change your mind here at any time. If your browser sends a Global Privacy Control signal, we treat it as a decline.</p>
   <div class="lg-choice" data-consent-open hidden>
@@ -155,7 +166,7 @@
     <button type="button">Change</button>
   </div>
   <p>You can also block or clear cookies in your browser settings, or use Google's <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener">Analytics opt-out add-on</a>.</p>
-  <p><b>Browser storage.</b> To make the site work, we keep a few things in your own browser's storage (not cookies): your bag and when it last changed, a copy of your waitlist sign-up so the page remembers you've joined, pieces you've shown interest in, display preferences (such as the shop grid), your analytics choice, and the random ID used for the visitor count. If you have an account, Firebase keeps your sign-in in your browser so you stay signed in. Clearing your browser's site data removes all of these.</p>
+  <p><b>Browser storage.</b> To make the site work, we keep a few things in your own browser's storage (not cookies): your bag and when it last changed, a copy of your waitlist sign-up so the page remembers you've joined, pieces you've shown interest in, display preferences (such as the shop grid), your analytics choice, and the random ID used for the visitor count. If you have an account, your browser also remembers your sign-in so you stay signed in. Clearing your browser's site data removes all of these.</p>
 
   <h2 id="marketing">6. Marketing</h2>
   <p>We send launch news, early access, offers and new drops only to people who ticked the box to receive them when joining the waitlist, or turned on "New drops and offers" in their account. Every marketing email has an unsubscribe link (one click, no sign-in), and marking one as spam also unsubscribes you. You can also switch emails off in your account, or ask us. If you agreed to text messages, we may text you launch alerts. We don't send texts yet; when we do, your mobile number will go to the SMS provider we use, and we'll name it in this policy. Reply STOP to any text to opt out. Unsubscribing doesn't stop emails about an order or your account.</p>
@@ -173,7 +184,7 @@
   <p>When we no longer need information, we delete it or remove anything that identifies you.</p>
 
   <h2 id="security">8. Security</h2>
-  <p>Your information is stored with Google Firebase, which encrypts it in transit and at rest. Only AXIA staff signed in with two-step verification can see customer information, and our database rules stop anyone else from reading it. The site only loads code from approved sources, forms are rate-limited, and Google reCAPTCHA helps keep automated abuse out. No system is perfectly secure, but if a data breach is likely to cause you serious harm, we'll tell you and the Office of the Australian Information Commissioner as the Notifiable Data Breaches scheme requires.</p>
+  <p>We take reasonable steps to protect your information from misuse, loss and unauthorised access. It is stored with Google, encrypted, and only the AXIA team can see customer details. No system is perfectly secure, but if a data breach is likely to cause you serious harm, we'll tell you and the Office of the Australian Information Commissioner, as the law requires.</p>
 
   <h2 id="rights">9. Access, correction and deletion</h2>
   <p>You can see and update most of your details in your <a href="/portal">account</a>. You can also ask us for a copy of the personal information we hold about you, to correct it, or to delete it. We'll confirm who you are first (usually by replying from the email address we hold), then respond within 30 days. When we delete your information, we remove your orders and account from our systems, along with your messages, waitlist sign-ups, invitations, transfers and your name in piece ownership history, and remove you from our email provider. Payment records held by Stripe, and records we must keep by law, may be kept for as long as the law requires.</p>
@@ -184,6 +195,7 @@
 
   <h2 id="changes">Changes to this policy</h2>
   <p>We may update this policy as our business or the law changes. We'll post the new version here with its date, and tell customers by email about any significant change.</p>
+  </article>
 </main>
 </body>
 </html>
