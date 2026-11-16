@@ -9,7 +9,8 @@ import path from 'node:path';
 import express from 'express';
 import { getSiteMode, isShopOpen } from './services.js';
 import { renderPage } from './seo.js';
-import { withNonce } from './csp.js';
+import { withNonce, allowAnalytics } from './csp.js';
+import { analyticsFor, analyticsTag } from './analytics.js';
 
 const NO_CACHE = 'no-cache';
 const WEEK = 'public, max-age=604800';
@@ -52,7 +53,10 @@ export function staticSite(root) {
   const sendPage = (res, file) => res.set('Cache-Control', NO_CACHE).type('html').send(withNonce(fs.readFileSync(file, 'utf8'), res.locals.nonce));
   // Storefront pages go out with their canonical, preview and robots tags (seo.js).
   const sendSitePage = async (req, res, name) => {
-    const html = await renderPage(path.join(root, name + '.html'), name, req.path === '/' ? '/' : '/' + name, req.query);
+    let html = await renderPage(path.join(root, name + '.html'), name, req.path === '/' ? '/' : '/' + name, req.query);
+    // GA4 and Clarity on storefront pages only, with their hosts added to this page's CSP (analytics.js).
+    const analytics = analyticsFor(name);
+    if (analytics) { html = html.replace('</head>', `${analyticsTag(analytics)}\n</head>`); allowAnalytics(res, analytics); }
     res.set('Cache-Control', NO_CACHE).type('html').send(withNonce(html, res.locals.nonce));
   };
 

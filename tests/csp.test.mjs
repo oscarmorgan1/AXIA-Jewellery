@@ -44,3 +44,39 @@ test('the admin offline page’s inline script matches its allowed hash', () => 
   const hash = `'sha256-${crypto.createHash('sha256').update(body).digest('base64')}'`;
   assert.equal(hash, OFFLINE_SCRIPT_HASH);
 });
+
+test('analytics hosts only on pages that load them, and only for the tool configured', async () => {
+  const { GA_HOSTS, CLARITY_HOSTS } = await import('../server/csp.js');
+  const all = [...Object.values(GA_HOSTS).flat(), ...Object.values(CLARITY_HOSTS).flat()];
+  const plain = policy('n');
+  assert.ok(!all.some(h => plain.includes(h)), 'the default policy (admin, portal, api) has no analytics host');
+
+  const ga = policy('n', { ga: 'G-ABC123', clarity: '' });
+  assert.ok(directive(ga, 'script-src').includes('https://www.googletagmanager.com'));
+  assert.ok(directive(ga, 'connect-src').includes('https://region1.google-analytics.com'));
+  assert.ok(!ga.includes('clarity.ms'));
+
+  const both = policy('n', { ga: 'G-ABC123', clarity: 'abcdef1234' });
+  const connect = directive(both, 'connect-src');
+  // the one wildcard allowed: Clarity's upload hosts, on clarity.ms only
+  assert.deepEqual(connect.filter(h => h.includes('*')), ['https://*.clarity.ms']);
+  assert.ok(!directive(both, 'script-src').some(h => h.includes('*.clarity.ms')));
+  assert.deepEqual(directive(both, 'frame-src'), directive(plain, 'frame-src'));
+});
+
+test('analytics config: valid IDs only, never on checkout or unsubscribe, no Clarity on /genuine', async () => {
+  const { analyticsFor, analyticsTag } = await import('../server/analytics.js');
+  const keep = { ...process.env };
+  try {
+    delete process.env.GA_MEASUREMENT_ID; delete process.env.CLARITY_PROJECT_ID;
+    assert.equal(analyticsFor('store'), null);
+    process.env.GA_MEASUREMENT_ID = 'G-ABC123'; process.env.CLARITY_PROJECT_ID = 'abcdef1234';
+    assert.deepEqual(analyticsFor('store'), { ga: 'G-ABC123', clarity: 'abcdef1234', consent: 'notice' });
+    for (const p of ['checkout', 'unsubscribe', 'styleguide']) assert.equal(analyticsFor(p), null);
+    assert.equal(analyticsFor('genuine').clarity, '');
+    process.env.GA_MEASUREMENT_ID = '"><script>'; process.env.CLARITY_PROJECT_ID = 'x';
+    assert.equal(analyticsFor('store'), null);
+    process.env.GA_MEASUREMENT_ID = 'G-ABC123'; process.env.ANALYTICS_CONSENT = 'opt-in';
+    assert.equal(analyticsTag(analyticsFor('store')), '<script src="/assets/js/analytics.js?v=20261116a" data-ga="G-ABC123" data-consent="opt-in" defer></script>');
+  } finally { process.env = keep; }
+});
