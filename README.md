@@ -202,6 +202,8 @@ Stored server-only (no rules change needed, the catch-all already denies browser
 
 Reply to an Inbox inquiry, or message a customer from their page or from an order, without leaving the portal. You see exactly what will be sent before it goes. Emails go through Resend (`POST /api/admin/messages/send`) in the AXIA layout, and replies to them land at `ORDER_EMAIL_REPLY_TO`. Each one is logged with its Resend ID on the inquiry (`replies`), on the order if it's about one, and on the customer record. Inquiries link the order they mention, whatever the format (`#XYZQWE`, `axia-xyzqwe`, `xyz qwe`), plus any other orders from the same email.
 
+Each new paid order emails `ORDER_ALERT_TO` (also in `apphosting.yaml`, comma-separated, currently dear.konrad@gmail.com; leave it empty to turn order alerts off) with the order number, customer, pieces, total, shipping address and a link to the order in the admin portal. Reply-To is the customer. It's sent once per order (`teamAlertedAt` on the order, plus a Resend idempotency key), test-mode orders say so in the subject, and a failed alert is logged but never fails the Stripe webhook.
+
 Each new support-page inquiry also emails `INQUIRY_ALERT_TO` (set in `apphosting.yaml`, comma-separated for more than one; leave it out to turn alerts off). The alert's Reply-To is the customer, so replying from your mail app answers them directly; replying from the Inbox logs it on their record. The address stays in server config and is never sent to the browser, and a failed alert never stops the message being saved.
 
 ### Site film and product videos

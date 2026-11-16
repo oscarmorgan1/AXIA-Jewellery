@@ -1,6 +1,7 @@
 // POST /api/stripe/webhook  Stripe tells us about paid checkouts and refunds.
 // Paid orders are written to Firestore `orders/{sessionId}` (admins only, see
-// firestore.rules) and the buyer gets a confirmation email through Resend.
+// firestore.rules), the buyer gets a confirmation email through Resend and the
+// team gets a new-order alert (ORDER_ALERT_TO).
 //
 // Stripe retries anything that doesn't get a 2xx, so every step is safe to
 // repeat: the order document is keyed by the session id and the email is only
@@ -9,7 +10,8 @@ import express from 'express';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { db, stripe } from './services.js';
 import { orderNumber } from './checkout.js';
-import { confirmationEmail, sendEmail } from './email.js';
+import { confirmationEmail, orderAlertEmail, sendEmail } from './email.js';
+import { addressList, sendTeamAlert } from './forms.js';
 import { emailEntry, historyEntry, push, upsertCustomer, customerId } from './orders.js';
 import { sendAccountInvite } from './account.js';
 import { syncOrder } from './sync.js';
@@ -91,6 +93,18 @@ async function recordCheckout(sessionId, siteUrl) {
     const result = await sendEmail({ to: order.customer.email, ...mail, idempotencyKey: `order-confirmation/${sessionId}` });
     if (result) {
       await ref.update({ emailSentAt: FieldValue.serverTimestamp(), emails: push(emailEntry('confirmation', order.customer.email, mail.subject, result)) });
+    }
+  }
+  // The team hears about every paid order. Never fails the webhook: the order is saved either way.
+  if (order.status === 'paid' && !(existing.exists && existing.data().teamAlertedAt)) {
+    try {
+      const sent = await sendTeamAlert({
+        to: addressList(process.env.ORDER_ALERT_TO), replyTo: order.customer.email || undefined,
+        mail: orderAlertEmail(order, sessionId), key: `order-alert/${sessionId}`,
+      });
+      if (sent) await ref.update({ teamAlertedAt: FieldValue.serverTimestamp() });
+    } catch (err) {
+      console.error('webhook: new-order alert failed', sessionId, err);
     }
   }
   await syncOrder(sessionId); // their portal copy, if they have an account

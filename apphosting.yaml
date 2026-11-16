@@ -52,6 +52,12 @@ env:
     value: "dear.konrad@gmail.com"
     availability: [RUNTIME]
 
+  # Who gets an email for each new paid order (comma-separate for more than
+  # one; leave empty to turn order alerts off). Server-side only.
+  - variable: ORDER_ALERT_TO
+    value: "dear.konrad@gmail.com"
+    availability: [RUNTIME]
+
   # Public address used in Stripe return links and email images. Pinned so a
   # forged Host header can't point them at another site.
   - variable: PUBLIC_SITE_URL

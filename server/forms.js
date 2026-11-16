@@ -16,19 +16,30 @@ const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 
 // The team address that hears about each new inquiry. Server config only
 // (apphosting.yaml), never sent to the browser.
-const alertTo = () => (process.env.INQUIRY_ALERT_TO || '').split(',').map(s => s.trim()).filter(Boolean);
+const alertTo = () => addressList(process.env.INQUIRY_ALERT_TO);
 
 /**
  * Emails the team about a saved inquiry (or a new reply in a portal conversation,
  * with its own `key`). Never fails the form: the Inbox has it either way.
  */
 export async function alertTeam(doc, id, key = `inquiry-alert/${id}`, mail = null) {
-  const to = alertTo();
+  return sendTeamAlert({ to: alertTo(), replyTo: doc.email, mail: mail || inquiryAlertEmail(doc), key });
+}
+
+/** A comma-separated address list from server config, e.g. ORDER_ALERT_TO. */
+export const addressList = v => String(v || '').split(',').map(s => s.trim()).filter(Boolean);
+
+/**
+ * Sends a plain internal email to the team (no unsubscribe footer). Returns the
+ * Resend id, or null when there's no one to tell or email isn't set up.
+ */
+export async function sendTeamAlert({ to, replyTo, mail, key }) {
   const from = process.env.ORDER_EMAIL_FROM;
-  if (!to.length) return;
-  if (!resend || !from) return console.warn('message: RESEND_API_KEY or ORDER_EMAIL_FROM not set, no inquiry alert sent');
-  const { error } = await resend.emails.send({ from, to, replyTo: doc.email, ...(mail || inquiryAlertEmail(doc)) }, { idempotencyKey: key });
+  if (!to.length) return null;
+  if (!resend || !from) { console.warn('alert: RESEND_API_KEY or ORDER_EMAIL_FROM not set, no team alert sent:', mail.subject); return null; }
+  const { data, error } = await resend.emails.send({ from, to, ...(replyTo ? { replyTo } : {}), ...mail }, key ? { idempotencyKey: key } : undefined);
   if (error) throw new Error(`Resend: ${error.message || JSON.stringify(error)}`);
+  return { id: data && data.id };
 }
 
 const tooManyMessages = rateLimit({ windowMs: 10 * 60 * 1000, max: 5 });
