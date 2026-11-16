@@ -77,6 +77,6 @@ test('analytics config: valid IDs only, never on checkout or unsubscribe, no Cla
     process.env.GA_MEASUREMENT_ID = '"><script>'; process.env.CLARITY_PROJECT_ID = 'x';
     assert.equal(analyticsFor('store'), null);
     process.env.GA_MEASUREMENT_ID = 'G-ABC123'; process.env.ANALYTICS_CONSENT = 'opt-in';
-    assert.equal(analyticsTag(analyticsFor('store')), '<script src="/assets/js/analytics.js?v=20261116b" data-ga="G-ABC123" data-consent="opt-in" defer></script>');
+    assert.equal(analyticsTag(analyticsFor('store')), '<script src="/assets/js/analytics.js?v=20261116c" data-ga="G-ABC123" data-consent="opt-in" defer></script>');
   } finally { process.env = keep; }
 });
