@@ -64,7 +64,8 @@ function parseSize(size, fallbackWidth) {
 
 /** Whether a product has photos per colour (Silver, Gold, Rose Gold...). */
 const hasCols = p => !!(p && Array.isArray(p.col) && p.col.length);
-const hasColourPhotos = p => !!(p && p.imagesByColor && Object.values(p.imagesByColor).some(a => Array.isArray(a) && a.length));
+// Only worth keeping for a product made in more than one colour.
+const hasColourPhotos = p => !!(p && p.imagesByColor && Array.isArray(p.col) && p.col.length > 1 && Object.values(p.imagesByColor).some(a => Array.isArray(a) && a.length));
 
 /** The cheapest live price, and whether every size costs the same. */
 function derived(p) {

@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap">
 <link rel="stylesheet" href="assets/css/tokens.css?v=20260930a">
-<link rel="stylesheet" href="assets/css/axia.css?v=20261116e">
+<link rel="stylesheet" href="assets/css/axia.css?v=20261116f">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111315'/%3E%3Cg fill='%23F4F1EA'%3E%3Cpolygon points='16,5 6,27 9.5,27'/%3E%3Cpolygon points='16,5 22.5,27 26,27'/%3E%3Crect x='9' y='20.4' width='14' height='1.7'/%3E%3C/g%3E%3C/svg%3E">
 <style>
   .nav__brand{font-family:var(--font-serif);font-weight:600;font-size:1.42rem;letter-spacing:.14em;text-indent:.14em;text-transform:uppercase;text-align:center}
@@ -461,8 +461,8 @@
   <symbol id="boxArt" viewBox="0 0 400 320"><path d="M70 140 L130 84 L360 84 L300 140 Z" fill="#242220" stroke="#3a3733" stroke-width="1.5"/><path d="M300 140 L360 84 L360 232 L300 288 Z" fill="#181614" stroke="#3a3733" stroke-width="1.5"/><rect x="70" y="140" width="230" height="148" rx="4" fill="#1f1d1b" stroke="#3a3733" stroke-width="1.5"/><text x="185" y="220" text-anchor="middle" font-family="Bodoni Moda,serif" font-size="24" letter-spacing="7" fill="#F4F1EA">AXIA</text><path d="M300 200 L300 288" stroke="#F3436E" stroke-width="8"/></symbol>
 </svg>
 
-<script src="assets/js/catalogue.js?v=20261116e"></script>
-<script type="text/axia-deferred" src="assets/js/axia.js?v=20261116e"></script>
+<script src="assets/js/catalogue.js?v=20261116f"></script>
+<script type="text/axia-deferred" src="assets/js/axia.js?v=20261116f"></script>
 <script type="text/axia-deferred">
 (function(){
   const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
@@ -648,8 +648,10 @@
   const widthPhotos = !!(WIDTHS && WIDTHS.every(w=>w.image));
   const hasImgs = widthPhotos || (Array.isArray(p.images) && p.images.length>0);
   // photo set follows the selected width (each width its own shot + shared size guide), else the colourway
-  // A width's photos in the picked colour (w.imagesByColor), else that width's own photos.
-  const widthImgs=w=>{ const c=w.imagesByColor&&w.imagesByColor[colour]; return (c&&c.length)?c:((w.images&&w.images.length)?w.images:[w.image]); };
+  // A width's photos in the picked colour (w.imagesByColor) when it comes in more than one colour,
+  // else that width's own photos. A one-colour width (the tennis pieces) always uses its own photos,
+  // so switching width always changes the photos even if colour photos were copied onto it.
+  const widthImgs=w=>{ const many=(Array.isArray(w.col)&&w.col.length?w.col:(p.col||[])).length>1; const c=many&&w.imagesByColor&&w.imagesByColor[colour]; return (c&&c.length)?c:((w.images&&w.images.length)?w.images:[w.image]); };
   const colourPhotos=!!(p.imagesByColor || (WIDTHS && WIDTHS.some(w=>w.imagesByColor)));
   const curImages=()=> widthPhotos ? widthImgs(WIDTHS[wi]).concat(p.sizingImage?[p.sizingImage]:[]) : ((p.imagesByColor && p.imagesByColor[colour]) || p.images || []);
   // preload EVERY variant up front so switching colour/width is instant (no load flash on the heavier shots)
