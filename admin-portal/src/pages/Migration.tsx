@@ -28,7 +28,7 @@ export default function Migration() {
   const toast = useToast();
   const confirm = useConfirm();
   const [sheet, setSheet] = useState<Sheet | null>(null);
-  const [applyPrices, setApplyPrices] = useState(false);
+  const [applyPrices, setApplyPrices] = useState(true);
   const [addSizes, setAddSizes] = useState(false);
   const [skip, setSkip] = useState<string[]>([]);
   const [preview, setPreview] = useState<Preview | null>(null);
@@ -105,7 +105,7 @@ export default function Migration() {
           ) : <p className="card__sub">Optional: without it, only the merge and the sets run.</p>}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
             <label className="check"><input type="checkbox" checked={applyPrices} disabled={!sheet} onChange={e => setApplyPrices(e.target.checked)} />
-              <span>Also change retail prices to the sheet’s<br /><small className="muted">Off: only costs are imported, prices stay as they are.</small></span></label>
+              <span>Change retail prices to the sheet’s<br /><small className="muted">Untick to import only the costs and keep today’s prices.</small></span></label>
             <label className="check"><input type="checkbox" checked={addSizes} disabled={!sheet} onChange={e => setAddSizes(e.target.checked)} />
               <span>Also add sizes the sheet has and the site doesn’t sell<br /><small className="muted">New widths start as Coming soon. New lengths in a live width go on sale.</small></span></label>
           </div>

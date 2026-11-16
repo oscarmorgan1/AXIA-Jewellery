@@ -10,6 +10,13 @@ import type { Piece } from '../types';
 
 type Filter = 'all' | PieceState;
 
+/** A piece's width and length, read from its size ("10mm · 7\"", "20\"", "5mm"). */
+function sizeParts(size?: string) {
+  const parts = String(size || '').split('·').map(x => x.trim()).filter(Boolean);
+  return { width: parts.find(x => /mm$/i.test(x)) || '', length: parts.find(x => /["”]$|in$|cm$/i.test(x)) || '' };
+}
+const bySize = (a: string, b: string) => parseFloat(a) - parseFloat(b) || a.localeCompare(b);
+
 /** Every physical piece: its serial, product, supplier order date, and the order it went out in. */
 export default function Pieces() {
   const { data: pieces, loading, error } = usePieces();
@@ -17,6 +24,9 @@ export default function Pieces() {
   const [params, setParams] = useSearchParams();
   const [filter, setFilter] = useState<Filter>((params.get('state') as Filter) || 'all');
   const [supplier, setSupplier] = useState(params.get('supplier') || '');
+  const [product, setProduct] = useState(params.get('product') || '');
+  const [width, setWidth] = useState(params.get('width') || '');
+  const [length, setLength] = useState(params.get('length') || '');
   const [editing, setEditing] = useState<Piece | 'new' | null>(null);
   // /pieces?open=KEY (from the header search) opens that piece once the registry has loaded.
   const openKey = params.get('open');
@@ -29,16 +39,36 @@ export default function Pieces() {
   const toast = useToast();
   const q = params.get('q') || '';
 
+  // Size filters: products in the registry, then the widths and lengths that product has pieces in.
+  const products = useMemo(() => [...new Set(pieces.map(p => p.productName).filter(Boolean))].sort(), [pieces]);
+  const ofProduct = useMemo(() => pieces.filter(p => !product || p.productName === product), [pieces, product]);
+  const widths = useMemo(() => [...new Set(ofProduct.map(p => sizeParts(p.size).width).filter(Boolean))].sort(bySize), [ofProduct]);
+  const lengths = useMemo(() => [...new Set(ofProduct.filter(p => !width || sizeParts(p.size).width === width).map(p => sizeParts(p.size).length).filter(Boolean))].sort(bySize), [ofProduct, width]);
+  useEffect(() => { if (width && !widths.includes(width)) setWidth(''); }, [widths, width]);
+  useEffect(() => { if (length && !lengths.includes(length)) setLength(''); }, [lengths, length]);
+
   const shown = useMemo(() => {
     const k = serialKey(q), t = q.trim().toLowerCase();
     return pieces.filter(p => {
       if (filter !== 'all' && pieceState(p) !== filter) return false;
       if (supplier && p.supplierId !== supplier) return false;
+      if (product && p.productName !== product) return false;
+      if (width || length) {
+        const z = sizeParts(p.size);
+        if (width && z.width !== width) return false;
+        if (length && z.length !== length) return false;
+      }
       if (!t) return true;
       return (k && p.key.includes(k)) || `${p.productName} ${p.productId} ${p.variant || ''} ${p.supplier || ''} ${p.supplierOrderNo || ''} ${p.orderNumber || ''}`.toLowerCase().includes(t);
     });
-  }, [pieces, filter, supplier, q]);
-  const count = (f: Filter) => f === 'all' ? pieces.length : pieces.filter(p => pieceState(p) === f).length;
+  }, [pieces, filter, supplier, product, width, length, q]);
+  // The tab counts follow the product and size filters, so "In stock" reads as stock in that size.
+  const sized = useMemo(() => pieces.filter(p => {
+    if (product && p.productName !== product) return false;
+    const z = sizeParts(p.size);
+    return (!width || z.width === width) && (!length || z.length === length);
+  }), [pieces, product, width, length]);
+  const count = (f: Filter) => f === 'all' ? sized.length : sized.filter(p => pieceState(p) === f).length;
 
   return (
     <>
@@ -59,6 +89,24 @@ export default function Pieces() {
             <select className="select" style={{ width: 170, borderRadius: 999 }} value={supplier} onChange={e => setSupplier(e.target.value)} aria-label="Supplier">
               <option value="">All suppliers</option>
               {suppliers.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
+            </select>
+          )}
+          {products.length > 0 && (
+            <select className="select" style={{ width: 200, borderRadius: 999 }} value={product} onChange={e => setProduct(e.target.value)} aria-label="Product">
+              <option value="">All products</option>
+              {products.map(x => <option key={x} value={x}>{x}</option>)}
+            </select>
+          )}
+          {widths.length > 0 && (
+            <select className="select" style={{ width: 120, borderRadius: 999 }} value={width} onChange={e => setWidth(e.target.value)} aria-label="Width">
+              <option value="">Any width</option>
+              {widths.map(x => <option key={x} value={x}>{x}</option>)}
+            </select>
+          )}
+          {lengths.length > 0 && (
+            <select className="select" style={{ width: 120, borderRadius: 999 }} value={length} onChange={e => setLength(e.target.value)} aria-label="Length">
+              <option value="">Any length</option>
+              {lengths.map(x => <option key={x} value={x}>{x}</option>)}
             </select>
           )}
           <span className="spacer" />
