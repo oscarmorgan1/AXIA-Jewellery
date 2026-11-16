@@ -272,7 +272,21 @@ export default function ProductEdit() {
                     {w.images && w.images.length > 1 && <div className="card__sub" style={{ marginBottom: 8 }}>{w.images.length} photos for this width (from the product it was merged from).</div>}
                     <VariantsTable variants={w.variants || []} onChange={v => setWidth(i, { variants: v })}
                       cost={{ width: w.width, costs: cost.variants || {}, onCost: setCost, assumptions, stock, making }} />
-                    <button type="button" className="btn btn--sm btn--danger" style={{ marginTop: 8 }} onClick={() => set({ widths: draft.widths!.filter((_, k) => k !== i) })}><Trash2 size={14} /> Remove width</button>
+                    {(draft.col || []).length > 1 && (
+                      <details className="width-block__photos">
+                        <summary>Photos by colour for {w.width || 'this width'}{w.imagesByColor ? '' : ' (not set, every colour shows the photos above)'}</summary>
+                        {(draft.col || []).map((colour, k) => (
+                          <div key={colour} style={{ marginTop: 14 }}>
+                            <div className="card__sub" style={{ marginBottom: 8, color: 'var(--ink)', fontWeight: 500 }}>{colour}</div>
+                            <ImageList productId={id} images={w.imagesByColor?.[colour] ?? (k === 0 ? (w.images || (w.image ? [w.image] : [])) : [])} onError={setError}
+                              onChange={next => setWidth(i, { imagesByColor: { ...w.imagesByColor, [colour]: next } })} />
+                          </div>
+                        ))}
+                      </details>
+                    )}
+                    <div className="width-block__foot">
+                      <button type="button" className="btn btn--sm btn--danger" onClick={() => set({ widths: draft.widths!.filter((_, k) => k !== i) })}><Trash2 size={14} /> Remove width</button>
+                    </div>
                   </div>
                 ))}
                 <div style={{ display: 'flex', gap: 12, alignItems: 'end', flexWrap: 'wrap' }}>

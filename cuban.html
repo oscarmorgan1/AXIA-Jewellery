@@ -8,7 +8,7 @@
 <meta name="description" content="The AXIA Cuban: Miami Cuban chains and bracelets from 10mm to 16mm, 925 sterling silver hand-set with VVS D-colour moissanite. Engravable clasp, lifetime warranty.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="assets/css/tokens.css?v=20260930a">
-<link rel="stylesheet" href="assets/css/axia.css?v=20261116c">
+<link rel="stylesheet" href="assets/css/axia.css?v=20261116d">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111315'/%3E%3Cg fill='%23F4F1EA'%3E%3Cpolygon points='16,5 6,27 9.5,27'/%3E%3Cpolygon points='16,5 22.5,27 26,27'/%3E%3Crect x='9' y='20.4' width='14' height='1.7'/%3E%3C/g%3E%3C/svg%3E">
 <style>
   /* --- signature render world --- */
@@ -274,8 +274,8 @@
 </div>
 <div class="toast" id="toast"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
 
-<script src="assets/js/catalogue.js?v=20261116c"></script>
-<script type="text/axia-deferred" src="assets/js/axia.js?v=20261116c"></script>
+<script src="assets/js/catalogue.js?v=20261116d"></script>
+<script type="text/axia-deferred" src="assets/js/axia.js?v=20261116d"></script>
 <script type="text/axia-deferred">
 (function(){
   const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
@@ -291,7 +291,7 @@
     const bdg=p.badge?('<span class="'+(p.badge==='Bestseller'?'tag tag--new card__tag':'tag card__tag')+'"'+(p.badge==='Bestseller'?'':' style="border-color:var(--ice);color:var(--ice)"')+'>'+p.badge+'</span>'):'';
     const ph=(p.images&&p.images[0])||(p.imagesByColor&&(Object.values(p.imagesByColor).find(a=>a&&a.length)||[])[0])||(p.widths&&((p.widths.find(w=>w.image)||{}).image))||'';
     const media=(p.showBoth&&p.images&&p.images.length>=2)?'<div class="card__split">'+p.images.slice(0,2).map(im=>'<img data-src '+AXIA_IMG(im,'(max-width: 760px) 25vw, 17vw')+' alt="'+p.name+'" loading="lazy">').join('')+'</div>':(ph?'<img class="card__photo" data-src '+AXIA_IMG(ph)+' alt="'+p.name+'" loading="lazy">':'<svg aria-hidden="true" class="card__art" viewBox="'+vb+'" data-cg="'+gen+'"></svg>');
-    return '<a class="card" href="'+(p.linkTo||'product?id='+p.id)+'"><div class="card__media">'+bdg+media+'<span class="card__edge"></span></div><div class="card__body"><div class="card__name">'+p.name+(p.width?', '+p.width:'')+'</div><div class="card__meta">'+meta+'</div><div class="card__price num'+(deal?' card__price--deal':'')+'">'+price+'</div></div></a>';
+    return '<a class="card" href="'+(p.linkTo||'product?id='+p.id)+'"><div class="card__media">'+bdg+media+'<span class="card__edge"></span></div><div class="card__body"><div class="card__name">'+p.name+'</div><div class="card__meta">'+meta+'</div><div class="card__price num'+(deal?' card__price--deal':'')+'">'+price+'</div></div></a>';
   }
   const fill=(sel,list)=>{const el=$(sel); if(el) el.innerHTML=list.map(card).join('');};
   fill('#cubanGrid',['iced-cuban-bracelet-5mm','classic-cuban-bracelet-10mm','two-row-flat-cuban-bracelet-12mm','prong-cuban-bracelet-10mm'].map(byId));

@@ -225,3 +225,21 @@ test('store discount: running window, rounding and cart pricing', async () => {
   assert.equal(full.lines[0].priceAUD, 600);
   assert.equal(full.lines[0].listPriceAUD, undefined);
 });
+
+test('merged widths keep their colour photos, and an earlier merge gets them back', () => {
+  const src = CATALOGUE.find(p => p.id === 'classic-cuban-bracelet-10mm');
+  assert.ok(src && src.imagesByColor, 'fixture has colour photos');
+  const { writes } = buildPlan({ products: clone(CATALOGUE), costs: [], pieces: [], reviews: null });
+  const iced = writes.find(x => x.collection === 'products' && x.id === 'iced-cuban-bracelet').data;
+  assert.deepEqual(iced.widths.find(w => w.width === '10mm').imagesByColor, src.imagesByColor);
+
+  // As the first run left it: merged, but the width without its colour photos.
+  const after = clone(CATALOGUE).map(p => p.id === 'classic-cuban-bracelet-10mm' ? { ...p, archived: true, mergedInto: { id: 'iced-cuban-bracelet', width: '10mm' } } : p);
+  const old = clone(iced); old.widths.forEach(w => { delete w.imagesByColor; });
+  after.push({ ...old, id: 'iced-cuban-bracelet' });
+  const again = buildPlan({ products: after.filter(p => !(p.name === 'Iced Cuban Bracelet' && !p.mergedInto && p.id !== 'iced-cuban-bracelet')).map(p => p.name === 'Iced Cuban Bracelet' && p.id !== 'iced-cuban-bracelet' ? { ...p, archived: true, mergedInto: p.mergedInto || { id: 'iced-cuban-bracelet', width: p.width } } : p), costs: [], pieces: [], reviews: null });
+  const fixed = again.writes.find(x => x.collection === 'products' && x.id === 'iced-cuban-bracelet');
+  assert.ok(fixed && fixed.merge, 'the merged product is updated in place');
+  assert.deepEqual(fixed.data.widths.find(w => w.width === '10mm').imagesByColor, src.imagesByColor);
+  assert.ok(again.report.notes.some(n => n.includes('colour photos')));
+});

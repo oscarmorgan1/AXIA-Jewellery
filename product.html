@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap">
 <link rel="stylesheet" href="assets/css/tokens.css?v=20260930a">
-<link rel="stylesheet" href="assets/css/axia.css?v=20261116c">
+<link rel="stylesheet" href="assets/css/axia.css?v=20261116d">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111315'/%3E%3Cg fill='%23F4F1EA'%3E%3Cpolygon points='16,5 6,27 9.5,27'/%3E%3Cpolygon points='16,5 22.5,27 26,27'/%3E%3Crect x='9' y='20.4' width='14' height='1.7'/%3E%3C/g%3E%3C/svg%3E">
 <style>
   .nav__brand{font-family:var(--font-serif);font-weight:600;font-size:1.42rem;letter-spacing:.14em;text-indent:.14em;text-transform:uppercase;text-align:center}
@@ -461,8 +461,8 @@
   <symbol id="boxArt" viewBox="0 0 400 320"><path d="M70 140 L130 84 L360 84 L300 140 Z" fill="#242220" stroke="#3a3733" stroke-width="1.5"/><path d="M300 140 L360 84 L360 232 L300 288 Z" fill="#181614" stroke="#3a3733" stroke-width="1.5"/><rect x="70" y="140" width="230" height="148" rx="4" fill="#1f1d1b" stroke="#3a3733" stroke-width="1.5"/><text x="185" y="220" text-anchor="middle" font-family="Bodoni Moda,serif" font-size="24" letter-spacing="7" fill="#F4F1EA">AXIA</text><path d="M300 200 L300 288" stroke="#F3436E" stroke-width="8"/></symbol>
 </svg>
 
-<script src="assets/js/catalogue.js?v=20261116c"></script>
-<script type="text/axia-deferred" src="assets/js/axia.js?v=20261116c"></script>
+<script src="assets/js/catalogue.js?v=20261116d"></script>
+<script type="text/axia-deferred" src="assets/js/axia.js?v=20261116d"></script>
 <script type="text/axia-deferred">
 (function(){
   const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
@@ -645,10 +645,13 @@
   const widthPhotos = !!(WIDTHS && WIDTHS.every(w=>w.image));
   const hasImgs = widthPhotos || (Array.isArray(p.images) && p.images.length>0);
   // photo set follows the selected width (each width its own shot + shared size guide), else the colourway
-  const curImages=()=> widthPhotos ? ((WIDTHS[wi].images&&WIDTHS[wi].images.length)?WIDTHS[wi].images:[WIDTHS[wi].image]).concat(p.sizingImage?[p.sizingImage]:[]) : ((p.imagesByColor && p.imagesByColor[colour]) || p.images || []);
+  // A width's photos in the picked colour (w.imagesByColor), else that width's own photos.
+  const widthImgs=w=>{ const c=w.imagesByColor&&w.imagesByColor[colour]; return (c&&c.length)?c:((w.images&&w.images.length)?w.images:[w.image]); };
+  const colourPhotos=!!(p.imagesByColor || (WIDTHS && WIDTHS.some(w=>w.imagesByColor)));
+  const curImages=()=> widthPhotos ? widthImgs(WIDTHS[wi]).concat(p.sizingImage?[p.sizingImage]:[]) : ((p.imagesByColor && p.imagesByColor[colour]) || p.images || []);
   // preload EVERY variant up front so switching colour/width is instant (no load flash on the heavier shots)
   if(p.imagesByColor){ Object.values(p.imagesByColor).forEach(arr=>arr.forEach(src=>{ const im=new Image(); im.src=AXIA_IMG.url(src); })); }
-  if(widthPhotos){ WIDTHS.forEach(w=>{ const im=new Image(); im.src=AXIA_IMG.url(w.image); }); if(p.sizingImage){ const im=new Image(); im.src=p.sizingImage; } }
+  if(widthPhotos){ WIDTHS.forEach(w=>{ const im=new Image(); im.src=AXIA_IMG.url(w.image); Object.values(w.imagesByColor||{}).forEach(a=>(a||[]).slice(0,1).forEach(src=>{ const c=new Image(); c.src=AXIA_IMG.url(src); })); }); if(p.sizingImage){ const im=new Image(); im.src=p.sizingImage; } }
   // recolour the gallery in place (swap srcs, keep DOM + current shot) with a quick crossfade,
   // instead of tearing down and rebuilding - that rebuild is what made colours 1 & 3 pop/flicker
   function recolorGallery(){
@@ -809,7 +812,7 @@
         const ph=firstPhoto(x);
         a.innerHTML=(ph?'<img alt="" loading="lazy" '+AXIA_IMG(ph,'44px')+'>':'')
           +'<span class="rvc__prod-t"><span class="rvc__prod-n"></span><span class="rvc__prod-p">'+(x.hidden?'Coming soon':AXIA_SALE.html(x.fromPriceAUD,x.singlePrice?'':'From '))+'</span></span><span class="rvc__prod-a" aria-hidden="true">&rarr;</span>';
-        a.querySelector('.rvc__prod-n').textContent=x.name+(x.width?', '+x.width:'');
+        a.querySelector('.rvc__prod-n').textContent=x.name;
         c.appendChild(a);
       } else if(anyLinked){ const gap=document.createElement('span'); gap.className='rvc__prod rvc__prod--blank'; gap.setAttribute('aria-hidden','true'); c.appendChild(gap); }
       track.appendChild(c); return {c,box,vid,src:v.src};
@@ -866,7 +869,7 @@
       const bdg=x.badge==='Matching set'?'<span class="tag card__tag" style="border-color:var(--ice);color:var(--ice)">Matching set</span>':'';
       const ph=firstPhoto(x);
       const media=ph?'<img class="card__photo" data-src '+AXIA_IMG(ph)+' alt="'+x.name+'" loading="lazy">':'<svg aria-hidden="true" class="card__art" viewBox="'+vb+'" data-pgen="'+gen+'"></svg>';
-      return '<a class="card" href="'+(x.linkTo||'product?id='+x.id)+'"><div class="card__media">'+bdg+media+'<span class="card__edge"></span></div><div class="card__body"><div class="card__name">'+x.name+(x.width?', '+x.width:'')+'</div><div class="card__meta">'+meta+'</div><div class="card__price num">'+price+'</div></div></a>';
+      return '<a class="card" href="'+(x.linkTo||'product?id='+x.id)+'"><div class="card__media">'+bdg+media+'<span class="card__edge"></span></div><div class="card__body"><div class="card__name">'+x.name+'</div><div class="card__meta">'+meta+'</div><div class="card__price num">'+price+'</div></div></a>';
     }).join('');
     $$('#pairWrap [data-pgen="tennis"]').forEach(x=>window.AXIA_art.tennis(x));
     $$('#pairWrap [data-pgen="cross"]').forEach(x=>window.AXIA_art.cross(x));
@@ -913,7 +916,7 @@
     const g=c.closest('[data-opt-group]'); const key=g.dataset.optGroup;
     $$('.chip',g).forEach(x=>x.classList.remove('is-active')); c.classList.add('is-active');
     if(key==='length') vi=+c.dataset.vi;
-    else if(key==='colour'){ colour=c.dataset.colour; if(hasImgs && p.imagesByColor){ if(p.colourToCloseup) imgIndex=Math.max(0,curImages().length-1); if($('#mainImg')) recolorGallery(); else renderArt(); } }
+    else if(key==='colour'){ colour=c.dataset.colour; if(hasImgs && colourPhotos){ if(p.colourToCloseup) imgIndex=Math.max(0,curImages().length-1); if($('#mainImg')) recolorGallery(); else renderArt(); } }
     else if(key==='width'){
       const was=(variant()||{}).length, soonBefore=soonW(); wi=+c.dataset.wi; const nl=variantsList(); const k=nl.findIndex(v=>v.length===was); vi=k>=0?k:Math.min(vi,nl.length-1);
       if(hasImgs){ if($('#mainImg')) recolorGallery(); else renderArt(); }

@@ -26,7 +26,7 @@ const lengthsOnly = variants => (Array.isArray(variants) ? variants : [])
   .map(v => ({ length: v && v.length != null ? v.length : null, priceAUD: 0 }));
 
 // A Coming soon width of a live product: shown as a chip, with no prices.
-const teaserWidth = w => ({ width: w && w.width, hidden: true, image: w && w.image, ...(w && w.images ? { images: w.images } : {}), fromPriceAUD: 0, variants: lengthsOnly(w && w.variants).slice(0, 1) });
+const teaserWidth = w => ({ width: w && w.width, hidden: true, image: w && w.image, ...(w && w.images ? { images: w.images } : {}), ...(w && w.imagesByColor ? { imagesByColor: w.imagesByColor } : {}), fromPriceAUD: 0, variants: lengthsOnly(w && w.variants).slice(0, 1) });
 
 /**
  * What the product page needs to build a set: each component with the sizes the
@@ -83,7 +83,7 @@ export function publicProduct(p, product = () => null) {
   if (!out.variants.length) out.variants = [{ length: null, priceAUD: 0 }];
   out.fromPriceAUD = 0;
   if (Array.isArray(p.widths)) {
-    out.widths = p.widths.map(w => ({ width: w && w.width, image: w && w.image, ...(w && w.images ? { images: w.images } : {}), fromPriceAUD: 0, variants: lengthsOnly(w && w.variants).slice(0, 1) }));
+    out.widths = p.widths.map(w => ({ width: w && w.width, image: w && w.image, ...(w && w.images ? { images: w.images } : {}), ...(w && w.imagesByColor ? { imagesByColor: w.imagesByColor } : {}), fromPriceAUD: 0, variants: lengthsOnly(w && w.variants).slice(0, 1) }));
   }
   return out;
 }

@@ -62,6 +62,9 @@ function parseSize(size, fallbackWidth) {
   return parts.length > 1 ? { width: parts[0], length: parts[1] } : { width: fallbackWidth || null, length: parts[0] };
 }
 
+/** Whether a product has photos per colour (Silver, Gold, Rose Gold...). */
+const hasColourPhotos = p => !!(p && p.imagesByColor && Object.values(p.imagesByColor).some(a => Array.isArray(a) && a.length));
+
 /** The cheapest live price, and whether every size costs the same. */
 function derived(p) {
   const prices = (p.widths || [{ variants: p.variants || [] }]).filter(w => !w.hidden)
@@ -110,15 +113,20 @@ export function buildPlan(data, opts = {}) {
       if (have) {
         // The merged product already sells this width (the tennis pieces); the old document only becomes a link.
         if (!have.images && Array.isArray(s.images) && s.images.length > 1) have.images = s.images;
+        if (!have.imagesByColor && hasColourPhotos(s)) have.imagesByColor = clone(s.imagesByColor);
         continue;
       }
       widths.push({
         width: s.width,
         ...(s.images && s.images.length ? { image: s.images[0], images: s.images } : {}),
+        ...(hasColourPhotos(s) ? { imagesByColor: clone(s.imagesByColor) } : {}),
         ...(s.hidden ? { hidden: true } : {}),
         variants: clone(s.variants || []),
       });
     }
+    // The lead product's own colour photos belong to its width.
+    const leadW = widths.find(w => w.width === lead.width);
+    if (leadW && !leadW.imagesByColor && hasColourPhotos(lead)) leadW.imagesByColor = clone(lead.imagesByColor);
     widths.sort((a, b) => mm(a.width) - mm(b.width));
     group.widths = widths.map(w => ({ width: w.width, status: w.hidden ? 'Coming soon' : 'Live', sizes: (w.variants || []).length }));
 
@@ -187,6 +195,23 @@ export function buildPlan(data, opts = {}) {
     report.reviews = data.reviews.videos.filter(v => moved.has(v.productId)).length;
     put('site', 'reviews', { videos, updatedAt: FieldValue.serverTimestamp() }, true);
   }
+
+  // ---- 1b. Colour photos for products merged by an earlier run, which kept only each width's
+  // default photos. The old documents still hold them, so copy them onto their width.
+  for (const src of products) {
+    const to = src.mergedInto;
+    // A target merged in this same run already has them (step 1).
+    if (!to || !to.id || !to.width || !hasColourPhotos(src) || writes.has(`products/${to.id}`)) continue;
+    const target = byId.get(to.id);
+    if (!target || !Array.isArray(target.widths)) continue;
+    const w = target.widths.find(x => x && x.width === to.width);
+    if (!w || w.imagesByColor) continue;
+    w.imagesByColor = clone(src.imagesByColor);
+    report.notes.push(`${target.name} ${to.width}: colour photos brought back from ${src.id}.`);
+    (report.photoRepairs ||= new Set()).add(to.id);
+  }
+  for (const id of report.photoRepairs || []) put('products', id, { widths: byId.get(id).widths, updatedAt: FieldValue.serverTimestamp() }, true);
+  report.photoRepairs = [...(report.photoRepairs || [])];
 
   // ---- 2. Sets that list their products become real sets, at the same price.
   for (const p of products) {
