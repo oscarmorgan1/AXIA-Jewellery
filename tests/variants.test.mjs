@@ -268,3 +268,37 @@ test('each width keeps its own colours through the merge, the repair and checkou
   assert.equal(lines[0].colour, 'Silver');
   assert.equal(lines[1].colour, 'Gold');
 });
+
+test('each width keeps its own video: the merge, the repair and the public catalogue', () => {
+  const five = CATALOGUE.find(p => p.id === 'iced-cuban-bracelet-5mm');
+  assert.ok(five && five.video, 'fixture: the 5mm has a video');
+  const { writes } = buildPlan({ products: clone(CATALOGUE), costs: [], pieces: [], reviews: null });
+  const iced = writes.find(x => x.collection === 'products' && x.id === 'iced-cuban-bracelet').data;
+  assert.equal(iced.widths.find(w => w.width === '5mm').video, five.video);
+  assert.equal(iced.widths.find(w => w.width === '5mm').videoPoster, five.videoPoster);
+  assert.equal(iced.widths.find(w => w.width === '10mm').video, undefined);
+  const pave = writes.find(x => x.collection === 'products' && x.id === 'micro-pave-cuban-bracelet').data;
+  assert.ok(pave.widths.find(w => w.width === '15mm').video, 'the 15mm Micro Pavé keeps its video');
+
+  // As the first run left it: merged with no width videos (the lead's spread onto the product).
+  const merged = clone(iced); merged.widths.forEach(w => { delete w.video; delete w.videoPoster; });
+  const after = clone(CATALOGUE).filter(p => p.name !== 'Iced Cuban Bracelet').concat(
+    clone(CATALOGUE).filter(p => p.name === 'Iced Cuban Bracelet').map(p => ({ ...p, archived: true, mergedInto: { id: 'iced-cuban-bracelet', width: p.width } })),
+    [{ ...merged, id: 'iced-cuban-bracelet', video: five.video, videoPoster: five.videoPoster }]);
+
+  // The storefront gets it back straight away from the archived 5mm...
+  const pub = publicProducts(after).find(p => p.id === 'iced-cuban-bracelet');
+  assert.equal(pub.widths.find(w => w.width === '5mm').video, five.video);
+  assert.equal(pub.widths.find(w => w.width === '10mm').video, undefined);
+  // ...a width whose video was removed in the portal stays without one...
+  const removed = after.map(p => (p.id === 'iced-cuban-bracelet' ? { ...p, widths: p.widths.map(w => (w.width === '5mm' ? { ...w, video: null } : w)) } : p));
+  assert.ok(!publicProducts(removed).find(p => p.id === 'iced-cuban-bracelet').widths.find(w => w.width === '5mm').video);
+
+  // ...and the repair writes it onto the width, taking the copy off the whole product.
+  const again = buildPlan({ products: after, costs: [], pieces: [], reviews: null });
+  const fixed = again.writes.find(x => x.collection === 'products' && x.id === 'iced-cuban-bracelet');
+  assert.ok(fixed && fixed.merge);
+  assert.equal(fixed.data.widths.find(w => w.width === '5mm').video, five.video);
+  assert.ok(fixed.data.video, 'the product-wide copy is removed');
+  assert.ok(again.report.notes.some(n => n.includes('video')));
+});

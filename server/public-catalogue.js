@@ -26,7 +26,8 @@ const lengthsOnly = variants => (Array.isArray(variants) ? variants : [])
   .map(v => ({ length: v && v.length != null ? v.length : null, priceAUD: 0 }));
 
 // A Coming soon width of a live product: shown as a chip, with no prices.
-const teaserWidth = w => ({ width: w && w.width, hidden: true, image: w && w.image, ...(w && w.images ? { images: w.images } : {}), ...(w && w.imagesByColor ? { imagesByColor: w.imagesByColor } : {}), ...(w && w.col ? { col: w.col } : {}), fromPriceAUD: 0, variants: lengthsOnly(w && w.variants).slice(0, 1) });
+const widthVideo = w => (w && w.video ? { video: w.video, ...(w.videoPoster ? { videoPoster: w.videoPoster } : {}) } : {});
+const teaserWidth = w => ({ width: w && w.width, hidden: true, image: w && w.image, ...widthVideo(w), ...(w && w.images ? { images: w.images } : {}), ...(w && w.imagesByColor ? { imagesByColor: w.imagesByColor } : {}), ...(w && w.col ? { col: w.col } : {}), fromPriceAUD: 0, variants: lengthsOnly(w && w.variants).slice(0, 1) });
 
 /**
  * What the product page needs to build a set: each component with the sizes the
@@ -83,13 +84,36 @@ export function publicProduct(p, product = () => null) {
   if (!out.variants.length) out.variants = [{ length: null, priceAUD: 0 }];
   out.fromPriceAUD = 0;
   if (Array.isArray(p.widths)) {
-    out.widths = p.widths.map(w => ({ width: w && w.width, image: w && w.image, ...(w && w.images ? { images: w.images } : {}), ...(w && w.imagesByColor ? { imagesByColor: w.imagesByColor } : {}), ...(w && w.col ? { col: w.col } : {}), fromPriceAUD: 0, variants: lengthsOnly(w && w.variants).slice(0, 1) }));
+    out.widths = p.widths.map(w => ({ width: w && w.width, image: w && w.image, ...widthVideo(w), ...(w && w.images ? { images: w.images } : {}), ...(w && w.imagesByColor ? { imagesByColor: w.imagesByColor } : {}), ...(w && w.col ? { col: w.col } : {}), fromPriceAUD: 0, variants: lengthsOnly(w && w.variants).slice(0, 1) }));
   }
   return out;
 }
 
+/**
+ * Each width's video (widths[].video). The width merge (migrate-variants.js) kept
+ * only the lead product's video, so a width merged in from a product that had
+ * one (the 5mm Iced Cuban Bracelet) lost it. The old document, archived with
+ * `mergedInto: { id, width }`, still has it: give it back to its width until the
+ * migration's repair writes it onto the product. A width whose video was
+ * removed in the portal has `video: null` and stays without one.
+ */
+export function withWidthVideos(list) {
+  const from = new Map(); // "id|width" -> { video, videoPoster }
+  for (const p of list || []) {
+    const to = p && p.mergedInto;
+    if (!to || !to.id || !to.width || !p.video) continue;
+    from.set(`${to.id}|${to.width}`, { video: p.video, ...(p.videoPoster ? { videoPoster: p.videoPoster } : {}) });
+  }
+  if (!from.size) return list || [];
+  return (list || []).map(p => {
+    if (!p || !Array.isArray(p.widths) || !p.widths.some(w => w && w.video === undefined && from.has(`${p.id}|${w.width}`))) return p;
+    return { ...p, widths: p.widths.map(w => (w && w.video === undefined && from.has(`${p.id}|${w.width}`) ? { ...w, ...from.get(`${p.id}|${w.width}`) } : w)) };
+  });
+}
+
 /** The whole public list, in the portal's order. */
-export function publicProducts(list) {
+export function publicProducts(input) {
+  const list = withWidthVideos(input);
   const byId = new Map((list || []).filter(p => p && p.id).map(p => [p.id, p]));
   const product = id => byId.get(id) || null;
   return (list || []).slice()
