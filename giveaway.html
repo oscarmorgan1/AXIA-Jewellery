@@ -11,7 +11,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111315'/%3E%3Cg fill='%23F4F1EA'%3E%3Cpolygon points='16,5 6,27 9.5,27'/%3E%3Cpolygon points='16,5 22.5,27 26,27'/%3E%3Crect x='9' y='20.4' width='14' height='1.7'/%3E%3C/g%3E%3C/svg%3E">
 <style>
   /* Hallmark · built: the project · redesign: full · genre: editorial (inferred) · theme: brand (AXIA tokens: obsidian, bone, ice, one magenta action) · hero: Split, the prize photo on the left at full section height · signature: the Micro Pavé chain photographed large, the countdown set as type beside it · v2.0.0 */
-  /* Hallmark · critique: the old page was a centred template (tracked-caps eyebrow, numbered magenta coins, a pill on the photo, an all-caps block head, centred form and FAQ); now one dark first screen with the prize and its clock, then a left-aligned working section for entry and questions */
+  /* Hallmark · critique: the old page was a centred template (tracked-caps eyebrow, numbered magenta coins, a pill on the photo, centred form and FAQ); heads stay in capitals to match the store; now one dark first screen with the prize and its clock, then a left-aligned working section for entry and questions */
   /* Hallmark · dropped the "Giveaway" pill on the photo and the "Free to enter. One winner." eyebrow · 54 and 9 name them; the h1 and the form already say free and one winner */
   /* Hallmark · moved #gwHow and #gwWinner from the hero to the entry section · they explain the form, and the hero keeps headline, clock, sentence and action at 1280 x 800 */
 
@@ -21,7 +21,7 @@
   .gw__media{position:relative;background:var(--deep-05);min-height:420px}
   .gw__media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 35%;display:block}
   .gw__copy{display:flex;flex-direction:column;justify-content:center;padding:clamp(var(--s-7),6vw,var(--s-9)) var(--gutter) clamp(var(--s-7),6vw,var(--s-9)) clamp(var(--s-6),5vw,var(--s-9));min-width:0}
-  .gw h1{font-family:var(--font-display);font-weight:600;font-size:clamp(2.5rem,4.4vw,4.1rem);line-height:1.02;letter-spacing:-0.025em;text-wrap:balance;overflow-wrap:break-word;min-width:0;max-width:13ch}
+  .gw h1{font-family:var(--font-display);font-weight:700;font-size:clamp(2.3rem,4vw,3.75rem);text-transform:uppercase;line-height:1.02;letter-spacing:-0.01em;text-wrap:balance;overflow-wrap:break-word;min-width:0;max-width:14ch}
   .gw__val{font-family:var(--font-sans);font-size:var(--t-body-l);color:var(--on-dark-2);margin-top:var(--s-4)}
   .gw__val[hidden]{display:none}
   .gw__cd{margin-top:var(--s-7);padding-top:var(--s-5);border-top:1px solid var(--line-dark-strong);max-width:30rem}
@@ -48,14 +48,14 @@
   /* ---- Entry: how it works beside the form ---- */
   .gw-sec{max-width:1120px;margin-inline:auto;padding:clamp(var(--s-8),8vw,var(--s-9)) var(--gutter);display:grid;grid-template-columns:minmax(0,4fr) minmax(0,7fr);gap:clamp(var(--s-6),6vw,var(--s-9))}
   .gw-sec+.gw-sec{border-top:1px solid var(--line);padding-top:clamp(var(--s-7),6vw,var(--s-8))}
-  .gw-sec__side h2{font-family:var(--font-display);font-weight:600;font-size:var(--t-24);letter-spacing:-0.01em;line-height:var(--lh-snug);text-wrap:balance}
+  .gw-sec__side h2{font-family:var(--font-display);font-weight:700;font-size:var(--t-24);text-transform:uppercase;letter-spacing:-0.01em;line-height:var(--lh-snug);text-wrap:balance}
   .gw-side{position:sticky;top:calc(var(--chrome-h) + var(--s-5));align-self:start}
   .gw__how{margin:var(--s-5) 0 0;padding:0;counter-reset:gw;border-top:1px solid var(--line)}
   .gw__how li{list-style:none;counter-increment:gw;display:grid;grid-template-columns:2rem minmax(0,1fr);gap:var(--s-3);padding:var(--s-4) 0;border-bottom:1px solid var(--line);color:var(--ink);font-size:var(--t-body)}
   .gw__how li::before{content:counter(gw);font-family:var(--font-display);font-weight:500;color:var(--ink-tertiary);font-variant-numeric:tabular-nums}
   .gw-sec .fine{font-size:var(--t-body-s);color:var(--ink-secondary);line-height:1.6;margin-top:var(--s-4);max-width:46ch}
   .gw-sec .fine a{color:inherit;text-decoration:underline;text-underline-offset:.2em}
-  .lead-h{font-family:var(--font-display);font-weight:600;font-size:var(--t-44);letter-spacing:-0.02em;line-height:var(--lh-tight);text-wrap:balance}
+  .lead-h{font-family:var(--font-display);font-weight:700;font-size:var(--t-44);text-transform:uppercase;letter-spacing:-0.01em;line-height:var(--lh-tight);text-wrap:balance}
   .lead-p{color:var(--ink-secondary);max-width:52ch;margin:var(--s-4) 0 var(--s-6);line-height:var(--lh-body)}
   form.fd-form{margin-top:var(--s-5)}
   form.fd-form[hidden]{display:none}
@@ -79,7 +79,7 @@
   .fd-success.on{display:block}
   .fd-success .tick{width:28px;height:28px;margin-bottom:var(--s-4)}
   .fd-success .tick svg{width:28px;height:28px;stroke:var(--ink);fill:none;stroke-width:1.6}
-  .fd-success h2{font-family:var(--font-display);font-weight:600;font-size:var(--t-44);letter-spacing:-0.02em;line-height:var(--lh-tight)}
+  .fd-success h2{font-family:var(--font-display);font-weight:700;font-size:var(--t-44);text-transform:uppercase;letter-spacing:-0.01em;line-height:var(--lh-tight)}
   .fd-success p{color:var(--ink-secondary);max-width:52ch;margin-top:var(--s-4)}
   .fd-success .gw__ig{color:var(--ink);text-decoration-color:var(--line-strong);margin-right:var(--s-5)}
   .fd-success .gw__ig:focus-visible{outline-color:var(--ink)}
