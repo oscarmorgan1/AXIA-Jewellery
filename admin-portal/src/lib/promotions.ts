@@ -23,7 +23,7 @@ export function blankPromotion(): Promotion {
   return {
     id: '', name: '', on: true, pct: 20, scope: 'all', productIds: [], collections: [], maxPriceAUD: null,
     startsAt: '', endsAt: '', allowPromos: false,
-    banner: { show: true, strip: true, style: 'theme', theme: 'obsidian', image: '', eyebrow: '', headline: '', text: '', ctaLabel: 'Shop the sale', ctaHref: 'collection', showCountdown: true },
+    banner: { show: true, strip: true, style: 'theme', theme: 'obsidian', image: '', eyebrow: '', headline: '', text: '', ctaLabel: 'Shop the sale', ctaHref: 'sale', showCountdown: true },
   };
 }
 
@@ -44,9 +44,9 @@ const inDays = (n: number) => { const d = new Date(); d.setDate(d.getDate() + n)
 
 export const TEMPLATES: { key: string; label: string; hint: string; make: () => Promotion }[] = [
   {
-    key: 'storewide', label: 'Storewide sale', hint: '30% off every piece, banner on the home page',
-    make: () => ({ ...blankPromotion(), name: 'Storewide sale', pct: 30, endsAt: inDays(7),
-      banner: { ...blankPromotion().banner, eyebrow: 'Storewide sale', headline: '30% off everything', text: 'Every piece in the store, hand-set and made to order. The original price is crossed out on every piece.', theme: 'obsidian' } }),
+    key: 'storewide', label: 'Storewide sale', hint: '30% off every piece until 26 December, big banner on the home page',
+    make: () => ({ ...blankPromotion(), name: 'Storewide sale', pct: 30, endsAt: new Date('2026-12-26T23:59:00+11:00').getTime() > Date.now() ? new Date('2026-12-26T23:59:00+11:00').toISOString() : inDays(7),
+      banner: { ...blankPromotion().banner, eyebrow: 'Storewide sale', headline: '30% off everything', text: 'Every piece in the store. Hand-set moissanite in 925 sterling silver, made to order.', theme: 'obsidian' } }),
   },
   {
     key: 'valentines', label: 'Valentine’s Day', hint: 'A collection or pieces under a price, rose theme',

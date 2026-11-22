@@ -310,16 +310,16 @@
   // in site/shop). The server checks the same switch before taking any payment.
   const CHECKOUT_OPEN = shopOpen();
   if (CHECKOUT_OPEN) $$('[data-buy-label]').forEach(l => { l.textContent = 'Add to bag'; });
-  $$('[aria-label="Account"]').forEach(b => b.onclick = e => { e.preventDefault(); say('Accounts open when the First Drop drops. Join the list to get in first.'); });
+  $$('[aria-label="Account"]').forEach(b => b.onclick = e => { e.preventDefault(); say('Accounts open soon. Sign up to hear first.'); });
   /* Only the cart drawer's Checkout button - never a form submit (e.g. the register button also uses .btn--block). */
   $$('.btn--cart.btn--block:not([type="submit"])').forEach(b => b.onclick = e => {
     e.preventDefault();
-    if (!CHECKOUT_OPEN) { say('Your bag is saved. Checkout opens when the First Drop drops.'); return; }
+    if (!CHECKOUT_OPEN) { say('Your bag is saved. Checkout opens soon.'); return; }
     if (!cart.length) { say('Your bag is empty.'); return; }
     location.href = 'checkout';
   });
   // Checkout closed: make every cart-drawer note say so.
-  if (!CHECKOUT_OPEN) $$('.drw__note').forEach(n => { n.textContent = 'Your bag is saved. Checkout opens when the First Drop drops.'; });
+  if (!CHECKOUT_OPEN) $$('.drw__note').forEach(n => { n.textContent = 'Your bag is saved. Checkout opens soon.'; });
 
   /* ---- Drop-access form ---- */
   $$('[data-drop-form]').forEach(f => f.onsubmit = e => {
@@ -331,30 +331,31 @@
   });
 })();
 
-/* pre-launch: sticky mobile "Join the First Drop" bar.
-   Skipped on the PDP (its own sticky Add-to-Bag) and on the First Drop page itself. */
+/* sticky mobile "Enter to win" bar, linking to the giveaway page (Admin > Giveaways).
+   Skipped on the PDP (its own sticky Add-to-Bag) and on the giveaway page itself; promo.js
+   takes it away once the giveaway closes, and uses the running giveaway's title. */
 (function () {
   var page = (location.pathname.split('/').pop() || 'store').replace(/\.html$/, '');
-  if (page === 'first-drop' || page === 'product' || page === 'cuban') return;
+  if (page === 'giveaway' || page === 'product' || page === 'cuban' || page === 'sale' || page === 'checkout') return;
   var bar = document.createElement('a');
-  bar.href = 'first-drop';
+  bar.href = 'giveaway';
   bar.className = 'fdbar';
-  bar.setAttribute('aria-label', 'Join the First Drop');
+  bar.setAttribute('aria-label', 'Enter the giveaway');
   bar.innerHTML = '<span>Enter to win a 15mm Micro Pavé Chain</span><span class="fdbar__arw" aria-hidden="true">&rarr;</span>';
   document.body.appendChild(bar);
   document.body.classList.add('has-fdbar');
 })();
 
 /* sitewide giveaway strip, pinned as the topmost bar so it never scrolls away.
-   Skipped on the First Drop page, and on any page that already has one. */
+   Skipped on the giveaway page, and on any page that already has one. */
 /* Sticky countdown banner, site-wide. Takes the give-strip's pinned top slot so the nav/announce
    offsets (var(--give-h)) already account for it. Skipped where a page has its own countdown
-   (first-drop hero, cuban's ccd, the landing's big bar). The date, text and on/off switch are
+   (giveaway page, cuban's ccd, the landing's big bar). The date, text and on/off switch are
    set in the admin portal (Settings > Countdown) and arrive through catalogue.js (AXIA_CD). */
 (function () {
   try {
     var page = (location.pathname.split('/').pop() || '').replace(/\.html$/, '');
-    if (page === 'first-drop' || page === 'cuban' || page === 'index' || page === '' || page === 'about' || page === 'support' || page === 'product' || page === 'collection') return;
+    if (page === 'giveaway' || page === 'sale' || page === 'cuban' || page === 'index' || page === '' || page === 'about' || page === 'support' || page === 'product' || page === 'collection') return;
     if (document.querySelector('.give-strip, .cdbar') || !window.AXIA_CD) return;
     var a = null, built = '';
     window.AXIA_CD.run(function (st) {
@@ -465,13 +466,13 @@
   ['touchstart', 'pointerdown', 'click', 'scroll'].forEach(function (ev) { addEventListener(ev, once, { once: true, passive: true }); });
 })();
 
-/* ---- First Access coupon modal: one well-timed popup on the shop (NOT the landing or the register page) ----
+/* ---- 15% sign-up popup: one well-timed popup on the shop (NOT the landing or the register page) ----
    Trigger = 45% scroll depth OR 18s on page, whichever first. Shown at most once per session; a dismiss
    suppresses it for 4 days, registering for 60. Offers 15% off (issued on registration; no code shown). */
 (function () {
   var page = (location.pathname.split('/').pop() || '').replace(/\.html$/, '');
   // Skip the landing (root/index), the register page itself, checkout, legal pages, and the authenticity check.
-  if (page === '' || page === 'index' || page === 'first-drop' || page === 'checkout' || page === 'terms' || page === 'genuine') return;
+  if (page === '' || page === 'index' || page === 'giveaway' || page === 'checkout' || page === 'terms' || page === 'genuine') return;
   var KEY = 'axia_promo';
   function suppressed() {
     try { if (sessionStorage.getItem('axia_promo_s')) return true; } catch (e) {}
@@ -490,13 +491,16 @@
       '<div class="promo__media"><img src="assets/img/products/two-row-flat-cuban-chain-12mm/silver/2.jpg" alt="" loading="lazy" decoding="async"></div>' +
       '<div class="promo__body">' +
         '<p class="promo__off"><span class="promo__pct">15%</span> off your first order</p>' +
-        '<h3 class="promo__h" id="promoTitle">Get in before the First Drop</h3>' +
-        '<p class="promo__p">Register free and we\u2019ll email your code, with early access before the public and an entry to win the chain.</p>' +
-        '<a class="promo__reg" href="first-drop">Register for First Access</a>' +
+        '<h3 class="promo__h" id="promoTitle">Join AXIA and get 15% off</h3>' +
+        '<p class="promo__p"></p>' +
+        '<a class="promo__reg" href="giveaway#register">Sign up free</a>' +
         '<button class="promo__no" type="button" data-promo-close data-promo-dismiss>Not now</button>' +
       '</div>' +
       '<button class="promo__x" type="button" data-promo-close aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>' +
     '</div>';
+  // Mentions the giveaway only while one is running (Admin > Giveaways).
+  var gv = window.AXIA_SITE && window.AXIA_SITE.giveaway, gvOn = gv && Date.parse(gv.endsAt) > Date.now();
+  m.querySelector('.promo__p').textContent = 'Sign up free and we\u2019ll email your code.' + (gvOn ? ' You\u2019re also in the draw: ' + (gv.title || 'the AXIA giveaway').replace(/^Win /, 'win ') + '.' : '');
   document.body.appendChild(m);
 
   var fired = false, prevFocus = null;

@@ -339,7 +339,7 @@
 
       <!-- accordions: long-form only -->
       <div class="acc">
-        <div class="acc__item"><button class="acc__h">Shipping <span class="pm"></span></button><div class="acc__p"><div class="acc__pi">Each piece is hand-set and made to order, so allow approximately 3-5 weeks for production before dispatch. Shipping is express, tracked and insured worldwide, calculated at checkout. Every order arrives in an AXIA box.</div></div></div>
+        <div class="acc__item"><button class="acc__h">Shipping <span class="pm"></span></button><div class="acc__p"><div class="acc__pi">Each piece is hand-set and made to order, so allow 20-30 business days for production before dispatch. Shipping is express, tracked and insured worldwide, calculated at checkout. Every order arrives in an AXIA box.</div></div></div>
         <div class="acc__item"><button class="acc__h">Warranty &amp; returns <span class="pm"></span></button><div class="acc__p"><div class="acc__pi">Lifetime warranty against manufacturing defects. 30-day exchanges or returns on unworn pieces in original condition. Wrong size is a simple swap. Custom-engraved pieces can't be returned unless faulty, since they're made for you. Our goods come with guarantees that cannot be excluded under the Australian Consumer Law: you are entitled to a replacement or refund for a major failure, and to have goods repaired or replaced if they fail to be of acceptable quality.</div></div></div>
         <div class="acc__item"><button class="acc__h">Care <span class="pm"></span></button><div class="acc__p"><div class="acc__pi">Wipe with the included cloth. Remove before swimming, showering or the gym to preserve the finish. Store flat in the pouch. Care card included.</div></div></div>
         <div class="acc__item" id="sizing"><button class="acc__h">Sizing guide <span class="pm"></span></button><div class="acc__p"><div class="acc__pi" id="sizingBody">Measure a chain you already own end to end, or contact us and we&rsquo;ll help you choose.</div></div></div>
@@ -420,7 +420,7 @@
     <div class="foot__top">
       <div class="foot__brand"><a class="nav__brand" href="store" aria-label="AXIA"><span class="wm-img" aria-hidden="true"></span></a><p>Buy once, shine forever.</p></div>
       <div><h5>Shop</h5><a href="cuban">The Cuban</a><a href="collection?cat=Tennis">Tennis</a><a href="collection?cat=Pendants">Pendants</a><a href="titans">The Titans</a><a href="collection">Shop all</a></div>
-      <div><h5>AXIA</h5><a href="about">About</a><a href="first-drop">First Drop</a><a href="store#craft">Craft</a><a href="support#sizing">Sizing</a><a href="support#gifting">Gifting</a></div>
+      <div><h5>AXIA</h5><a href="about">About</a><a href="giveaway">Giveaway</a><a href="store#craft">Craft</a><a href="support#sizing">Sizing</a><a href="support#gifting">Gifting</a></div>
       <div><h5>Support</h5><a href="support#shipping">Shipping</a><a href="support#warranty">Warranty</a><a href="support#returns">Exchanges</a><a href="support">Contact</a><a href="genuine">Authenticity</a><a href="privacy">Privacy</a></div>
     </div>
     <div class="foot__bot"><span>© 2026 AXIA Jewellery <span style="opacity:.4;font-size:.82em">ABN 64 972 889 034</span></span><span>Worth, made visible.</span></div>
@@ -638,7 +638,7 @@
     rows.push(['Colours',cols().join(', ')]);
     rows.push(['Finish','White-gold plated']);
     rows.push(['Passes diamond tester','Yes']);
-    rows.push(['Made to order','Yes \u00b7 approx. 3-5 weeks']);
+    rows.push(['Made to order','Yes \u00b7 20-30 business days']);
     rows.push(['Packaging','Ships in an AXIA box']);
     return rows.map(r=>'<div><span class="k">'+r[0]+'</span><span class="v">'+r[1]+'</span></div>').join('');
   }
@@ -701,7 +701,7 @@
     $('#pEyebrow').textContent=eyebrow();
     $('#pName').textContent=fullName();
     $('#pDesc').textContent=p.desc;
-    $('#mtoNote').textContent='Hand-set and made to order \u00b7 allow approximately 3-5 weeks \u00b7 every order ships in an AXIA box.';
+    $('#mtoNote').textContent='Hand-set and made to order \u00b7 allow 20-30 business days \u00b7 every order ships in an AXIA box.';
     $('#cfg').textContent=optString();
     const pr=SET?setPriceNow():(variant()||{}).priceAUD||0;
     // During a store discount (Website > Store discount) the price shown is the sale price, with the
@@ -898,7 +898,7 @@
   // Hidden pieces are teasers (locked for a future drop) - replace the buy area with a Drop 02 lock.
   if(p.hidden){
     const buy=$('.buy'); if(buy) buy.innerHTML='<button class="btn btn--cart" disabled style="opacity:.55;cursor:not-allowed;flex:1">Coming soon</button>';
-    const note=$('#mtoNote'); if(note){ note.innerHTML='Not out yet. This piece is coming soon. <a href="first-drop" style="color:var(--magenta);text-decoration:underline">Join the list</a> for first access.'; note.style.color='var(--ink)'; }
+    const note=$('#mtoNote'); if(note){ note.innerHTML='Not out yet. This piece is coming soon. <a href="giveaway" style="color:var(--magenta);text-decoration:underline">Sign up</a> for first access.'; note.style.color='var(--ink)'; }
     const sb=$('.sticky-buy'); if(sb) sb.style.display='none';
     const gn=$('#giftNote'); if(gn) gn.hidden=true;
     const bn=$('#bundleNudge'); if(bn) bn.hidden=true;

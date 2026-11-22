@@ -112,13 +112,67 @@ export function publicPromotions(active) {
   }));
 }
 
-/** site/giveaway: when the giveaway ends and whether its countdown shows. */
-export function publicGiveaway(d) {
-  if (!d) return null;
+// ---- Giveaways (admin: Giveaways), kept in site/giveaways as { items: [...] } ----
+// The site shows one at a time: the running one that ends soonest, else the one that
+// ended most recently (for 30 days, with its "closed" text). Until any are saved, the
+// built-in 15mm Micro Pavé giveaway below runs, ending when site/giveaway says (the
+// first version's single end date) or 11:59 pm Sydney time on 26 December 2026.
+
+export const DEFAULT_GIVEAWAY = {
+  id: 'micro-pave-15mm',
+  on: true,
+  title: 'Win the 15mm Micro Pavé Chain',
+  prize: '15mm Micro Pavé Cuban Chain',
+  valueAUD: 2699,
+  image: 'assets/img/products/micro-pave-cuban-chain-15mm/1.jpg',
+  description: 'Our 15mm Micro Pavé Cuban chain, fully iced in hand-set VVS moissanite and 925 sterling silver. Sign up free and follow us on Instagram to go in the draw.',
+  steps: ['Sign up free below. That’s your entry.', 'Follow AXIA on Instagram.', 'One entry per person. Australian residents 18+.'],
+  instagram: '',
+  startsAt: '',
+  endsAt: '2026-12-26T23:59:00+11:00',
+  showCountdown: true,
+  endedText: 'Entries are closed. The winner is announced within 7 days.',
+  winnerText: 'Winner drawn at random and announced within 7 days of entries closing.',
+};
+
+export function normalizeGiveaway(raw = {}) {
+  const r = raw && typeof raw === 'object' ? raw : {};
+  const d = DEFAULT_GIVEAWAY;
+  const value = Number(r.valueAUD);
   return {
-    endsAt: iso(d.endsAt),
-    show: d.show !== false,
-    label: str(d.label, 60) || 'The AXIA Giveaway',
-    endedText: str(d.endedText, 80) || 'Entries are closed. Winner announced soon.',
+    id: str(r.id, 60) || 'giveaway',
+    on: r.on !== false,
+    title: str(r.title, 90) || 'AXIA Giveaway',
+    prize: str(r.prize, 90),
+    valueAUD: value > 0 ? Math.round(value) : null,
+    image: str(r.image, 1000),
+    description: str(r.description, 600),
+    steps: (Array.isArray(r.steps) ? r.steps : []).map(x => str(x, 160)).filter(Boolean).slice(0, 6),
+    instagram: str(r.instagram, 40).replace(/^@/, '').replace(/[^A-Za-z0-9._]/g, ''),
+    startsAt: iso(r.startsAt),
+    endsAt: iso(r.endsAt),
+    showCountdown: r.showCountdown !== false,
+    endedText: str(r.endedText, 160) || d.endedText,
+    winnerText: str(r.winnerText, 200),
   };
+}
+
+/** The giveaway the site shows now, or null. `legacy` is the first version's site/giveaway. */
+export function currentGiveaway(doc, legacy = null, now = Date.now()) {
+  let items = doc && Array.isArray(doc.items) ? doc.items.slice(0, 50).map(normalizeGiveaway) : null;
+  if (!items) {
+    const end = legacy && iso(legacy.endsAt);
+    items = [normalizeGiveaway({ ...DEFAULT_GIVEAWAY, ...(end ? { endsAt: end } : {}), ...(legacy && legacy.show === false ? { showCountdown: false } : {}) })];
+  }
+  const live = items.filter(g => g.on && g.endsAt && !(g.startsAt && Date.parse(g.startsAt) > now));
+  const running = live.filter(g => Date.parse(g.endsAt) > now).sort((a, b) => Date.parse(a.endsAt) - Date.parse(b.endsAt));
+  if (running.length) return running[0];
+  const ended = live.filter(g => now - Date.parse(g.endsAt) < 30 * 86400e3).sort((a, b) => Date.parse(b.endsAt) - Date.parse(a.endsAt));
+  return ended[0] || null;
+}
+
+/** What the storefront gets as site.giveaway. label/show keep the first version's names for promo.js. */
+export function publicGiveaway(g) {
+  if (!g) return null;
+  return { ...g, label: g.title, show: g.showCountdown };
 }

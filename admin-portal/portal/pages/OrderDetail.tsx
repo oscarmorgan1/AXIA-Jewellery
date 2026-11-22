@@ -99,7 +99,7 @@ export default function OrderDetail() {
           <>
             <Progress order={order} />
             <p className="card__sub pt-next">
-              {order.status === 'paid' && 'Every piece is hand-set and made to order, so allow approximately 3 to 5 weeks before it ships.'}
+              {order.status === 'paid' && 'Every piece is hand-set and made to order, so allow 20 to 30 business days before it ships.'}
               {order.status === 'in_progress' && 'Our setters are working on your piece. We’ll email you the day it ships.'}
               {order.status === 'shipped' && 'Your piece is on its way in its AXIA box.'}
               {order.status === 'fulfilled' && 'Delivered. Wear it well.'}

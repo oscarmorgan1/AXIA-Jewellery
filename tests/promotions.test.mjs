@@ -2,7 +2,7 @@
 // and that checkout pricing takes them off the current price: `npm test`.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { activePromotions, covers, isRunning, normalizePromotion, promoFor, publicGiveaway, publicPromotions } from '../server/promotions.js';
+import { activePromotions, covers, currentGiveaway, isRunning, normalizePromotion, promoFor, publicGiveaway, publicPromotions } from '../server/promotions.js';
 import { priceCart } from '../server/pricing.js';
 import { publicProduct } from '../server/public-catalogue.js';
 
@@ -95,8 +95,27 @@ test('the storefront gets original prices (the sale price is worked out in the b
   assert.equal(out.widths[0].variants[0].priceAUD, 600);
 });
 
-test('giveaway: defaults and a bad date', () => {
+test('giveaway: the built-in Micro Pavé one runs until giveaways are saved, ending 26 December', () => {
+  const g = currentGiveaway(null, null, now);
+  assert.equal(g.id, 'micro-pave-15mm');
+  assert.equal(Date.parse(g.endsAt), Date.parse('2026-12-26T23:59:00+11:00'));
+  assert.equal(publicGiveaway(g).label, g.title);
+  // the first version's single end date still counts
+  assert.equal(currentGiveaway(null, { endsAt: '2026-12-20T00:00:00.000Z' }, now).endsAt, '2026-12-20T00:00:00.000Z');
   assert.equal(publicGiveaway(null), null);
-  assert.deepEqual(publicGiveaway({ endsAt: '2026-12-24T13:00:00.000Z' }), { endsAt: '2026-12-24T13:00:00.000Z', show: true, label: 'The AXIA Giveaway', endedText: 'Entries are closed. Winner announced soon.' });
-  assert.equal(publicGiveaway({ endsAt: 'soon' }).endsAt, '');
+});
+
+test('giveaway: the running one closing soonest shows, then the last closed for 30 days', () => {
+  const items = [
+    { id: 'later', title: 'B', endsAt: '2027-02-14T00:00:00Z' },
+    { id: 'soon', title: 'A', endsAt: '2026-12-26T12:59:00Z' },
+    { id: 'off', title: 'C', on: false, endsAt: '2026-11-30T00:00:00Z' },
+    { id: 'future', title: 'D', startsAt: '2026-12-01T00:00:00Z', endsAt: '2026-12-02T00:00:00Z' },
+  ];
+  assert.equal(currentGiveaway({ items }, null, now).id, 'soon');
+  assert.equal(currentGiveaway({ items }, null, Date.parse('2027-01-01T00:00:00Z')).id, 'later');
+  assert.equal(currentGiveaway({ items: [{ id: 'x', endsAt: '2026-11-01T00:00:00Z' }] }, null, now).id, 'x', 'closed recently: shows the closed text');
+  assert.equal(currentGiveaway({ items: [{ id: 'x', endsAt: '2026-09-01T00:00:00Z' }] }, null, now), null);
+  assert.equal(currentGiveaway({ items: [] }, null, now), null, 'all deleted: nothing shows');
+  assert.equal(currentGiveaway({ items: [{ id: 'x', endsAt: '2027-01-01T00:00:00Z', instagram: '@axia.jewel lery' }] }, null, now).instagram, 'axia.jewellery');
 });
