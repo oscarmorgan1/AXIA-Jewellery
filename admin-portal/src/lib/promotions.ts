@@ -1,4 +1,4 @@
-import type { Collection, Product, Promotion, PromoTheme } from '../types';
+import type { Collection, Product, Promotion, PromoTheme, StoreDiscount } from '../types';
 import { statusOf } from './catalogue';
 
 /** Banner colours. Keep in step with assets/css/promo.css (.promo--<theme>). */
@@ -97,4 +97,23 @@ export function scopeSummary(p: Promotion, cols: Collection[], products: Product
   }
   const names = p.productIds.map(id => products.find(x => x.id === id)?.name || id);
   return (names.length ? (names.length > 3 ? `${names.slice(0, 3).join(', ')} and ${names.length - 3} more` : names.join(', ')) : 'No pieces picked') + under;
+}
+
+/**
+ * The promotions taking money off right now, the older store discount included as an
+ * "every piece" one (server/promotions.js activePromotions).
+ */
+export function runningPromotions(items: Promotion[], legacy?: StoreDiscount | null, now = Date.now()): Promotion[] {
+  const out = items.map(withDefaults).filter(p => statusOfPromo(p, now) === 'Live' && p.pct >= 1 && p.pct <= 90);
+  if (legacy?.on && legacy.pct >= 1 && legacy.pct <= 90 && !(legacy.endsAt && Date.parse(legacy.endsAt) <= now)) {
+    out.push({ ...blankPromotion(), id: 'store-discount', name: 'Store discount', pct: legacy.pct, endsAt: legacy.endsAt || '' });
+  }
+  return out;
+}
+
+/** The promotion that applies to a product at a price: the biggest that covers it (they never stack). */
+export function promoFor(promos: Promotion[], product: Product, priceAUD: number): Promotion | null {
+  let best: Promotion | null = null;
+  for (const p of promos) if (covers(p, product, priceAUD) && (!best || p.pct > best.pct)) best = p;
+  return best;
 }

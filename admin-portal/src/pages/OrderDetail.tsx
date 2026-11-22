@@ -15,6 +15,7 @@ import Drawer from '../components/Drawer';
 import ConfirmDelete from '../components/ConfirmDelete';
 import { useToast } from '../components/Toast';
 import ComposeEmail from '../components/ComposeEmail';
+import OrderMargin from '../components/OrderMargin';
 import { statusChip } from './Orders';
 import type { Order, Piece, Return, Tracking } from '../types';
 import { SkeletonPage } from '../components/Skeleton';
@@ -322,6 +323,7 @@ export default function OrderDetail() {
                         {i.components.map((c, k) => <li key={k}><Link to={`/products/${encodeURIComponent(c.id)}`}>{c.name}</Link> <small>{[c.width, c.length].filter(Boolean).join(' · ')} · {aud(c.priceAUD)} on its own</small></li>)}
                       </ul>
                     )}
+                    {(i.listPriceAUD || 0) > i.priceAUD && i.promotion && <small className="muted">{i.promotion}</small>}
                     {i.engraving && <div className="engrave-line"><PenLine size={13} /> Engraving: <span className="engrave-text">{i.engraving}</span></div>}
                     <div className="piece-slots">
                       {slots[n]?.assigned.map(p => (
@@ -334,7 +336,10 @@ export default function OrderDetail() {
                     </div>
                   </div>
                   <div className="order-item__qty">× {i.qty}</div>
-                  <div className="order-item__price">{aud(i.priceAUD * i.qty, 2)}</div>
+                  <div className="order-item__price">
+                    {aud(i.priceAUD * i.qty, 2)}
+                    {(i.listPriceAUD || 0) > i.priceAUD && <small className="order-item__was"><s>{aud(i.listPriceAUD! * i.qty, 2)}</s></small>}
+                  </div>
                 </div>
               ))}
               {order.gift && (
@@ -429,6 +434,7 @@ export default function OrderDetail() {
               <dt>Payment</dt><dd>{stripeUrl ? <a href={stripeUrl} target="_blank" rel="noreferrer">{order.stripe!.paymentIntent!.slice(0, 14)}…</a> : '–'}</dd>
             </dl>
           </div>
+          <OrderMargin order={order} />
         </div>
       </div>
 

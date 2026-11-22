@@ -59,7 +59,7 @@ Pages show web-sized WebP copies of the photos in `assets/img` (600px and 1200px
 | `visits/{day}_{id}` | admins | server only (`POST /api/visit`, rate limited) | Anonymous unique visitors: one entry per browser per day (Sydney time) with landing page, referring site and device. Shown on the dashboard. Admins who have signed in to the portal aren't counted |
 | `signups/{id}` | admins | server only (`POST /api/signup`, rate limited) | Waitlist registrations from the landing and First Drop pages. Shown under Customers |
 | `messages/{id}` | admins | server only (`POST /api/message`, rate limited) | Support page contact form. Shown in the Inbox |
-| `productCosts/{id}` | admins | admins | Factory cost, quoted size, notes, and `variants["width\|length"]` with each size's own cost. **Private** |
+| `productCosts/{id}` | admins | admins | Factory cost, quoted size, notes, and `variants["width\|length"]` with each size's own cost. **Private** Margins shows each piece at its sale price while a promotion runs, and has a price simulator (nothing it tries is saved). An order's margin (on its page) is worked out from what was paid: each line's `priceAUD` is already after its promotion, and the promo code's `discountAUD` is shared across the lines by value; a free gift adds its cost |
 | `internal/costAssumptions` | admins | admins | Payment fee, packaging, returns reserve, GST, freight per piece (US$) and the USD rate |
 | `migrations/{id}` | nobody | server only (`/api/admin/migrations`) | Runs of the temporary catalogue migration (Settings > Catalogue migration): what changed and a copy of every document before, for Undo |
 | `internal/firstDropPlan` | admins | admins | Internal unit plan |
