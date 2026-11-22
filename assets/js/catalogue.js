@@ -392,7 +392,7 @@
       var want = window.AXIA_SALE.promos().some(function (p) { return p.banner && (p.banner.show || p.banner.strip); })
         || (g && g.endsAt && document.querySelector('[data-giveaway-slot], .fdbar'));
       if (!want || document.querySelector('script[data-promo]')) return;
-      var v = '20261122a', l = document.createElement('link');
+      var v = '20261122d', l = document.createElement('link');
       l.rel = 'stylesheet'; l.href = 'assets/css/promo.css?v=' + v;
       document.head.appendChild(l);
       var sc = document.createElement('script');
