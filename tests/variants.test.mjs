@@ -268,3 +268,14 @@ test('each width keeps its own colours through the merge, the repair and checkou
   assert.equal(lines[0].colour, 'Silver');
   assert.equal(lines[1].colour, 'Gold');
 });
+
+test('a set sends each width option its own photo, so the page can show the width picked', () => {
+  const tc = clone(CATALOGUE.find(p => p.id === 'tennis-chain'));
+  const tb = clone(CATALOGUE.find(p => p.id === 'tennis-bracelet'));
+  const set = { id: 'tennis-set', name: 'The Tennis Set', cat: 'chain', images: [], variants: [{ length: null, priceAUD: 0 }],
+    set: { sharedWidth: true, pricing: { mode: 'discount', amountAUD: 100 }, components: [{ productId: 'tennis-chain' }, { productId: 'tennis-bracelet' }] } };
+  const out = publicProducts([tc, tb, set]).find(p => p.id === 'tennis-set');
+  const opts = out.set.components.map(c => Object.fromEntries(c.options.map(o => [o.width, o.image])));
+  assert.equal(opts[0]['2mm'], 'assets/img/products/tennis-chain-2mm/1.jpg');
+  assert.equal(opts[1]['5mm'], 'assets/img/products/tennis-bracelet-5mm/1.jpg');
+});
