@@ -134,7 +134,11 @@ type Stamp = { toDate(): Date };
 export interface OrderComponent { id: string; name: string; width?: string; length?: string; colour?: string; priceAUD: number }
 
 export interface OrderItem {
-  id: string; name: string; qty: number; priceAUD: number;
+  id: string; name: string; qty: number;
+  /** What one unit was charged, after any promotion (before a promo code, which is order-wide: discountAUD). */
+  priceAUD: number;
+  /** The price before the promotion, and which one ("Storewide sale (30%)"), when one applied. */
+  listPriceAUD?: number; promotion?: string;
   options?: string; width?: string; length?: string; colour?: string; engraving?: string; image?: string;
   /** A set: its pieces. Each unit of the line is one piece of each. */
   components?: OrderComponent[];
