@@ -310,8 +310,8 @@
 
 <div class="toast" id="toast"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
 
-<script src="assets/js/catalogue.js?v=20261116f"></script>
-<script type="text/axia-deferred" src="assets/js/axia.js?v=20261116f"></script>
+<script src="assets/js/catalogue.js?v=20261122a"></script>
+<script type="text/axia-deferred" src="assets/js/axia.js?v=20261122a"></script>
 <script type="text/axia-deferred">
 (function(){
   const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
@@ -385,7 +385,7 @@
     if(!list.length){
       grid.innerHTML='<p class="empty-note" style="grid-column:1/-1">Nothing here right now. <a class="link-u" href="collection">View everything</a></p>';
     } else grid.innerHTML=list.map(p=>{
-      const price=p.hidden?'Coming soon':AXIA_SALE.html(p.fromPriceAUD,p.singlePrice?'':'From ');
+      const price=p.hidden?'Coming soon':AXIA_SALE.html(p.fromPriceAUD,p.singlePrice?'':'From ',p);
       if(p.id==='the-ascendant' && state.cat==='titans'){
         return '<a class="card card--apex" href="'+(p.linkTo||'product?id='+p.id)+'"><div class="card__media">'+badge(p)+media(p)+'<span class="card__edge"></span></div><div class="card__body"><span class="card__eyebrow">The apex of AXIA</span><div class="card__name">'+p.name+'</div><div class="card__meta">'+metaText(p)+'</div><div class="card__price num">'+price+'</div><span class="card__cta">Meet the Ascendant</span></div></a>';
       }

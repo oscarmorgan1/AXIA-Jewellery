@@ -11,9 +11,10 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { db } from './services.js';
 import { publicProducts, mergedIds } from './public-catalogue.js';
 import { activeDiscount } from './variants.js';
+import { activePromotions, publicGiveaway, publicPromotions } from './promotions.js';
 
 const TTL = 15_000;
-const SITE_DOCS = ['countdown', 'shop', 'media', 'reviews', 'discount'];
+const SITE_DOCS = ['countdown', 'shop', 'media', 'reviews', 'discount', 'promotions', 'giveaway'];
 
 // Firestore Timestamps as ISO strings, the way the REST API used to give them.
 function plain(v) {
@@ -41,7 +42,12 @@ async function build() {
   SITE_DOCS.forEach((id, i) => { out.site[id] = site[i].exists ? plain(site[i].data()) : null; });
   // Only a running store discount goes out: { pct, allowPromos, endsAt }. The storefront
   // takes it off every price the way the server does at checkout.
-  out.site.discount = activeDiscount(site[SITE_DOCS.indexOf('discount')].exists ? site[SITE_DOCS.indexOf('discount')].data() : null);
+  const raw = id => { const d = site[SITE_DOCS.indexOf(id)]; return d.exists ? d.data() : null; };
+  out.site.discount = activeDiscount(raw('discount'));
+  // Only running promotions go out (promotions.js), the older store discount among them.
+  // A promotion that's switched off, scheduled for later or ended never reaches browsers.
+  out.site.promotions = publicPromotions(activePromotions(raw('promotions'), raw('discount')));
+  out.site.giveaway = publicGiveaway(raw('giveaway'));
   return out;
 }
 

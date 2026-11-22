@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { collection, doc, onSnapshot, query, where, type DocumentData } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Collection, CostAssumptions, Message, Order, Piece, Return, Product, Supplier, ProductCost, Signup, Countdown, ShopSettings, MaintenanceSettings, SiteMedia, Visit, ReviewVideo, StoreDiscount } from '../types';
+import type { Collection, CostAssumptions, Message, Order, Piece, Return, Product, Supplier, ProductCost, Signup, Countdown, ShopSettings, MaintenanceSettings, SiteMedia, Visit, ReviewVideo, StoreDiscount, Promotion, Giveaway } from '../types';
 import { DEFAULT_ASSUMPTIONS } from './economics';
 
 interface Live<T> { data: T; loading: boolean; error: Error | null }
@@ -62,6 +62,32 @@ export function useStoreDiscount(): Live<StoreDiscount> & { saved: boolean } {
   useEffect(() => onSnapshot(
     doc(db, 'site', 'discount'),
     snap => setState({ data: { ...DEFAULT_DISCOUNT, ...(snap.data() as Partial<StoreDiscount> | undefined) }, loading: false, error: null, saved: snap.exists() }),
+    error => setState(s => ({ ...s, loading: false, error })),
+  ), []);
+  return state;
+}
+
+/** The promotions (`site/promotions`, { items }), edited under Promotions. Read by the server at checkout. */
+export function usePromotions(): Live<Promotion[]> & { saved: boolean } {
+  const [state, setState] = useState<Live<Promotion[]> & { saved: boolean }>({ data: [], loading: true, error: null, saved: false });
+  useEffect(() => onSnapshot(
+    doc(db, 'site', 'promotions'),
+    snap => {
+      const items = (snap.data()?.items as Promotion[] | undefined) || [];
+      setState({ data: items, loading: false, error: null, saved: snap.exists() });
+    },
+    error => setState(s => ({ ...s, loading: false, error })),
+  ), []);
+  return state;
+}
+
+/** Matches publicGiveaway in server/promotions.js (what the site shows when a field is empty). */
+export const DEFAULT_GIVEAWAY: Giveaway = { endsAt: '', show: true, label: 'The AXIA Giveaway', endedText: 'Entries are closed. Winner announced soon.' };
+export function useGiveaway(): Live<Giveaway> & { saved: boolean } {
+  const [state, setState] = useState<Live<Giveaway> & { saved: boolean }>({ data: DEFAULT_GIVEAWAY, loading: true, error: null, saved: false });
+  useEffect(() => onSnapshot(
+    doc(db, 'site', 'giveaway'),
+    snap => setState({ data: { ...DEFAULT_GIVEAWAY, ...(snap.data() as Partial<Giveaway> | undefined) }, loading: false, error: null, saved: snap.exists() }),
     error => setState(s => ({ ...s, loading: false, error })),
   ), []);
   return state;

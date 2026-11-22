@@ -225,6 +225,9 @@
 
 
 <!-- HERO: a slideshow of the house pieces (first slide stands alone without scripting) -->
+<!-- Promotion banner (Admin > Promotions) and giveaway countdown (Admin > Website > Giveaway), drawn by assets/js/promo.js -->
+<div data-promo-slot="home"></div>
+
 <section class="hero" id="hero" aria-roledescription="carousel" aria-label="AXIA pieces">
   <h1 class="sr-only">AXIA: moissanite jewellery in 925 sterling silver</h1>
   <div class="hero__grid">
@@ -279,6 +282,8 @@
 </section>
 
 <!-- POSITIONING -->
+<div data-giveaway-slot data-giveaway-link="first-drop#register"></div>
+
 <section class="section stake" id="stake">
   <div class="stake__glow" id="stakeGlow"></div>
   <div class="stake__in container">
@@ -416,8 +421,8 @@
   hero.addEventListener('focusout',function(e){ if(!hero.contains(e.relatedTarget)) play(); });
 })();
 </script>
-<script src="assets/js/catalogue.js?v=20261116f"></script>
-<script type="text/axia-deferred" src="assets/js/axia.js?v=20261116f"></script>
+<script src="assets/js/catalogue.js?v=20261122a"></script>
+<script type="text/axia-deferred" src="assets/js/axia.js?v=20261122a"></script>
 <script type="text/axia-deferred">
 (function(){
   const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
@@ -426,7 +431,7 @@
   function card(p){ if(!p) return '';
     const deal=false; // no strikethrough "was" prices (ACL: nothing has sold at a higher price)
     const was='';
-    const price=p.hidden?'Coming soon':AXIA_SALE.html(p.fromPriceAUD,p.singlePrice?'':'From ');
+    const price=p.hidden?'Coming soon':AXIA_SALE.html(p.fromPriceAUD,p.singlePrice?'':'From ',p);
     const gen=p.art==='tennis'?'tennis':p.art==='cross'?'cross':p.art==='cubanBracelet'?'cubanBracelet':'cuban';
     const vb=p.art==='cross'?'0 0 300 430':'0 0 1000 620';
     const meta=(p.col&&p.col.length>1)?p.col.join(' / '):'925 silver';

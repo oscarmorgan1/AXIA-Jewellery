@@ -187,17 +187,19 @@
   if(!cart.length){ $('#coEmpty').hidden=false; return; }
   $('#coWrap').hidden=false;
 
-  // The store discount, if one is running: the bag keeps original prices and the server takes
-  // the discount off at checkout, so the summary shows the same sale prices (assets/js/catalogue.js AXIA_SALE).
-  let salePct=0;
-  try{ const r=await fetch('/api/catalogue'); const d=r.ok&&(await r.json()).site.discount; if(d&&d.pct>0&&(!d.endsAt||Date.parse(d.endsAt)>Date.now())) salePct=d.pct; }catch(e){}
-  const sale=n=>salePct?Math.round(n*(100-salePct)/100):n;
-  const subtotal=cart.reduce((a,i)=>a+sale(i.price)*(i.q||1),0);
+  // Promotions: the bag keeps original prices and the server takes any running promotion off at
+  // checkout. The summary asks the server for the same prices (POST /api/checkout/quote), so what
+  // it shows is what Stripe will charge. If that can't be reached it shows the bag's prices.
+  const bagItems=()=>cart.map(i=>({id:i.id,width:i.width,length:i.length,colour:i.colour,engraving:i.engraving,q:i.q||1,...(i.parts?{parts:i.parts}:{})}));
+  let quote=null;
+  try{ const r=await fetch('/api/checkout/quote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:bagItems()})}); if(r.ok){ const q=await r.json(); if(q&&Array.isArray(q.lines)&&q.lines.length===cart.length) quote=q.lines; } }catch(e){}
+  const unit=(i,k)=>quote?quote[k].priceAUD:i.price;
+  const subtotal=cart.reduce((a,i,k)=>a+unit(i,k)*(i.q||1),0);
   let giftLen=''; try{ giftLen=localStorage.getItem('axia_gift_len')||''; }catch(e){}
-  $('#coItems').innerHTML=cart.map(it=>
+  $('#coItems').innerHTML=cart.map((it,k)=>
     '<div class="ci"><div class="ci__m">'+thumb(it)+((it.q||1)>1?'<span class="ci__q">'+it.q+'</span>':'')+'</div>'+
     '<div class="ci__t"><div class="ci__n">'+esc(it.name)+'</div>'+(it.opt?'<div class="ci__o">'+esc(it.opt)+'</div>':'')+'</div>'+
-    '<div class="ci__p">'+(salePct?'<s class="price-was">'+fmtA(it.price*(it.q||1))+'</s> ':'')+fmtA(sale(it.price)*(it.q||1))+'</div></div>').join('')+
+    '<div class="ci__p">'+(unit(it,k)<it.price?'<s class="price-was">'+fmtA(it.price*(it.q||1))+'</s> ':'')+fmtA(unit(it,k)*(it.q||1))+'</div></div>').join('')+
     // Free gift over A$999, matching the bag drawer. The server checks this again.
     (subtotal>999?'<div class="ci"><div class="ci__m"><img src="assets/img/products/tennis-bracelet-4mm/1.jpg" alt="" loading="lazy"></div><div class="ci__t"><div class="ci__n">Classic Tennis Bracelet</div><div class="ci__o">'+(giftLen?esc(giftLen)+' · ':'')+'Free with orders over A$999</div><span class="ci__gift">Free gift</span></div><div class="ci__p">Free</div></div>':'');
   $('#sumSub').textContent=fmtA(subtotal);
@@ -207,7 +209,7 @@
     const btn=$('#payBtn'), err=$('#coErr');
     btn.disabled=true; btn.textContent='Opening secure payment…'; err.textContent='';
     try{
-      const items=cart.map(i=>({id:i.id,width:i.width,length:i.length,colour:i.colour,engraving:i.engraving,q:i.q||1,...(i.parts?{parts:i.parts}:{})}));
+      const items=bagItems();
       const r=await fetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items,giftLength:giftLen})});
       const d=await r.json().catch(()=>({}));
       if(!r.ok||!d.url) throw new Error(d.error||'Something went wrong starting checkout. Please try again.');

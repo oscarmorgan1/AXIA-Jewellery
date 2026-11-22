@@ -424,6 +424,7 @@ export default function OrderDetail() {
             <div className="card__head"><h2>Payment</h2></div>
             <dl className="kv">
               <dt>Promo code</dt><dd>{order.promotionCode || '–'}</dd>
+              {order.promotions && <><dt>Promotion</dt><dd>{order.promotions}{order.storeDiscountPct ? ` (up to ${order.storeDiscountPct}% off)` : ''}</dd></>}
               <dt>Mode</dt><dd>{test ? 'Test' : 'Live'}</dd>
               <dt>Payment</dt><dd>{stripeUrl ? <a href={stripeUrl} target="_blank" rel="noreferrer">{order.stripe!.paymentIntent!.slice(0, 14)}…</a> : '–'}</dd>
             </dl>

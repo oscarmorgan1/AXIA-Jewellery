@@ -27,7 +27,7 @@
 (function () {
   'use strict';
   var FALLBACK = 'assets/data/products.js?v=20261108a';
-  var CACHE_KEY = 'axia_catalogue_v5', CACHE_TTL = 60 * 1000, TIMEOUT = 9000;
+  var CACHE_KEY = 'axia_catalogue_v6', CACHE_TTL = 60 * 1000, TIMEOUT = 9000;
 
   /* ?catalogue=static forces the bundled snapshot; anything else asks the server. */
   var source = new URLSearchParams(location.search).get('catalogue') === 'static' ? 'static' : 'live';
@@ -75,7 +75,7 @@
       var list = tidy(j.products || []);
       if (!list.length) throw new Error('Catalogue is empty');
       var s = j.site || {};
-      return { p: list, c: tidyCollections(j.collections), s: { countdown: s.countdown || null, shop: s.shop || null, discount: s.discount || null }, m: j.merged || {} };
+      return { p: list, c: tidyCollections(j.collections), s: { countdown: s.countdown || null, shop: s.shop || null, discount: s.discount || null, promotions: Array.isArray(s.promotions) ? s.promotions : null, giveaway: s.giveaway || null }, m: j.merged || {} };
     });
   }
 
@@ -333,25 +333,73 @@
     return null;
   };
 
-  /* The store discount (admin: Website > Store discount), published in site.discount while it runs.
-     AXIA_SALE.price(n) takes it off a price to the whole dollar, exactly as the server does at
-     checkout (server/variants.js salePrice); AXIA_SALE.html(n, 'From ') is the shown price, with
-     the original crossed out while a discount runs. Bag lines keep the original price. */
+  /* Promotions (admin: Promotions), published in site.promotions while they run (the older
+     single store discount, site.discount, arrives as one of them). Each covers every piece,
+     some collections or some products, optionally only pieces priced at or under an amount;
+     the biggest one covering a piece wins. Prices in the catalogue are never changed: the sale
+     price is worked out from the current price, to the whole dollar, exactly as the server does
+     at checkout (server/promotions.js, server/variants.js salePrice).
+       AXIA_SALE.pct(p, n)          the % off product p at price n (0 when none)
+       AXIA_SALE.price(n, p)        price n of product p after its promotion
+       AXIA_SALE.html(n, prefix, p) the shown price, the original crossed out during a promotion
+     p is a product (or its id). Without it only promotions covering every piece count.
+     Bag lines keep the original price. */
   var fmtSale = function (n) { return 'A$' + Number(n).toLocaleString('en-AU'); };
+  function salePromos() {
+    var s = window.AXIA_SITE || {}, list = Array.isArray(s.promotions) ? s.promotions.slice() : [];
+    var d = s.discount;
+    // an older server (or a cached catalogue) with only the store discount
+    if (!Array.isArray(s.promotions) && d && d.pct > 0) list.push({ id: 'store-discount', name: 'Store discount', pct: d.pct, scope: 'all', endsAt: d.endsAt || '', allowPromos: d.allowPromos !== false });
+    var now = Date.now();
+    return list.filter(function (x) { return x && x.pct >= 1 && x.pct <= 90 && !(x.endsAt && !(Date.parse(x.endsAt) > now)); });
+  }
+  function saleFor(p, n) {
+    if (typeof p === 'string') p = window.AXIA_VIEW ? window.AXIA_VIEW(p) : null;
+    var best = null, list = salePromos();
+    for (var i = 0; i < list.length; i++) {
+      var x = list[i], ok;
+      if (x.maxPriceAUD && n > x.maxPriceAUD) continue;
+      if (x.scope === 'all') ok = true;
+      else if (!p) ok = false;
+      else if (x.scope === 'products') ok = (x.productIds || []).indexOf(p.id) >= 0;
+      else if (x.scope === 'collections') ok = (p.coll || []).some(function (c) { return (x.collections || []).indexOf(c) >= 0; });
+      if (ok && (!best || x.pct > best.pct)) best = x;
+    }
+    return best;
+  }
   window.AXIA_SALE = {
-    pct: function () {
-      var d = window.AXIA_SITE && window.AXIA_SITE.discount;
-      if (!d || !(d.pct > 0)) return 0;
-      if (d.endsAt && !(Date.parse(d.endsAt) > Date.now())) return 0;
-      return d.pct;
+    promos: salePromos,
+    for: saleFor,
+    pct: function (p, n) {
+      // older calls: AXIA_SALE.pct() with no product
+      var x = saleFor(p, n == null ? 0 : n);
+      return x ? x.pct : 0;
     },
-    price: function (n) { var p = window.AXIA_SALE.pct(); return p ? Math.round(n * (100 - p) / 100) : n; },
-    html: function (n, prefix) {
+    price: function (n, p) { var x = saleFor(p, n); return x && n > 0 ? Math.round(n * (100 - x.pct) / 100) : n; },
+    html: function (n, prefix, p) {
       prefix = prefix || '';
-      if (!window.AXIA_SALE.pct() || !(n > 0)) return prefix + fmtSale(n);
-      return prefix + '<s class="price-was">' + fmtSale(n) + '</s> ' + fmtSale(window.AXIA_SALE.price(n));
+      var x = n > 0 && saleFor(p, n);
+      if (!x) return prefix + fmtSale(n);
+      return prefix + '<s class="price-was">' + fmtSale(n) + '</s> ' + fmtSale(Math.round(n * (100 - x.pct) / 100));
     },
   };
+
+  /* Promotion banners and the giveaway countdown (assets/js/promo.js), fetched only when
+     there's something to show: a running promotion with a banner, or a giveaway end date. */
+  function loadPromo() {
+    try {
+      var s = window.AXIA_SITE || {}, g = s.giveaway;
+      var want = window.AXIA_SALE.promos().some(function (p) { return p.banner && (p.banner.show || p.banner.strip); })
+        || (g && g.show !== false && g.endsAt && document.querySelector('[data-giveaway-slot]'));
+      if (!want || document.querySelector('script[data-promo]')) return;
+      var v = '20261122a', l = document.createElement('link');
+      l.rel = 'stylesheet'; l.href = 'assets/css/promo.css?v=' + v;
+      document.head.appendChild(l);
+      var sc = document.createElement('script');
+      sc.src = 'assets/js/promo.js?v=' + v; sc.async = true; sc.setAttribute('data-promo', '');
+      document.head.appendChild(sc);
+    } catch (e) {}
+  }
 
   window.AXIA_SOURCE = source;
   window.AXIA_READY = Promise.all([catalogue, domReady]).then(function (r) {
@@ -362,6 +410,7 @@
     window.AXIA_MERGED = r[0].m || {};
     return runDeferred();
   }).then(function () {
+    loadPromo();
     document.dispatchEvent(new CustomEvent('axia:catalogue', { detail: { products: window.AXIA_PRODUCTS, collections: window.AXIA_COLLECTIONS, source: source } }));
     return window.AXIA_PRODUCTS;
   });

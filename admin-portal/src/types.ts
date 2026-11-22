@@ -161,6 +161,9 @@ export interface Order {
   subtotalAUD?: number;
   discountAUD?: number;
   promotionCode?: string;
+  /** Promotions taken off at checkout (names), and the biggest % among them. */
+  promotions?: string;
+  storeDiscountPct?: number;
   promotionCodeId?: string;
   totalAUD?: number;
   status?: 'pending' | 'paid' | 'in_progress' | 'shipped' | 'fulfilled' | 'in_return' | 'refunded' | 'cancelled' | string;
@@ -457,5 +460,55 @@ export interface StoreDiscount {
   endsAt: string;
   /** Whether promo codes still work on top of it at checkout. */
   allowPromos: boolean;
+  updatedAt?: { toDate(): Date };
+}
+
+/** The colour themes a promotion banner can use. Same names as assets/css/promo.css on the storefront. */
+export type PromoTheme = 'obsidian' | 'ice' | 'bone' | 'magenta' | 'rose' | 'gold' | 'emerald';
+
+/**
+ * One promotion in site/promotions ({ items: Promotion[] }), edited under Promotions.
+ * Prices in products/ are never changed: the storefront and checkout work the sale price out
+ * from the current price (server/promotions.js), so editing a price moves its sale price too.
+ */
+export interface Promotion {
+  id: string;
+  name: string;
+  on: boolean;
+  /** Percent off, 1 to 90. Prices round to the whole dollar. */
+  pct: number;
+  scope: 'all' | 'collections' | 'products';
+  productIds: string[];
+  collections: string[];
+  /** Only pieces priced at or under this (before the discount). null for any price. */
+  maxPriceAUD: number | null;
+  /** ISO times; '' starts now / runs until switched off. */
+  startsAt: string;
+  endsAt: string;
+  /** Whether promo codes still work on top at checkout. */
+  allowPromos: boolean;
+  banner: {
+    /** The banner on the home page. */
+    show: boolean;
+    /** A slim bar across the top of the shop pages. */
+    strip: boolean;
+    style: 'theme' | 'photo';
+    theme: PromoTheme;
+    image: string;
+    eyebrow: string;
+    headline: string;
+    text: string;
+    ctaLabel: string;
+    ctaHref: string;
+    showCountdown: boolean;
+  };
+}
+
+/** site/giveaway: when the AXIA Giveaway closes, counted down on the giveaway and home pages. */
+export interface Giveaway {
+  endsAt: string;
+  show: boolean;
+  label: string;
+  endedText: string;
   updatedAt?: { toDate(): Date };
 }

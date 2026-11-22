@@ -14,6 +14,7 @@ const Margins = lazy(() => import('./pages/Margins'));
 const Orders = lazy(() => import('./pages/Orders'));
 const OrderDetail = lazy(() => import('./pages/OrderDetail'));
 const Promos = lazy(() => import('./pages/Promos'));
+const Promotions = lazy(() => import('./pages/Promotions'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Collections = lazy(() => import('./pages/Collections'));
 const Customers = lazy(() => import('./pages/Customers'));
@@ -71,6 +72,7 @@ export default function App() {
         <Route path="returns" element={<Returns />} />
         <Route path="returns/:id" element={<ReturnDetail />} />
         <Route path="promos" element={<Promos />} />
+        <Route path="promotions" element={<Promotions />} />
         <Route path="marketing" element={<Marketing />} />
         <Route path="marketing/:id" element={<Campaign />} />
         <Route path="website" element={<Website />} />
