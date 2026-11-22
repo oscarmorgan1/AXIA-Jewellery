@@ -285,6 +285,14 @@ export default function ProductEdit() {
                         ))}
                       </details>
                     )}
+                    <details className="width-block__photos" open={!!w.video}>
+                      <summary>Video for {w.width || 'this width'}{w.video ? '' : (draft.video && !draft.widths!.some(x => x.video === draft.video) ? ' (not set, shows the product video below)' : ' (not set)')}</summary>
+                      <div style={{ marginTop: 14 }}>
+                        <ProductVideo productId={id} width={w.width} video={w.video} poster={w.videoPoster} onError={setError}
+                          help={`Shown on the product page while ${w.width || 'this width'} is picked, as the last thumbnail. Converted to a small 720p file with no sound, at most 30 seconds.`}
+                          onChange={v => setWidth(i, v)} />
+                      </div>
+                    </details>
                     <div className="width-block__foot">
                       <button type="button" className="btn btn--sm btn--danger" onClick={() => set({ widths: draft.widths!.filter((_, k) => k !== i) })}><Trash2 size={14} /> Remove width</button>
                     </div>
@@ -331,8 +339,8 @@ export default function ProductEdit() {
           </div>
 
           <div className="card">
-            <div className="card__head"><div><h2>Video</h2></div></div>
-            <ProductVideo productId={id} video={draft.video} poster={draft.videoPoster} onError={setError} onChange={v => set(v)} />
+            <div className="card__head"><div><h2>Video</h2>{draft.widths?.length ? <div className="card__sub">Each width can have its own video (under Pricing, in its width). This one shows on widths without one.</div> : null}</div></div>
+            <ProductVideo productId={id} video={draft.video} poster={draft.videoPoster} onError={setError} onChange={v => set({ video: v.video ?? undefined, videoPoster: v.videoPoster ?? undefined })} />
           </div>
 
           <details className="card">

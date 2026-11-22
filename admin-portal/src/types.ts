@@ -12,6 +12,9 @@ export interface WidthOption {
   imagesByColor?: Record<string, string[]>;
   /** The colours this width is made in, when not every colour of the product (e.g. 5mm in Silver only). */
   col?: string[];
+  /** This width's product page video (null once removed, so an older merged product's video doesn't come back). */
+  video?: string | null;
+  videoPoster?: string | null;
   /** Coming soon: shown on the product page, can't be bought yet. */
   hidden?: boolean;
   fromPriceAUD?: number;
