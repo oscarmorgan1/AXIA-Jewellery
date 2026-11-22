@@ -652,18 +652,30 @@
   function fillArt(el){ if(!el)return; const a=p.art; if(a==='none')return; if(a==='tennis')window.AXIA_art.tennis(el); else if(a==='cross')window.AXIA_art.cross(el); else if(a==='cubanBracelet')window.AXIA_art.drape(el,{yTop:170,yBot:470,w:52,h:40,n:22,iced:true}); else window.AXIA_art.drape(el,{yTop:170,yBot:470,w:76,h:58,n:16,iced:true}); }
   // a width-select product only has real photos if every width supplies an image; otherwise it falls back
   // to the generated SVG art (the width chips still change price/length, just no photo swap)
-  const widthPhotos = !!(WIDTHS && WIDTHS.every(w=>w.image));
-  const hasImgs = widthPhotos || (Array.isArray(p.images) && p.images.length>0);
+  // (a width with no photo of its own, such as one just added in the admin, shows the product's photos
+  // instead, so one missing photo no longer stops every other width from switching)
+  const widthPhotos = !!(WIDTHS && WIDTHS.some(w=>w.image||(w.images&&w.images.length)));
+  // A set whose pieces come in several widths shows each piece in the width picked (o.image from
+  // server/public-catalogue.js), then any of the set's own photos that aren't one of those width shots.
+  const setWidthPhotos = !!(SET && setPickers.length && setPickers.every(i=>(SET.components[i].options||[]).every(o=>o.image)));
+  const setImgs=()=>{
+    const shots=SET.components.map((c,i)=>(c.pickWidth&&compOpt(i).image)||'').filter(Boolean);
+    const widthShots=new Set(); SET.components.forEach(c=>(c.options||[]).forEach(o=>{ if(o.image) widthShots.add(o.image); }));
+    const own=(p.images||[]).filter(src=>!widthShots.has(src));
+    return [...new Set(shots.concat(own))];
+  };
+  const hasImgs = widthPhotos || setWidthPhotos || (Array.isArray(p.images) && p.images.length>0);
   // photo set follows the selected width (each width its own shot + shared size guide), else the colourway
   // A width's photos in the picked colour (w.imagesByColor) when it comes in more than one colour,
   // else that width's own photos. A one-colour width (the tennis pieces) always uses its own photos,
   // so switching width always changes the photos even if colour photos were copied onto it.
-  const widthImgs=w=>{ const many=(Array.isArray(w.col)&&w.col.length?w.col:(p.col||[])).length>1; const c=many&&w.imagesByColor&&w.imagesByColor[colour]; return (c&&c.length)?c:((w.images&&w.images.length)?w.images:[w.image]); };
+  const widthImgs=w=>{ const many=(Array.isArray(w.col)&&w.col.length?w.col:(p.col||[])).length>1; const c=many&&w.imagesByColor&&w.imagesByColor[colour]; const own=(c&&c.length)?c:((w.images&&w.images.length)?w.images:[w.image]).filter(Boolean); if(own.length) return own; const lead=WIDTHS.find(x=>x.image||(x.images&&x.images.length)); return (p.images&&p.images.length)?p.images:(lead.images&&lead.images.length?lead.images:[lead.image]); };
   const colourPhotos=!!(p.imagesByColor || (WIDTHS && WIDTHS.some(w=>w.imagesByColor)));
-  const curImages=()=> widthPhotos ? widthImgs(WIDTHS[wi]).concat(p.sizingImage?[p.sizingImage]:[]) : ((p.imagesByColor && p.imagesByColor[colour]) || p.images || []);
+  const curImages=()=> setWidthPhotos ? setImgs() : widthPhotos ? widthImgs(WIDTHS[wi]).concat(p.sizingImage?[p.sizingImage]:[]) : ((p.imagesByColor && p.imagesByColor[colour]) || p.images || []);
   // preload EVERY variant up front so switching colour/width is instant (no load flash on the heavier shots)
+  if(setWidthPhotos){ SET.components.forEach(c=>(c.options||[]).forEach(o=>{ if(o.image){ const im=new Image(); im.src=AXIA_IMG.url(o.image); } })); }
   if(p.imagesByColor){ Object.values(p.imagesByColor).forEach(arr=>arr.forEach(src=>{ const im=new Image(); im.src=AXIA_IMG.url(src); })); }
-  if(widthPhotos){ WIDTHS.forEach(w=>{ const im=new Image(); im.src=AXIA_IMG.url(w.image); Object.values(w.imagesByColor||{}).forEach(a=>(a||[]).slice(0,1).forEach(src=>{ const c=new Image(); c.src=AXIA_IMG.url(src); })); }); if(p.sizingImage){ const im=new Image(); im.src=p.sizingImage; } }
+  if(widthPhotos){ WIDTHS.forEach(w=>{ if(w.image){ const im=new Image(); im.src=AXIA_IMG.url(w.image); } Object.values(w.imagesByColor||{}).forEach(a=>(a||[]).slice(0,1).forEach(src=>{ const c=new Image(); c.src=AXIA_IMG.url(src); })); }); if(p.sizingImage){ const im=new Image(); im.src=p.sizingImage; } }
   // recolour the gallery in place (swap srcs, keep DOM + current shot) with a quick crossfade,
   // instead of tearing down and rebuilding - that rebuild is what made colours 1 & 3 pop/flicker
   function recolorGallery(){
@@ -948,7 +960,10 @@
       if(c.dataset.sw!==undefined) setPickers.forEach(k=>{ setParts[k].w=c.dataset.sw; });
       else if(c.dataset.cw!==undefined&&i>=0) setParts[i].w=c.dataset.cw;
       else if(c.dataset.cl!==undefined&&i>=0) setParts[i].l=c.dataset.cl;
-      fixLens(); $('#optWrap').innerHTML=optHTML(); sync(); return;
+      fixLens(); $('#optWrap').innerHTML=optHTML(); sync();
+      // the photos follow the width picked for each piece
+      if(setWidthPhotos&&(c.dataset.sw!==undefined||c.dataset.cw!==undefined)){ if($('#mainImg')) recolorGallery(); else renderArt(); }
+      return;
     }
     const g=c.closest('[data-opt-group]'); const key=g.dataset.optGroup;
     $$('.chip',g).forEach(x=>x.classList.remove('is-active')); c.classList.add('is-active');

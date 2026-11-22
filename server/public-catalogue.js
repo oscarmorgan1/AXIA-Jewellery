@@ -51,6 +51,8 @@ function publicSet(p, product) {
         singlePrice: !!cp.singlePrice,
         options: ws.map(w => ({
           width: many ? w.width : null,
+          // that width's own photo, so the set page can show the size the buyer picks
+          image: (w.images && w.images[0]) || w.image || '',
           lengths: (w.variants || []).filter(v => v && v.priceAUD > 0 && !v.hidden && (!c.length || v.length === c.length))
             .map(v => ({ length: v.length == null ? null : v.length, priceAUD: v.priceAUD })),
         })).filter(o => o.lengths.length),
