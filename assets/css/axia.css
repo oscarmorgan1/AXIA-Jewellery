@@ -410,8 +410,8 @@ html:has(body.promo-open){overflow:clip}
 [data-cart-close],[data-menu-close]{min-width:44px;min-height:44px;display:inline-grid;place-items:center}
 .link-u{padding-top:4px}
 body.chrome-dark{--focus:var(--ice)}
-.nav__icon--account.is-in::after{content:"";position:absolute;top:9px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--ice-ink,#2A6076);box-shadow:0 0 0 2px var(--bone,#F4F1EA)}
-body.chrome-dark .nav__icon--account.is-in::after{background:var(--ice,#C7EAF7);box-shadow:0 0 0 2px var(--obsidian,#111315)}
+.nav__icon--account.is-in::after{content:"";position:absolute;top:9px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--ice-ink);box-shadow:0 0 0 2px var(--bone)}
+body.chrome-dark .nav__icon--account.is-in::after{background:var(--ice);box-shadow:0 0 0 2px var(--obsidian)}
 
 /* Store discount: the original price, crossed out, before the sale price (AXIA_SALE.html). */
 .price-was{font-weight:400;color:var(--ink-tertiary);text-decoration:line-through;margin-right:.35em}
