@@ -114,12 +114,13 @@ async function publish(local, dest, contentType) {
 /**
  * Turns an uploaded original into the slot's new video. Site films are saved to
  * site/media; a product video (slot 'product') gets one 720p MP4 and a poster
- * under products/{productId}/, returned for the portal to save on the product.
+ * under products/{productId}/, saved on the product (or on one of its widths,
+ * `width`) and returned to the portal.
  * A review video (slot 'review') is the same 720p MP4 but keeps its sound and
  * runs up to a minute; it's added to the shared list in the public
  * `site/reviews` document, which every product page shows.
  */
-export async function processVideo({ slot, path: uploaded, by, productId }) {
+export async function processVideo({ slot, path: uploaded, by, productId, width }) {
   const product = PER_PRODUCT.includes(slot);
   if (!MEDIA_SLOTS.includes(slot) && !product && slot !== 'review') throw Object.assign(new Error('Unknown video slot'), { status: 400 });
   if (product && !PRODUCT_ID.test(productId || '')) throw Object.assign(new Error('Save the product with a name first'), { status: 400 });
@@ -165,8 +166,16 @@ export async function processVideo({ slot, path: uploaded, by, productId }) {
       // Saved on the product straight away (if it exists yet), so the video sticks
       // even if the editor is closed before Save.
       const ref = db.collection('products').doc(productId);
+      // With a width (a product sold in several widths), it's that width's video.
       const saved = await db.runTransaction(async tx => {
-        if (!(await tx.get(ref)).exists) return false;
+        const snap = await tx.get(ref);
+        if (!snap.exists) return false;
+        if (width) {
+          const widths = snap.get('widths');
+          if (!Array.isArray(widths) || !widths.some(w => w && w.width === width)) return false;
+          tx.update(ref, { widths: widths.map(w => (w && w.width === width ? { ...w, video: sd.url, videoPoster: poster.url } : w)), updatedAt: FieldValue.serverTimestamp() });
+          return true;
+        }
         tx.update(ref, { video: sd.url, videoPoster: poster.url, updatedAt: FieldValue.serverTimestamp() });
         return true;
       });

@@ -286,8 +286,8 @@
 </div>
 <div class="toast" id="toast"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
 
-<script src="assets/js/catalogue.js?v=20261122a"></script>
-<script type="text/axia-deferred" src="assets/js/axia.js?v=20261122a"></script>
+<script src="assets/js/catalogue.js?v=20261122c"></script>
+<script type="text/axia-deferred" src="assets/js/axia.js?v=20261122c"></script>
 <script type="text/axia-deferred">
 (function(){
   const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
@@ -321,8 +321,11 @@
   })();
 
   /* ---- Populate preferred product (grouped) + dependent size/length ---- */
-  const group=p=> p.coll.includes('titans')?'The Titans': p.coll.includes('pendants')?'Pendants': p.coll.includes('tennis')?'Tennis':'Cuban';
-  const order=['Cuban','Tennis','Pendants','The Titans'];
+  // collections made in the portal (Rings, Earrings, ...) get their own group after the original four
+  const EXTRA=(window.AXIA_COLLECTIONS||[]).filter(c=>c.showInShop&&!['sets','cuban','tennis','pendants','titans'].includes(c.slug));
+  const group=p=>{ const c=p.coll||[]; if(c.includes('titans'))return 'The Titans'; if(c.includes('pendants'))return 'Pendants'; if(c.includes('tennis'))return 'Tennis'; if(c.includes('cuban'))return 'Cuban';
+    const x=EXTRA.find(e=>c.includes(e.slug)); return x?(x.tab||x.name):'Cuban'; };
+  const order=['Cuban','Tennis','Pendants','The Titans'].concat(EXTRA.map(e=>e.tab||e.name));
   const sel=$('#pp'), sizeSel=$('#ps');
   order.forEach(g=>{
     const items=P.filter(p=>!p.hidden && !p.linkTo && !p.bundle && group(p)===g); if(!items.length) return;

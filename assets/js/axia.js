@@ -126,6 +126,39 @@
   $$('[data-menu]').forEach(b => b.onclick = () => { mm.classList.add('on'); document.documentElement.style.overflow = 'hidden'; });
   $$('[data-menu-close]').forEach(b => b.onclick = () => { mm.classList.remove('on'); document.documentElement.style.overflow = ''; });
 
+  /* ---- Shop links in the menu and footer: add collections made in the portal ----
+     The Cuban, Tennis, Pendants and The Titans are written into each page.
+     Any other collection marked "In shop" (Rings, Earrings, ...) is added
+     after them, so a new category shows up without editing every page. */
+  (function addCollectionLinks() {
+    const cols = (window.AXIA_COLLECTIONS || []).filter(c => c && c.showInShop && c.slug !== 'sets');
+    if (!cols.length || !window.AXIA_COLL_HREF) return;
+    const norm = v => String(v || '').trim().toLowerCase();
+    const dec = v => { try { return decodeURIComponent(v); } catch (e) { return v; } };
+    const linked = (links, c) => links.some(a => {
+      const h = a.getAttribute('href') || '', t = norm(a.textContent);
+      const q = norm(dec((h.split('cat=')[1] || '').split('&')[0]));
+      return h === c.slug || (q && (q === norm(c.slug) || q === norm(c.name) || q === norm(c.tab)))
+        || t === norm(c.name) || (c.tab && t === norm(c.tab));
+    });
+    const add = (box, before, inMenu) => {
+      const links = $$('a', box);
+      cols.forEach(c => {
+        if (linked(links, c)) return;
+        const a = document.createElement('a');
+        a.href = AXIA_COLL_HREF(c); a.textContent = c.tab || c.name;
+        if (inMenu) a.setAttribute('data-menu-close', '');
+        box.insertBefore(a, before || null);
+        links.push(a);
+      });
+    };
+    $$('.mm__cats').forEach(box => add(box, $$('a', box).find(a => /sort=/.test(a.getAttribute('href') || '')), true));
+    $$('footer h5').filter(h => norm(h.textContent) === 'shop').forEach(h => {
+      const box = h.parentElement;
+      add(box, $$('a', box).find(a => (a.getAttribute('href') || '') === 'collection'), false);
+    });
+  })();
+
   /* ---- Width/size chips ---- */
   $$('[data-chips]').forEach(row => row.addEventListener('click', e => {
     const c = e.target.closest('.chip'); if (!c) return;
@@ -238,7 +271,9 @@
     || null;
   const buildSearchIndex = () => {
     const P = (window.AXIA_PRODUCTS || []).filter(p => !p.hidden);
+    const COLL_NAMES = Object.fromEntries((window.AXIA_COLLECTIONS || []).map(c => [c.slug, c.name]));
     const catName = p => (p.coll && p.coll.includes('titans')) ? 'Titan'
+      : window.AXIA_TYPE ? window.AXIA_TYPE(p).label
       : p.cat === 'bracelet' ? 'Bracelet' : p.cat === 'pendant' ? 'Pendant' : 'Chain';
     const pages = [
       { n: 'The Cuban', m: 'The signature collection', h: 'cuban', kw: 'cuban chain bracelet signature', img: 'assets/img/products/micro-pave-cuban-chain-15mm/1.jpg' },
@@ -249,11 +284,15 @@
       n: p.name + (p.width ? ', ' + p.width : ''),
       m: [catName(p), (p.singlePrice ? '' : 'From ') + fmtASearch(sale(p.fromPriceAUD, p))].join(' · '),
       h: p.linkTo || ('product?id=' + p.id),
-      art: p.art || 'cuban',
+      art: p.art === 'none' ? null : (p.art || 'cuban'),
       img: firstPhoto(p),
-      kw: [p.name, p.width, p.cat, p.cons, (p.col || []).join(' '), (p.coll || []).join(' ')].join(' ').toLowerCase()
+      kw: [p.name, p.width, p.cat, p.cons, (p.col || []).join(' '), (p.coll || []).join(' '), (p.coll || []).map(s => (COLL_NAMES[s] || '')).join(' ')].join(' ').toLowerCase()
     }));
-    return pages.concat(items);
+    // collections added in the portal (Rings, Earrings, ...) are searchable as pages too
+    const known = new Set(['sets', 'cuban', 'titans']);
+    const extra = (window.AXIA_COLLECTIONS || []).filter(c => c.showInShop && !known.has(c.slug))
+      .map(c => ({ n: c.name, m: c.intro || 'Collection', h: window.AXIA_COLL_HREF ? AXIA_COLL_HREF(c) : 'collection?cat=' + encodeURIComponent(c.slug), kw: [c.name, c.tab || '', c.slug].join(' ').toLowerCase(), img: c.image || null }));
+    return pages.concat(extra, items);
   };
   let SEARCH_INDEX = buildSearchIndex();
   const srch = document.createElement('div');

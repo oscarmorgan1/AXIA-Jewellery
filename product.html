@@ -461,8 +461,8 @@
   <symbol id="boxArt" viewBox="0 0 400 320"><path d="M70 140 L130 84 L360 84 L300 140 Z" fill="#242220" stroke="#3a3733" stroke-width="1.5"/><path d="M300 140 L360 84 L360 232 L300 288 Z" fill="#181614" stroke="#3a3733" stroke-width="1.5"/><rect x="70" y="140" width="230" height="148" rx="4" fill="#1f1d1b" stroke="#3a3733" stroke-width="1.5"/><text x="185" y="220" text-anchor="middle" font-family="Bodoni Moda,serif" font-size="24" letter-spacing="7" fill="#F4F1EA">AXIA</text><path d="M300 200 L300 288" stroke="#F3436E" stroke-width="8"/></symbol>
 </svg>
 
-<script src="assets/js/catalogue.js?v=20261122a"></script>
-<script type="text/axia-deferred" src="assets/js/axia.js?v=20261122a"></script>
+<script src="assets/js/catalogue.js?v=20261122c"></script>
+<script type="text/axia-deferred" src="assets/js/axia.js?v=20261122c"></script>
 <script type="text/axia-deferred">
 (function(){
   const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
@@ -482,7 +482,13 @@
   /* The Titans are not released yet - never show a titan as a buyable product; send to the gated page. */
   if(p.titan||(p.coll&&p.coll.includes('titans'))){ location.replace('titans'); return; }
   const CONS={classic:'Classic',prong:'Moonrock','flat':'Two-Row Flat','micro-pave':'Micro Pav\u00e9',baguette:'Baguette','cross-link':'Cross-Link','fire-bezel':'Fire Bezel','fancy-cut':'Fancy Cut',marquise:'Marquise','cross-clasp':'Cross Clasp'};
-  function eyebrow(){ if(p.coll.includes('titans'))return 'The Titans'; if(p.coll.includes('pendants'))return 'Pendant'; if(p.coll.includes('tennis'))return p.cat==='chain'?'Tennis \u00b7 Chain':'Tennis \u00b7 Bracelet'; return 'The Cuban'+(p.cons?(' \u00b7 '+(CONS[p.cons]||'')):''); }
+  const TYPE=window.AXIA_TYPE?AXIA_TYPE(p):{key:p.cat||'chain',label:'Chain',size:'Length',sizes:'Available lengths',known:true};
+  const LENGTH_TYPES=['chain','bracelet','pendant','necklace'];
+  function eyebrow(){ const c=p.coll||[]; if(c.includes('titans'))return 'The Titans'; if(c.includes('pendants'))return 'Pendant'; if(c.includes('tennis'))return p.cat==='chain'?'Tennis \u00b7 Chain':'Tennis \u00b7 Bracelet'; if(c.includes('cuban')||(!c.length&&LENGTH_TYPES.includes(TYPE.key)))return 'The Cuban'+(p.cons?(' \u00b7 '+(CONS[p.cons]||'')):'');
+    // a collection made in the portal (Rings, Earrings, ...): its name, then the type if it adds something
+    const col=(window.AXIA_COLLECTIONS||[]).find(x=>c.includes(x.slug)&&x.slug!=='sets');
+    const name=col?(col.tab||col.name):TYPE.label;
+    return (!col||name.toLowerCase().indexOf(TYPE.label.toLowerCase().replace(/s$/,''))>=0)?name:name+' \u00b7 '+TYPE.label; }
   let colour=(p.col&&p.col[0])||'Silver';
   let imgIndex=0; // which photo is showing, kept across colour/width switches
   // Width-select: a product with a `widths` array lets the buyer pick width; each width carries its own
@@ -502,7 +508,8 @@
   const setParts=SET?SET.components.map(c=>{
     const opts=c.options||[];
     const want=c.cat==='chain'?'20"':'7"';
-    const o=(c.pickWidth&&opts.find(x=>x.width===(p.defaultWidth||'')))||opts[0]||{lengths:[]};
+    // ?width=10mm (the matching-set link from a 10mm piece) opens the set on that width
+    const o=(c.pickWidth&&WANT_W&&opts.find(x=>x.width===WANT_W))||(c.pickWidth&&opts.find(x=>x.width===(p.defaultWidth||'')))||opts[0]||{lengths:[]};
     const l=c.length||((o.lengths.find(x=>x.length===want)||o.lengths[0]||{}).length)||null;
     return { w:c.pickWidth?(o.width||null):c.width, l };
   }):[];
@@ -615,7 +622,7 @@
       h+='<div class="opt" data-opt-group="colour"><div class="opt__label"><span>Colour</span><span class="val" id="valColour">'+colour+'</span></div><div class="opt__row">'+cols().map(c=>'<button class="chip'+(c===colour?' is-active':'')+'" data-colour="'+c+'">'+c+'</button>').join('')+'</div></div>';
     }
     if(!p.singlePrice&&!soonW()){
-      h+='<div class="opt" data-opt-group="length"><div class="opt__label"><span>'+(p.bundle?'Bracelet size':'Length')+'</span><span class="val" id="valLength">'+variant().length+'</span> <a href="#sizing" data-acc-jump="Sizing guide">Sizing guide</a></div><div class="opt__row">'+variantsList().map((v,i)=>'<button class="chip'+(i===vi?' is-active':'')+'" data-vi="'+i+'">'+v.length+'</button>').join('')+'</div></div>';
+      h+='<div class="opt" data-opt-group="length"><div class="opt__label"><span>'+(p.bundle?'Bracelet size':TYPE.size)+'</span><span class="val" id="valLength">'+variant().length+'</span> <a href="#sizing" data-acc-jump="Sizing guide">Sizing guide</a></div><div class="opt__row">'+variantsList().map((v,i)=>'<button class="chip'+(i===vi?' is-active':'')+'" data-vi="'+i+'">'+v.length+'</button>').join('')+'</div></div>';
     }
     if(canEngrave){
       h+='<div class="opt opt--engrave" data-opt-group="engrave">'
@@ -634,7 +641,7 @@
     rows.push(['Setting','Hand-set, stone by stone']);
     if(widthLabel()) rows.push(['Width',widthLabel()]);
     const lens=(variantsList().length)?[...new Set(variantsList().map(v=>v.length))].join(', '):'';
-    if(lens) rows.push(['Available lengths',lens]);
+    if(lens) rows.push([TYPE.sizes,lens]);
     rows.push(['Colours',cols().join(', ')]);
     rows.push(['Finish','White-gold plated']);
     rows.push(['Passes diamond tester','Yes']);
@@ -642,7 +649,7 @@
     rows.push(['Packaging','Ships in an AXIA box']);
     return rows.map(r=>'<div><span class="k">'+r[0]+'</span><span class="v">'+r[1]+'</span></div>').join('');
   }
-  function fillArt(el){ if(!el)return; const a=p.art; if(a==='tennis')window.AXIA_art.tennis(el); else if(a==='cross')window.AXIA_art.cross(el); else if(a==='cubanBracelet')window.AXIA_art.drape(el,{yTop:170,yBot:470,w:52,h:40,n:22,iced:true}); else window.AXIA_art.drape(el,{yTop:170,yBot:470,w:76,h:58,n:16,iced:true}); }
+  function fillArt(el){ if(!el)return; const a=p.art; if(a==='none')return; if(a==='tennis')window.AXIA_art.tennis(el); else if(a==='cross')window.AXIA_art.cross(el); else if(a==='cubanBracelet')window.AXIA_art.drape(el,{yTop:170,yBot:470,w:52,h:40,n:22,iced:true}); else window.AXIA_art.drape(el,{yTop:170,yBot:470,w:76,h:58,n:16,iced:true}); }
   // a width-select product only has real photos if every width supplies an image; otherwise it falls back
   // to the generated SVG art (the width chips still change price/length, just no photo swap)
   const widthPhotos = !!(WIDTHS && WIDTHS.every(w=>w.image));
@@ -676,9 +683,13 @@
   // frame follows the photo's own proportions so the whole image shows (no crop, no bars)
   function setViewerAspect(img){ const v=$('#viewer'); if(!img)return; const apply=()=>{ if(img.naturalWidth&&img.naturalHeight) v.style.aspectRatio=img.naturalWidth+' / '+img.naturalHeight; }; if(img.complete&&img.naturalWidth) apply(); else img.addEventListener('load',apply,{once:true}); }
   function ensureImageViewer(){ const v=$('#viewer'); if(!$('#mainImg')){ v.classList.add('viewer--photo'); const IMGS=curImages(); const i0=Math.min(imgIndex,IMGS.length-1); v.innerHTML='<img data-src class="viewer__img" id="mainImg" '+AXIA_IMG(IMGS[i0],'(max-width: 900px) 100vw, 55vw')+'" alt="'+fullName()+'">'; setViewerAspect($('#mainImg')); } }
-  function showVideo(){ const v=$('#viewer'); v.classList.add('viewer--photo'); v.style.aspectRatio='1 / 1'; v.innerHTML='<video class="viewer__img" id="mainVid" src="'+p.video+'" poster="'+(p.videoPoster||'')+'" muted loop playsinline controls preload="metadata"></video>'; const vid=$('#mainVid'); if(vid){ vid.muted=true; vid.addEventListener('loadedmetadata',()=>{ if(vid.videoWidth&&vid.videoHeight) v.style.aspectRatio=vid.videoWidth+' / '+vid.videoHeight; },{once:true}); const go=vid.play&&vid.play(); if(go&&go.catch)go.catch(()=>{}); } }
+  // The video follows the width: each width its own (w.video), else the product's, unless that one is
+  // another width's (a merged product keeps the lead width's clip on the product too).
+  const curVideo=()=>{ const w=WIDTHS&&WIDTHS[wi]; if(w&&w.video) return { src:w.video, poster:w.videoPoster||'' }; if(!p.video||(WIDTHS&&WIDTHS.some(x=>x&&x.video===p.video))) return null; return { src:p.video, poster:p.videoPoster||'' }; };
+  function showVideo(){ const cv=curVideo(); if(!cv) return; const v=$('#viewer'); v.classList.add('viewer--photo'); v.style.aspectRatio='1 / 1'; v.innerHTML='<video class="viewer__img" id="mainVid" src="'+cv.src+'" poster="'+cv.poster+'" muted loop playsinline controls preload="metadata"></video>'; const vid=$('#mainVid'); if(vid){ vid.muted=true; vid.addEventListener('loadedmetadata',()=>{ if(vid.videoWidth&&vid.videoHeight) v.style.aspectRatio=vid.videoWidth+' / '+vid.videoHeight; },{once:true}); const go=vid.play&&vid.play(); if(go&&go.catch)go.catch(()=>{}); } }
   function showMainImage(i){ const img=$('#mainImg'); if(!img)return; imgIndex=i; AXIA_IMG.set(img,curImages()[i]); setViewerAspect(img); $$('#thumbs .thumb').forEach((t,k)=>t.classList.toggle('is-active',k===i)); }
   function showFrontArt(){ const vb=p.art==='cross'?'0 0 300 430':'0 0 1000 620'; const v=$('#viewer'); v.classList.remove('viewer--photo'); v.style.aspectRatio=''; v.innerHTML='<svg aria-hidden="true" viewBox="'+vb+'" id="mainArt"></svg>'; fillArt($('#mainArt')); }
+  function videoThumb(IMGS){ const cv=curVideo(); if(!cv) return ''; return '<button class="thumb thumb--video" data-video aria-label="Play video"><img src="'+(cv.poster||IMGS[IMGS.length-1])+'" alt="" loading="lazy"><span class="thumb__play"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></button>'; }
   function renderArt(){
     const viewer=$('#viewer'), thumbs=$('#thumbs');
     if(hasImgs){
@@ -687,7 +698,7 @@
       viewer.classList.add('viewer--photo');
       viewer.innerHTML='<img data-src class="viewer__img" id="mainImg" '+AXIA_IMG(IMGS[i0],'(max-width: 900px) 100vw, 55vw')+' alt="'+fullName()+'">';
       thumbs.innerHTML=IMGS.map((src,i)=>'<button class="thumb'+(i===i0?' is-active':'')+'" data-img="'+i+'" aria-label="View '+(i+1)+'"><img data-src '+AXIA_IMG(src,'120px')+' alt="" loading="lazy"></button>').join('')
-        + (p.video?'<button class="thumb thumb--video" data-video aria-label="Play video"><img src="'+(p.videoPoster||IMGS[IMGS.length-1])+'" alt="" loading="lazy"><span class="thumb__play"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></button>':'');
+        + videoThumb(IMGS);
       setViewerAspect($('#mainImg'));
     } else {
       const vb=p.art==='cross'?'0 0 300 430':'0 0 1000 620';
@@ -763,21 +774,38 @@
   })();
   const firstPhoto=x=>(x.images&&x.images[0])||(x.imagesByColor&&(Object.values(x.imagesByColor).find(a=>a&&a.length)||[])[0])||(x.widths&&((x.widths.find(w=>w.image)||{}).image))||'';
   // the matching set this piece belongs to (if any) - drives both the buy-area nudge and the "Wear it with" feature
-  const relBundle=P.find(b=>Array.isArray(b.bundleOf)&&b.bundleOf.includes(p.id)&&!b.hidden)||null;
+  // A set only matches the width on show: a set made with the 12mm bracelet isn't offered on the 5mm.
+  // Its piece for this product either has a fixed width, or lets the buyer pick (then any width it's made in).
+  // Sets that only list ids (bundleOf, no set.components) match every width, as before.
+  function setFits(b,width){
+    const comps=(b.set&&Array.isArray(b.set.components))?b.set.components.filter(c=>c&&c.productId===p.id):[];
+    if(!comps.length) return !(b.set&&Array.isArray(b.set.components)&&b.set.components.length);
+    if(!WIDTHS||!width) return true;
+    return comps.some(c=>c.width?c.width===width:(!Array.isArray(c.options)||!c.options.length||c.options.some(o=>!o.width||o.width===width)));
+  }
+  function findBundle(){
+    const width=WIDTHS?WIDTHS[wi].width:'';
+    const mine=P.filter(b=>!b.hidden&&b.id!==p.id&&((Array.isArray(b.bundleOf)&&b.bundleOf.includes(p.id))||(b.set&&Array.isArray(b.set.components)&&b.set.components.some(c=>c&&c.productId===p.id)))&&setFits(b,width));
+    // a set made for exactly this width first, then one where the buyer picks the width
+    const exact=mine.find(b=>b.set&&(b.set.components||[]).some(c=>c&&c.productId===p.id&&c.width===width));
+    return exact||mine[0]||null;
+  }
+  let relBundle=findBundle();
+  const bundleHref=b=>'product?id='+b.id+(WIDTHS&&(b.set&&(b.set.components||[]).some(c=>c&&c.productId===p.id&&!c.width))?'&width='+encodeURIComponent(WIDTHS[wi].width):'');
   function renderBundleNudge(){
     const el=$('#bundleNudge'); if(!el) return;
-    if(!relBundle){ el.hidden=true; return; }
+    if(!relBundle||soonW()){ el.hidden=true; return; }
     const save=(relBundle.compareAtAUD||0)-relBundle.fromPriceAUD;
     // partner = the OTHER piece in the set (look it up so a pendant says "chain", not "bracelet")
-    const otherId=(relBundle.bundleOf||[]).find(id=>id!==p.id);
+    const otherId=(relBundle.bundleOf||((relBundle.set&&relBundle.set.components)||[]).map(c=>c&&c.productId)).find(id=>id&&id!==p.id);
     const other=P.find(x=>x.id===otherId);
     const partnerCat=other?other.cat:(p.cat==='bracelet'?'chain':'bracelet');
     const partner='the matching '+(partnerCat==='pendant'?'pendant':partnerCat);
     const img=firstPhoto(relBundle);
-    el.href='product?id='+relBundle.id;
+    el.href=bundleHref(relBundle);
     el.innerHTML=(img?'<img class="bnudge__img" src="'+img+'" alt="">':'')
-      +'<span class="bnudge__t"><span class="bnudge__k">Buy the set, pay less</span><span class="bnudge__n">'+relBundle.name+'</span>'
-      +'<span class="bnudge__s">Add '+partner+' and <b>save '+fmtA(save)+'</b> vs buying them apart.</span></span>'
+      +'<span class="bnudge__t"><span class="bnudge__k">'+(save>0?'Buy the set, pay less':'Make it a set')+'</span><span class="bnudge__n">'+relBundle.name+'</span>'
+      +'<span class="bnudge__s">'+(save>0?'Add '+partner+' and <b>save '+fmtA(save)+'</b> vs buying them apart.':'Add '+partner+' and wear them together.')+'</span></span>'
       +'<span class="bnudge__arw">&rarr;</span>';
     el.hidden=false;
   }
@@ -868,13 +896,13 @@
       const deal=x.compareAtAUD&&x.compareAtAUD>x.fromPriceAUD;
       const was=deal?'<s style="color:inherit;font-weight:400;margin-right:.4rem">'+fmtA(x.compareAtAUD)+'</s>':'';
       const price=AXIA_SALE.pct(x,x.fromPriceAUD)?AXIA_SALE.html(x.fromPriceAUD,x.singlePrice?'':'From ',x):was+(x.singlePrice?'':'From ')+fmtA(x.fromPriceAUD);
-      const gen=x.art==='tennis'?'tennis':x.art==='cross'?'cross':x.art==='cubanBracelet'?'cubanBracelet':'cuban';
+      const gen=x.art==='none'?'none':x.art==='tennis'?'tennis':x.art==='cross'?'cross':x.art==='cubanBracelet'?'cubanBracelet':'cuban';
       const vb=x.art==='cross'?'0 0 300 430':'0 0 1000 620';
       const meta=(x.col&&x.col.length>1)?x.col.join(' / '):'925 silver';
       const bdg=x.badge==='Matching set'?'<span class="tag card__tag" style="border-color:var(--ice);color:var(--ice)">Matching set</span>':'';
       const ph=firstPhoto(x);
       const media=ph?'<img class="card__photo" data-src '+AXIA_IMG(ph)+' alt="'+x.name+'" loading="lazy">':'<svg aria-hidden="true" class="card__art" viewBox="'+vb+'" data-pgen="'+gen+'"></svg>';
-      return '<a class="card" href="'+(x.linkTo||'product?id='+x.id)+'"><div class="card__media">'+bdg+media+'<span class="card__edge"></span></div><div class="card__body"><div class="card__name">'+x.name+'</div><div class="card__meta">'+meta+'</div><div class="card__price num">'+price+'</div></div></a>';
+      return '<a class="card" href="'+(x.linkTo||(relBundle&&x.id===relBundle.id?bundleHref(x):'product?id='+x.id))+'"><div class="card__media">'+bdg+media+'<span class="card__edge"></span></div><div class="card__body"><div class="card__name">'+x.name+'</div><div class="card__meta">'+meta+'</div><div class="card__price num">'+price+'</div></div></a>';
     }).join('');
     $$('#pairWrap [data-pgen="tennis"]').forEach(x=>window.AXIA_art.tennis(x));
     $$('#pairWrap [data-pgen="cross"]').forEach(x=>window.AXIA_art.cross(x));
@@ -883,7 +911,11 @@
   }
   /* sizing guide: bracelets talk wrists, necklaces/pendants talk chain lengths (in inches) */
   (function(){ const sb=$('#sizingBody'); if(!sb) return;
-    if(p.cat==='bracelet'){
+    if(TYPE.key==='ring'){
+      sb.innerHTML='To find your ring size, wrap a thin strip of paper around the base of your finger, mark where it meets, and measure that length in millimetres, or check a ring you already wear against a ring sizer. If you&rsquo;re between sizes, size up. Size exchanges are free within 30 days, or contact us and we&rsquo;ll help you choose.';
+    } else if(!LENGTH_TYPES.includes(TYPE.key)){
+      sb.innerHTML='Not sure which size is right? Contact us with a photo or measurement of a piece you already own and we&rsquo;ll help you choose. Size exchanges are free within 30 days.';
+    } else if(p.cat==='bracelet'){
       sb.innerHTML='To find your size, wrap a piece of string around your wrist once, mark where it meets, then measure that length against a ruler. Add about half an inch so the bracelet sits comfortably rather than tight. Our bracelets run 6&Prime; to 9&Prime;. If you&rsquo;re between sizes, size up. Size exchanges are free within 30 days.';
     } else {
       sb.innerHTML='16&Prime; sits high on the collar, 18&Prime; is the standard drop most people wear, 20&Prime; to 22&Prime; falls lower over a tee, and 24&Prime; sits mid-chest. To check a length, measure a chain you already own end to end, or contact us and we&rsquo;ll help you choose.';
@@ -923,13 +955,16 @@
     if(key==='length') vi=+c.dataset.vi;
     else if(key==='colour'){ colour=c.dataset.colour; if(hasImgs && colourPhotos){ if(p.colourToCloseup) imgIndex=Math.max(0,curImages().length-1); if($('#mainImg')) recolorGallery(); else renderArt(); } }
     else if(key==='width'){
-      const was=(variant()||{}).length, soonBefore=soonW(), colsBefore=cols().join('|'); wi=+c.dataset.wi;
+      const was=(variant()||{}).length, soonBefore=soonW(), colsBefore=cols().join('|'), vidBefore=(curVideo()||{}).src; wi=+c.dataset.wi;
       if(!cols().includes(colour)) colour=cols()[0]; const nl=variantsList(); const k=nl.findIndex(v=>v.length===was); vi=k>=0?k:Math.min(vi,nl.length-1);
-      if(hasImgs){ if($('#mainImg')) recolorGallery(); else renderArt(); }
+      // a width with a different video (or none) gets its own thumbnails
+      if(hasImgs){ if($('#mainImg')&&vidBefore===(curVideo()||{}).src) recolorGallery(); else renderArt(); }
       // the address follows the width, so a shared link opens on it
       try{ const u=new URL(location.href); u.searchParams.set('width',WIDTHS[wi].width); history.replaceState(null,'',u); }catch(err){}
       // a Coming soon width has no lengths to pick: redraw the options when moving to or from one
       // and when the colours on offer change (a Silver-only width hides the colour picker)
+      // the matching set follows the width too
+      const nb=findBundle(); if(nb!==relBundle){ relBundle=nb; renderPairings(); } renderBundleNudge();
       if(soonBefore!==soonW()||colsBefore!==cols().join('|')){ $('#optWrap').innerHTML=optHTML(); sync(); return; }
       const vw=$('#valWidth'); if(vw) vw.textContent=widthLabel();
     }

@@ -111,7 +111,7 @@ export default function Collections() {
   return (
     <>
       <div className="page-head">
-        <div><h1>Collections</h1><p className="lede" style={{ margin: 0 }}>Group pieces once and reuse them. Collections marked “In shop” become tabs on Shop All, in this order.</p></div>
+        <div><h1>Collections</h1><p className="lede" style={{ margin: 0 }}>Collections are the shop’s categories. Make one for Rings or Earrings, pick its pieces, and mark it “In shop”: it becomes a tab on Shop All (in this order) and a link in the site menu and footer.</p></div>
         <span className="spacer" />
         <button className="btn btn--primary" onClick={() => open()}><FolderPlus size={16} /> New collection</button>
       </div>
