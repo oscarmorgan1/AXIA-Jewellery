@@ -11,7 +11,7 @@ import { isUnsubscribed, setSubscribed } from './unsubscribe.js';
 import { rateLimit, clientIp } from './limit.js';
 
 const EMAIL = /^[^@\s/]+@[^@\s/]+\.[^@\s/]+$/;
-const SOURCES = ['landing', 'first-drop', 'other'];
+const SOURCES = ['landing', 'first-drop', 'giveaway', 'sale', 'other'];
 const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 
 // A light per-visitor limit so the form can't be used to spam inboxes, plus an

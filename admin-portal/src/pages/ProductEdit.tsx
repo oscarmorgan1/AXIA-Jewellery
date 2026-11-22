@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Lock, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, ExternalLink, Lock, Plus, Trash2, X } from 'lucide-react';
 import { doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { db, siteUrl } from '../firebase';
 import { useAssumptions, useCollections, useCosts, usePieces, useProducts } from '../lib/data';
 import { allPrices, slugify, statusOf, withDerivedPrices } from '../lib/catalogue';
+import { PRODUCT_TYPES, typeLabel } from '../lib/productTypes';
 import { economics, retailAtSize } from '../lib/economics';
 import { aud, pct, timeAgo } from '../lib/format';
 import ImageList from '../components/ImageList';
@@ -55,6 +56,9 @@ export default function ProductEdit() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [customType, setCustomType] = useState<string | null>(null);
+  const [newColl, setNewColl] = useState<{ name: string; showInShop: boolean } | null>(null);
+  const [addingColl, setAddingColl] = useState(false);
 
   // Load once (not live) so in-progress edits aren't overwritten by snapshots.
   useEffect(() => {
@@ -91,6 +95,37 @@ export default function ProductEdit() {
 
   if (notFound) return <div className="card empty"><b>Product not found</b><Link className="btn" to="/products">Back to products</Link></div>;
   if (!draft) return <div className="card empty">Loading…</div>;
+
+  // Types: the built-in ones, then any other type a product already uses, so a new one is reusable.
+  const typeKeys = [...PRODUCT_TYPES.map(t => t.key)];
+  products.forEach(x => { const k = (x.cat || '').trim().toLowerCase(); if (k && !typeKeys.includes(k)) typeKeys.push(k); });
+  const curType = (draft.cat || '').trim().toLowerCase();
+  if (curType && !typeKeys.includes(curType)) typeKeys.push(curType);
+
+  async function createCollection() {
+    if (!newColl) return;
+    const name = newColl.name.trim(), slug = slugify(name);
+    if (!name || !slug) return setError('Give the new collection a name.');
+    const existing = collections.find(c => c.slug === slug || c.name.toLowerCase() === name.toLowerCase());
+    if (existing) {
+      // already there: just tick it
+      if (!(draft!.coll || []).includes(existing.slug)) set({ coll: [...(draft!.coll || []), existing.slug] });
+      setNewColl(null);
+      return toast.show(`${existing.name} already exists, so it's ticked for this product`);
+    }
+    setAddingColl(true); setError(null);
+    try {
+      const b = writeBatch(db);
+      b.set(doc(db, 'collections', slug), {
+        slug, name, tab: '', intro: '', image: '', showInShop: newColl.showInShop,
+        sort: Math.max(0, ...collections.map(x => x.sort ?? 0)) + 10, updatedAt: serverTimestamp(),
+      });
+      await b.commit();
+      set({ coll: [...(draft!.coll || []), slug] });
+      setNewColl(null);
+      toast.show(`${name} created${newColl.showInShop ? ' and added to the shop tabs' : ''}. Save the product to put it in.`);
+    } catch (e) { setError((e as Error).message); } finally { setAddingColl(false); }
+  }
 
   const setStatus = (s: 'Live' | 'Coming soon' | 'Archived') =>
     set({ hidden: s === 'Coming soon', archived: s === 'Archived' });
@@ -210,15 +245,33 @@ export default function ProductEdit() {
               <label className="field">Product id (URL)<input className="input" value={id} disabled /></label>
               <label className="field">Badge<input className="input" value={draft.badge ?? ''} placeholder="e.g. First Drop" onChange={e => set({ badge: orNull(e.target.value) })} /></label>
               <label className="field full">Description<textarea className="textarea" value={draft.desc ?? ''} onChange={e => set({ desc: e.target.value })} /></label>
-              <label className="field">Type
-                <select className="select" value={draft.cat ?? ''} onChange={e => set({ cat: e.target.value })}>
-                  <option value="chain">Chain</option><option value="bracelet">Bracelet</option><option value="pendant">Pendant</option>
-                </select>
-              </label>
+              {customType === null ? (
+                <label className="field">Type
+                  <select className="select" value={curType} onChange={e => {
+                    if (e.target.value === '__new') { setCustomType(''); return; }
+                    const t = PRODUCT_TYPES.find(x => x.key === e.target.value);
+                    set({ cat: e.target.value, ...(t?.art ? { art: t.art } : {}) });
+                  }}>
+                    {!curType && <option value="">Choose a type</option>}
+                    {typeKeys.map(k => <option key={k} value={k}>{typeLabel(k)}</option>)}
+                    <option value="__new">+ New type…</option>
+                  </select>
+                </label>
+              ) : (
+                <div className="field">New type
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <input className="input" autoFocus value={customType} placeholder="e.g. Anklet" onChange={e => setCustomType(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); const k = customType.trim().toLowerCase(); if (k) set({ cat: k }); setCustomType(null); } if (e.key === 'Escape') setCustomType(null); }} />
+                    <button type="button" className="icon-btn" aria-label="Use this type" onClick={() => { const k = customType.trim().toLowerCase(); if (k) set({ cat: k }); setCustomType(null); }}><Check size={16} /></button>
+                    <button type="button" className="icon-btn" aria-label="Cancel" onClick={() => setCustomType(null)}><X size={16} /></button>
+                  </div>
+                </div>
+              )}
               <label className="field">Artwork style
                 <select className="select" value={draft.art ?? 'cuban'} onChange={e => set({ art: e.target.value })}>
-                  <option value="cuban">Cuban</option><option value="tennis">Tennis</option><option value="cross">Cross</option>
+                  <option value="cuban">Cuban</option><option value="tennis">Tennis</option><option value="cross">Cross</option><option value="none">None, photos only</option>
                 </select>
+                <span className="card__sub" style={{ marginTop: 4 }}>The drawing shown when a piece has no photo yet. Pick None for rings, earrings and anything that isn't a chain.</span>
               </label>
               <label className="field">Width<input className="input" value={draft.width ?? ''} placeholder="e.g. 15mm" onChange={e => set({ width: orNull(e.target.value) })} /></label>
               <label className="field">Construction<input className="input" value={draft.cons ?? ''} placeholder="e.g. prong, baguette" onChange={e => set({ cons: orNull(e.target.value) })} /></label>
@@ -235,8 +288,18 @@ export default function ProductEdit() {
                       </button>
                     );
                   })}
-                  <Link to="/collections" className="tag-toggle" style={{ borderStyle: 'dashed' }}>+ New collection</Link>
+                  {!newColl && <button type="button" className="tag-toggle" style={{ borderStyle: 'dashed' }} onClick={() => setNewColl({ name: '', showInShop: true })}>+ New collection</button>}
                 </div>
+                {newColl && (
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 10 }}>
+                    <input className="input" autoFocus style={{ maxWidth: 240 }} value={newColl.name} placeholder="e.g. Rings" onChange={e => setNewColl({ ...newColl, name: e.target.value })}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); createCollection(); } if (e.key === 'Escape') setNewColl(null); }} />
+                    <label className="check"><input type="checkbox" checked={newColl.showInShop} onChange={e => setNewColl({ ...newColl, showInShop: e.target.checked })} /> Show as a shop tab</label>
+                    <button type="button" className="btn btn--sm btn--primary" disabled={addingColl || !newColl.name.trim()} onClick={createCollection}>{addingColl ? 'Creating…' : 'Create'}</button>
+                    <button type="button" className="btn btn--sm btn--ghost" onClick={() => setNewColl(null)}>Cancel</button>
+                  </div>
+                )}
+                <div className="card__sub" style={{ marginTop: 6 }}>Collections are the shop's categories, like Cuban, Tennis or Rings. Add a cover photo and intro, or reorder the tabs, under <Link to="/collections">Collections</Link>.</div>
               </div>
             </div>
           </div>
@@ -285,6 +348,14 @@ export default function ProductEdit() {
                         ))}
                       </details>
                     )}
+                    <details className="width-block__photos" open={!!w.video}>
+                      <summary>Video for {w.width || 'this width'}{w.video ? '' : (draft.video && !draft.widths!.some(x => x.video === draft.video) ? ' (not set, shows the product video below)' : ' (not set)')}</summary>
+                      <div style={{ marginTop: 14 }}>
+                        <ProductVideo productId={id} width={w.width} video={w.video} poster={w.videoPoster} onError={setError}
+                          help={`Shown on the product page while ${w.width || 'this width'} is picked, as the last thumbnail. Converted to a small 720p file with no sound, at most 30 seconds.`}
+                          onChange={v => setWidth(i, v)} />
+                      </div>
+                    </details>
                     <div className="width-block__foot">
                       <button type="button" className="btn btn--sm btn--danger" onClick={() => set({ widths: draft.widths!.filter((_, k) => k !== i) })}><Trash2 size={14} /> Remove width</button>
                     </div>
@@ -331,8 +402,8 @@ export default function ProductEdit() {
           </div>
 
           <div className="card">
-            <div className="card__head"><div><h2>Video</h2></div></div>
-            <ProductVideo productId={id} video={draft.video} poster={draft.videoPoster} onError={setError} onChange={v => set(v)} />
+            <div className="card__head"><div><h2>Video</h2>{draft.widths?.length ? <div className="card__sub">Each width can have its own video (under Pricing, in its width). This one shows on widths without one.</div> : null}</div></div>
+            <ProductVideo productId={id} video={draft.video} poster={draft.videoPoster} onError={setError} onChange={v => set({ video: v.video ?? undefined, videoPoster: v.videoPoster ?? undefined })} />
           </div>
 
           <details className="card">

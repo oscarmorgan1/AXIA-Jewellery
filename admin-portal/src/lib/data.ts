@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { collection, doc, onSnapshot, query, where, type DocumentData } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Collection, CostAssumptions, Message, Order, Piece, Return, Product, Supplier, ProductCost, Signup, Countdown, ShopSettings, MaintenanceSettings, SiteMedia, Visit, ReviewVideo, StoreDiscount, Promotion, Giveaway } from '../types';
+import type { Collection, CostAssumptions, Message, Order, Piece, Return, Product, Supplier, ProductCost, Signup, Countdown, ShopSettings, MaintenanceSettings, SiteMedia, Visit, ReviewVideo, StoreDiscount, Promotion, GiveawayItem } from '../types';
 import { DEFAULT_ASSUMPTIONS } from './economics';
 
 interface Live<T> { data: T; loading: boolean; error: Error | null }
@@ -81,13 +81,23 @@ export function usePromotions(): Live<Promotion[]> & { saved: boolean } {
   return state;
 }
 
-/** Matches publicGiveaway in server/promotions.js (what the site shows when a field is empty). */
-export const DEFAULT_GIVEAWAY: Giveaway = { endsAt: '', show: true, label: 'The AXIA Giveaway', endedText: 'Entries are closed. Winner announced soon.' };
-export function useGiveaway(): Live<Giveaway> & { saved: boolean } {
-  const [state, setState] = useState<Live<Giveaway> & { saved: boolean }>({ data: DEFAULT_GIVEAWAY, loading: true, error: null, saved: false });
+/** The giveaways (`site/giveaways`, { items }). `saved` false means none saved yet, so the site runs the built-in one. */
+export function useGiveaways(): Live<GiveawayItem[]> & { saved: boolean } {
+  const [state, setState] = useState<Live<GiveawayItem[]> & { saved: boolean }>({ data: [], loading: true, error: null, saved: false });
+  useEffect(() => onSnapshot(
+    doc(db, 'site', 'giveaways'),
+    snap => setState({ data: (snap.data()?.items as GiveawayItem[] | undefined) || [], loading: false, error: null, saved: snap.exists() }),
+    error => setState(s => ({ ...s, loading: false, error })),
+  ), []);
+  return state;
+}
+
+/** The first version's single giveaway end date (`site/giveaway`), used until Giveaways is saved. */
+export function useLegacyGiveaway(): Live<{ endsAt?: string; show?: boolean } | null> {
+  const [state, setState] = useState<Live<{ endsAt?: string; show?: boolean } | null>>({ data: null, loading: true, error: null });
   useEffect(() => onSnapshot(
     doc(db, 'site', 'giveaway'),
-    snap => setState({ data: { ...DEFAULT_GIVEAWAY, ...(snap.data() as Partial<Giveaway> | undefined) }, loading: false, error: null, saved: snap.exists() }),
+    snap => setState({ data: (snap.data() as { endsAt?: string; show?: boolean } | undefined) || null, loading: false, error: null }),
     error => setState(s => ({ ...s, loading: false, error })),
   ), []);
   return state;

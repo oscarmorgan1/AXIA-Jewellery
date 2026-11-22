@@ -124,6 +124,8 @@ export function staticSite(root) {
       return res.status(503).set({ 'Cache-Control': 'no-store', 'Retry-After': '600', 'X-Robots-Tag': 'noindex' })
         .sendFile(path.join(root, down));
     }
+    // The First Drop page became the giveaway page; old links and ads still land on it.
+    if (m && m[1] === 'first-drop') return res.redirect(301, '/giveaway' + qs);
     if (req.path === '/') return sendSitePage(req, res, (await shopOpen()) ? 'store' : 'index');
     // Open, the store lives at the main address, so /store goes there. Closed, /store stays reachable.
     if (m && m[1] === 'store' && !m[2] && (await shopOpen())) return sendTo(res, '/' + qs);

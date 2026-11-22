@@ -12,6 +12,9 @@ export interface WidthOption {
   imagesByColor?: Record<string, string[]>;
   /** The colours this width is made in, when not every colour of the product (e.g. 5mm in Silver only). */
   col?: string[];
+  /** This width's product page video (null once removed, so an older merged product's video doesn't come back). */
+  video?: string | null;
+  videoPoster?: string | null;
   /** Coming soon: shown on the product page, can't be bought yet. */
   hidden?: boolean;
   fromPriceAUD?: number;
@@ -504,11 +507,22 @@ export interface Promotion {
   };
 }
 
-/** site/giveaway: when the AXIA Giveaway closes, counted down on the giveaway and home pages. */
-export interface Giveaway {
+/** One giveaway in site/giveaways ({ items }), edited under Giveaways. The site shows the running one that ends soonest. */
+export interface GiveawayItem {
+  id: string;
+  on: boolean;
+  title: string;
+  prize: string;
+  valueAUD: number | null;
+  image: string;
+  description: string;
+  /** How to enter, one line each. */
+  steps: string[];
+  /** Instagram account entrants must follow, without the @. */
+  instagram: string;
+  startsAt: string;
   endsAt: string;
-  show: boolean;
-  label: string;
+  showCountdown: boolean;
   endedText: string;
-  updatedAt?: { toDate(): Date };
+  winnerText: string;
 }

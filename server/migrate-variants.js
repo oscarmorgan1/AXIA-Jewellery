@@ -62,6 +62,8 @@ function parseSize(size, fallbackWidth) {
   return parts.length > 1 ? { width: parts[0], length: parts[1] } : { width: fallbackWidth || null, length: parts[0] };
 }
 
+/** A product's video as a width's { video, videoPoster }, or nothing. */
+const videoOf = p => (p && p.video ? { video: p.video, ...(p.videoPoster ? { videoPoster: p.videoPoster } : {}) } : {});
 /** Whether a product has photos per colour (Silver, Gold, Rose Gold...). */
 const hasCols = p => !!(p && Array.isArray(p.col) && p.col.length);
 // Only worth keeping for a product made in more than one colour.
@@ -117,6 +119,7 @@ export function buildPlan(data, opts = {}) {
         if (!have.images && Array.isArray(s.images) && s.images.length > 1) have.images = s.images;
         if (!have.imagesByColor && hasColourPhotos(s)) have.imagesByColor = clone(s.imagesByColor);
         if (!have.col && hasCols(s)) have.col = [...s.col];
+        if (have.video === undefined && s.video) Object.assign(have, videoOf(s));
         continue;
       }
       widths.push({
@@ -124,6 +127,7 @@ export function buildPlan(data, opts = {}) {
         ...(s.images && s.images.length ? { image: s.images[0], images: s.images } : {}),
         ...(hasColourPhotos(s) ? { imagesByColor: clone(s.imagesByColor) } : {}),
         ...(hasCols(s) ? { col: [...s.col] } : {}),
+        ...videoOf(s),
         ...(s.hidden ? { hidden: true } : {}),
         variants: clone(s.variants || []),
       });
@@ -132,6 +136,8 @@ export function buildPlan(data, opts = {}) {
     const leadW = widths.find(w => w.width === lead.width);
     if (leadW && !leadW.imagesByColor && hasColourPhotos(lead)) leadW.imagesByColor = clone(lead.imagesByColor);
     if (leadW && !leadW.col && hasCols(lead)) leadW.col = [...lead.col];
+    // ...and so does its video: each width shows its own (the 5mm Iced Cuban Bracelet's clip).
+    if (leadW && leadW.video === undefined && lead.video) Object.assign(leadW, videoOf(lead));
     widths.sort((a, b) => mm(a.width) - mm(b.width));
     group.widths = widths.map(w => ({ width: w.width, status: w.hidden ? 'Coming soon' : 'Live', sizes: (w.variants || []).length }));
 
@@ -159,6 +165,8 @@ export function buildPlan(data, opts = {}) {
       archived: false,
       sort: existing ? existing.sort || 0 : Math.min(...sources.map(d => d.sort || 0)),
     };
+    // The lead's video now lives on its width, not on the whole product.
+    if (!existing && leadW && leadW.video && merged.video === leadW.video) { delete merged.video; delete merged.videoPoster; }
     if (existing && existing.linkTo) merged.linkTo = existing.linkTo;
     if (existing && existing.variants) merged.variants = existing.variants; // older pages read these too
     delete merged.mergedInto;
@@ -203,8 +211,8 @@ export function buildPlan(data, opts = {}) {
     put('site', 'reviews', { videos, updatedAt: FieldValue.serverTimestamp() }, true);
   }
 
-  // ---- 1b. Colours and colour photos for products merged by an earlier run, which kept only
-  // each width's default photos and the lead product's colours. The old documents still hold
+  // ---- 1b. Colours, colour photos and videos for products merged by an earlier run, which kept only
+  // each width's default photos and the lead product's colours and video. The old documents still hold
   // them, so copy them onto their width.
   for (const src of products) {
     const to = src.mergedInto;
@@ -217,11 +225,17 @@ export function buildPlan(data, opts = {}) {
     const fixed = [];
     if (!w.imagesByColor && hasColourPhotos(src)) { w.imagesByColor = clone(src.imagesByColor); fixed.push('colour photos'); }
     if (!w.col && hasCols(src)) { w.col = [...src.col]; fixed.push(`colours (${src.col.join(', ')})`); }
+    if (w.video === undefined && src.video) { Object.assign(w, videoOf(src)); fixed.push('video'); }
     if (!fixed.length) continue;
     report.notes.push(`${target.name} ${to.width}: ${fixed.join(' and ')} brought back from ${src.id}.`);
     (report.photoRepairs ||= new Set()).add(to.id);
   }
-  for (const id of report.photoRepairs || []) put('products', id, { widths: byId.get(id).widths, updatedAt: FieldValue.serverTimestamp() }, true);
+  for (const id of report.photoRepairs || []) {
+    const t = byId.get(id);
+    // A video the lead product brought to the whole product is now on its width only.
+    const own = t.video && t.widths.some(w => w && w.video === t.video);
+    put('products', id, { widths: t.widths, ...(own ? { video: FieldValue.delete(), videoPoster: FieldValue.delete() } : {}), updatedAt: FieldValue.serverTimestamp() }, true);
+  }
   report.photoRepairs = [...(report.photoRepairs || [])];
 
   // ---- 2. Sets that list their products become real sets, at the same price.
