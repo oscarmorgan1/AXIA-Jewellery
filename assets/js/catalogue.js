@@ -401,6 +401,34 @@
     } catch (e) {}
   }
 
+  /* Product types ("Type" in the portal). Chains, bracelets and pendants
+     were the only ones at first; rings, earrings and any type the admin
+     types in work the same way. AXIA_TYPE(p) gives the label shoppers see
+     and what to call its sizes. */
+  var TYPES = {
+    chain: { label: 'Chain', size: 'Length', sizes: 'Available lengths' },
+    bracelet: { label: 'Bracelet', size: 'Length', sizes: 'Available lengths' },
+    pendant: { label: 'Pendant', size: 'Length', sizes: 'Available lengths' },
+    necklace: { label: 'Necklace', size: 'Length', sizes: 'Available lengths' },
+    ring: { label: 'Ring', size: 'Ring size', sizes: 'Available sizes' },
+    earrings: { label: 'Earrings', size: 'Size', sizes: 'Available sizes' }
+  };
+  window.AXIA_TYPE = function (p) {
+    var key = String((p && p.cat) || 'chain').trim().toLowerCase();
+    if (key === 'earring') key = 'earrings';
+    if (key === 'rings') key = 'ring';
+    var t = TYPES[key];
+    if (t) return { key: key, label: t.label, size: t.size, sizes: t.sizes, known: true };
+    var label = key.replace(/[-_]+/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    return { key: key, label: label, size: 'Size', sizes: 'Available sizes', known: false };
+  };
+  /* Link for a collection: The Cuban and The Titans have their own pages. */
+  window.AXIA_COLL_HREF = function (c) {
+    if (c.slug === 'cuban') return 'cuban';
+    if (c.slug === 'titans') return 'titans';
+    return 'collection?cat=' + encodeURIComponent(c.slug);
+  };
+
   window.AXIA_SOURCE = source;
   window.AXIA_READY = Promise.all([catalogue, domReady]).then(function (r) {
     window.AXIA_PRODUCTS = r[0].p;
