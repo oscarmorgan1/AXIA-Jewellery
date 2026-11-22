@@ -15,6 +15,7 @@ const Orders = lazy(() => import('./pages/Orders'));
 const OrderDetail = lazy(() => import('./pages/OrderDetail'));
 const Promos = lazy(() => import('./pages/Promos'));
 const Promotions = lazy(() => import('./pages/Promotions'));
+const Giveaways = lazy(() => import('./pages/Giveaways'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Collections = lazy(() => import('./pages/Collections'));
 const Customers = lazy(() => import('./pages/Customers'));
@@ -73,6 +74,7 @@ export default function App() {
         <Route path="returns/:id" element={<ReturnDetail />} />
         <Route path="promos" element={<Promos />} />
         <Route path="promotions" element={<Promotions />} />
+        <Route path="giveaways" element={<Giveaways />} />
         <Route path="marketing" element={<Marketing />} />
         <Route path="marketing/:id" element={<Campaign />} />
         <Route path="website" element={<Website />} />

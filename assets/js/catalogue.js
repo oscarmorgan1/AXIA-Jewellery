@@ -261,7 +261,7 @@
     settings: countdownSettings,
     run: function (cb) {
       var c = countdownSettings(), target = Date.parse(c.target), iv = null;
-      var base = { label: c.label, href: 'first-drop' };
+      var base = { label: c.label, href: 'giveaway' };
       function emit(extra) { var o = {}; for (var k in base) o[k] = base[k]; for (k in extra) o[k] = extra[k]; try { cb(o); } catch (e) { if (window.console) console.error(e); } }
       if (c.mode === 'off') return emit({ mode: 'off' });
       if (c.mode !== 'timer' || isNaN(target)) return emit({ mode: 'text', text: c.text });
@@ -390,9 +390,9 @@
     try {
       var s = window.AXIA_SITE || {}, g = s.giveaway;
       var want = window.AXIA_SALE.promos().some(function (p) { return p.banner && (p.banner.show || p.banner.strip); })
-        || (g && g.show !== false && g.endsAt && document.querySelector('[data-giveaway-slot]'));
+        || (g && g.endsAt && document.querySelector('[data-giveaway-slot], .fdbar'));
       if (!want || document.querySelector('script[data-promo]')) return;
-      var v = '20261122a', l = document.createElement('link');
+      var v = '20261122d', l = document.createElement('link');
       l.rel = 'stylesheet'; l.href = 'assets/css/promo.css?v=' + v;
       document.head.appendChild(l);
       var sc = document.createElement('script');

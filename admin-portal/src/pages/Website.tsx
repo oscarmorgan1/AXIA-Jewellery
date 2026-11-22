@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { ArrowRight, ArrowUpRight, EyeOff, Save, Tag, Timer, Type, Undo2 } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Gift, EyeOff, Save, Tag, Timer, Type, Undo2 } from 'lucide-react';
 import { db, siteUrl } from '../firebase';
 import { DEFAULT_COUNTDOWN, useCountdown } from '../lib/data';
 import { useToast } from '../components/Toast';
 import VideosCard from '../components/VideosCard';
-import GiveawayCard from '../components/GiveawayCard';
 import { Link } from 'react-router-dom';
 import type { Countdown } from '../types';
 
@@ -63,7 +62,7 @@ export default function Website() {
   return (
     <>
       <div className="page-head">
-        <div><h1>Website</h1><p className="lede" style={{ margin: 0 }}>The giveaway end date, the site film, and the launch countdown on the landing page, the Cuban and First Drop pages, and the bar across the shop.</p></div>
+        <div><h1>Website</h1><p className="lede" style={{ margin: 0 }}>The site film and the launch countdown on the landing page, the Cuban and First Drop pages, and the bar across the shop.</p></div>
         <span className="spacer" />
         <a className="btn" href={siteUrl('/')} target="_blank" rel="noreferrer">Open site <ArrowUpRight size={15} /></a>
       </div>
@@ -74,7 +73,11 @@ export default function Website() {
         <Link className="btn" to="/promotions">Open Promotions <ArrowRight size={15} /></Link>
       </div>
 
-      <GiveawayCard />
+      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <Gift size={18} />
+        <div style={{ flex: 1, minWidth: 220 }}><b>Giveaways</b><div className="card__sub">Prize, photo, how to enter and the countdown to when entries close.</div></div>
+        <Link className="btn" to="/giveaways">Open Giveaways <ArrowRight size={15} /></Link>
+      </div>
 
       <VideosCard />
 

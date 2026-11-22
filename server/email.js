@@ -146,7 +146,7 @@ export function confirmationEmail(order, siteUrl) {
   const engraved = order.items.some(i => i.engraving);
   const body = [
     p(`${first ? `Thank you, ${esc(first)}.` : 'Thank you.'} We’ve received your order <b>#${esc(order.orderNumber)}</b> and your payment has gone through.`),
-    p('Every AXIA piece is hand-set and made to order, so allow approximately 3 to 5 weeks before it ships. We’ll email you at each step.', C.soft),
+    p('Every AXIA piece is hand-set and made to order, so allow 20 to 30 business days before it ships. We’ll email you at each step.', C.soft),
     progress('paid'),
     sectionTitle('Your order'),
     itemsTable(order, siteUrl),
@@ -167,14 +167,14 @@ export function confirmationEmail(order, siteUrl) {
     ...order.items.map(i => `${i.name}${i.qty > 1 ? ' x ' + i.qty : ''}${i.options ? ' (' + i.options + ')' : ''}: ${aud(i.priceAUD * i.qty)}`),
     ...(order.gift ? [`${order.gift.name}${order.gift.length ? ' (' + order.gift.length + ')' : ''}: free gift`] : []),
     '', `Total paid: ${aud(order.totalAUD)} AUD`, '',
-    'Every piece is hand-set and made to order, so allow approximately 3 to 5 weeks before it ships.',
+    'Every piece is hand-set and made to order, so allow 20 to 30 business days before it ships.',
     ...(orderUrl(order) ? [`Track your order: ${orderUrl(order)}`] : []),
     `Help centre: ${brandUrl()}/support`,
   ].join('\n');
 
   return {
     subject: `Your AXIA order #${order.orderNumber} is confirmed`,
-    html: layout({ siteUrl, preheader: `Order #${order.orderNumber} confirmed. Allow 3 to 5 weeks for your hand-set piece.`, heading: 'Order confirmed', body }),
+    html: layout({ siteUrl, preheader: `Order #${order.orderNumber} confirmed. Allow 20 to 30 business days for your hand-set piece.`, heading: 'Order confirmed', body }),
     text,
   };
 }

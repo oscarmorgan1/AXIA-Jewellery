@@ -93,7 +93,7 @@ export function checkoutRoutes() {
         allow_promotion_codes: used.every(p => p.allowPromos),
         billing_address_collection: 'auto',
         custom_text: {
-          submit: { message: 'Every piece is hand-set and made to order. Allow approximately 3-5 weeks before dispatch.' },
+          submit: { message: 'Every piece is hand-set and made to order. Allow 20-30 business days before dispatch.' },
           ...(gift ? { shipping_address: { message: `Your free ${gift.name}${gift.length ? ' (' + gift.length + ')' : ''} ships with this order.` } } : {}),
         },
         metadata: compact({ ...(gift ? { gift: gift.id, giftName: gift.name, giftLength: gift.length } : {}), storeDiscountPct: topPct || '', promotions: [...new Set(used.map(p => p.name))].join(', ').slice(0, 450) }),

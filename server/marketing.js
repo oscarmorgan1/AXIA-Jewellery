@@ -67,7 +67,7 @@ export const TEMPLATES = {
       heading: 'Two days. Then it’s yours.',
       body: 'Hi {{first_name}},\n\nThe first AXIA drop goes live in 48 hours, and you’re on the list, so you’re hearing it first.\n\nEvery piece is hand-set in 925 sterling silver with VVS D-colour moissanite that passes a diamond tester. Quantities in the first run are small, and once a piece sells out it’s made to order.',
       ctaLabel: 'Preview the drop',
-      ctaUrl: '/first-drop',
+      ctaUrl: '/giveaway',
       productsTitle: 'In the first drop',
       footnote: 'Your first-order code from your welcome email works on drop day.',
       audience: 'waitlist',

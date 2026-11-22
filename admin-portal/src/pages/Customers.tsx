@@ -8,7 +8,7 @@ import { personText, usePeople, type Person } from '../lib/customers';
 import { SkeletonRows } from '../components/Skeleton';
 
 export const fmtDate = (d?: Date) => (d ? d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '–');
-export const SOURCE: Record<string, string> = { landing: 'Waitlist page', 'first-drop': 'First Drop page', other: 'Other' };
+export const SOURCE: Record<string, string> = { landing: 'Waitlist page', 'first-drop': 'First Drop page', giveaway: 'Giveaway page', sale: 'Sale page', other: 'Other' };
 export const initials = (n: string) => n.split(/[\s@.]+/).filter(Boolean).map(x => x[0]).join('').slice(0, 2).toUpperCase();
 
 type Filter = 'all' | 'buyers' | 'open' | 'waitlist';
