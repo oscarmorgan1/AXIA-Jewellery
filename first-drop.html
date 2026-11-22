@@ -167,6 +167,8 @@
         <span class="fd-give__eye">One winner. Free to enter.</span>
         <h2>Your chance to win a 15mm Micro Pavé Chain</h2>
         <div class="val">Valued at A$2,699</div>
+        <!-- Giveaway countdown: Admin > Website > Giveaway (assets/js/promo.js) -->
+        <div data-giveaway-slot="inline"></div>
         <p>Our unreleased 15mm Micro Pavé Cuban chain, fully iced. Register free for First Access and you're in the draw.</p>
         <ul class="fd-give__how">
           <li><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 13 4 4 10-11"/></svg><span>Register free for First Access. That's your entry.</span></li>
@@ -269,8 +271,8 @@
 </div>
 <div class="toast" id="toast"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
 
-<script src="assets/js/catalogue.js?v=20261116f"></script>
-<script type="text/axia-deferred" src="assets/js/axia.js?v=20261116f"></script>
+<script src="assets/js/catalogue.js?v=20261122a"></script>
+<script type="text/axia-deferred" src="assets/js/axia.js?v=20261122a"></script>
 <script type="text/axia-deferred">
 (function(){
   const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
@@ -307,7 +309,7 @@
     const og=document.createElement('optgroup'); og.label=g;
     items.sort((a,b)=>a.fromPriceAUD-b.fromPriceAUD).forEach(p=>{
       const o=document.createElement('option'); o.value=p.id;
-      o.textContent=p.name+(p.width?' '+p.width:'')+'  ·  from '+fmtA(AXIA_SALE.price(p.fromPriceAUD))+(AXIA_SALE.pct()?' (was '+fmtA(p.fromPriceAUD)+')':'');
+      o.textContent=p.name+(p.width?' '+p.width:'')+'  ·  from '+fmtA(AXIA_SALE.price(p.fromPriceAUD,p))+(AXIA_SALE.pct(p,p.fromPriceAUD)?' (was '+fmtA(p.fromPriceAUD)+')':'');
       og.appendChild(o);
     });
     sel.appendChild(og);
@@ -318,7 +320,7 @@
     if(p.variants && p.variants.length>1){
       sizeSel.disabled=false;
       sizeSel.appendChild(new Option('Choose a length…','',true,true)); sizeSel.options[0].disabled=true;
-      p.variants.forEach(v=> sizeSel.appendChild(new Option(v.length+'  ·  '+fmtA(AXIA_SALE.price(v.priceAUD))+(AXIA_SALE.pct()?' (was '+fmtA(v.priceAUD)+')':''), v.length)));
+      p.variants.forEach(v=> sizeSel.appendChild(new Option(v.length+'  ·  '+fmtA(AXIA_SALE.price(v.priceAUD,p))+(AXIA_SALE.pct(p,v.priceAUD)?' (was '+fmtA(v.priceAUD)+')':''), v.length)));
     } else {
       sizeSel.disabled=false; sizeSel.innerHTML=''; sizeSel.appendChild(new Option('One size','One size',true,true));
     }

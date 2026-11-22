@@ -274,8 +274,8 @@
 </div>
 <div class="toast" id="toast"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 13 4 4 10-11"/></svg><span id="tmsg"></span></div>
 
-<script src="assets/js/catalogue.js?v=20261116f"></script>
-<script type="text/axia-deferred" src="assets/js/axia.js?v=20261116f"></script>
+<script src="assets/js/catalogue.js?v=20261122a"></script>
+<script type="text/axia-deferred" src="assets/js/axia.js?v=20261122a"></script>
 <script type="text/axia-deferred">
 (function(){
   const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
@@ -284,7 +284,7 @@
   function card(p){ if(!p) return '';
     const deal=false; // no strikethrough "was" prices (ACL: nothing has sold at a higher price)
     const was='';
-    const price=AXIA_SALE.html(p.fromPriceAUD,p.singlePrice?'':'From ');
+    const price=AXIA_SALE.html(p.fromPriceAUD,p.singlePrice?'':'From ',p);
     const gen=p.art==='tennis'?'tennis':p.art==='cross'?'cross':p.art==='cubanBracelet'?'cubanBracelet':'cuban';
     const vb=p.art==='cross'?'0 0 300 430':'0 0 1000 620';
     const meta='925 silver · VVS moissanite';

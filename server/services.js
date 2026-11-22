@@ -10,6 +10,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import Stripe from 'stripe';
 import { Resend } from 'resend';
 import { activeDiscount } from './variants.js';
+import { activePromotions } from './promotions.js';
 
 const app = initializeApp(process.env.FIRESTORE_EMULATOR_HOST ? { projectId: 'axia-jewellery' } : undefined);
 export const db = getFirestore(app);
@@ -34,6 +35,12 @@ export async function isShopOpen() {
 export async function getStoreDiscount() {
   const snap = await db.collection('site').doc('discount').get();
   return activeDiscount(snap.exists ? snap.data() : null);
+}
+
+/** The promotions running now (site/promotions plus the older site/discount). See promotions.js. */
+export async function getPromotions() {
+  const [doc, legacy] = await Promise.all([db.collection('site').doc('promotions').get(), db.collection('site').doc('discount').get()]);
+  return activePromotions(doc.exists ? doc.data() : null, legacy.exists ? legacy.data() : null);
 }
 
 /**

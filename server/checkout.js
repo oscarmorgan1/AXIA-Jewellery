@@ -2,7 +2,10 @@
 // GET  /api/checkout/session?id=cs_...  what the confirmation page shows.
 import express from 'express';
 import { priceCart, CartError } from './pricing.js';
-import { stripe, getProduct, isShopOpen, getSiteMode, getStoreDiscount } from './services.js';
+import { stripe, getProduct, isShopOpen, getSiteMode, getPromotions } from './services.js';
+import { rateLimit, clientIp } from './limit.js';
+
+const tooManyQuotes = rateLimit({ windowMs: 60 * 1000, max: 30 });
 
 export const SHIPPING = [
   { id: 'standard', name: 'Standard shipping', amountAUD: 0, min: 3, max: 6 },
@@ -30,14 +33,34 @@ export const setMeta = l => (l.components ? JSON.stringify(l.components.map(c =>
 export function checkoutRoutes() {
   const router = express.Router();
 
+  // POST /api/checkout/quote  the bag priced exactly as checkout will charge it, promotions
+  // included, for the checkout page's summary. Takes no payment and needs no open shop.
+  router.post('/api/checkout/quote', express.json({ limit: '32kb' }), async (req, res) => {
+    if (tooManyQuotes(clientIp(req))) return res.status(429).json({ error: 'Too many requests. Please wait a moment.' });
+    try {
+      const promotions = await getPromotions();
+      const { lines, subtotalAUD, gift } = await priceCart(req.body && req.body.items, getProduct, { giftLength: req.body && req.body.giftLength, promotions });
+      res.set('Cache-Control', 'no-store').json({
+        lines: lines.map(l => ({ id: l.id, qty: l.qty, priceAUD: l.priceAUD, listPriceAUD: l.listPriceAUD || l.priceAUD, promo: l.promo ? { name: l.promo.name, pct: l.promo.pct } : null })),
+        subtotalAUD, gift,
+      });
+    } catch (err) {
+      if (err instanceof CartError) return res.status(409).json({ error: err.message });
+      console.error('checkout: could not price bag', err);
+      res.status(500).json({ error: 'Could not price your bag.' });
+    }
+  });
+
   router.post('/api/checkout', express.json({ limit: '32kb' }), async (req, res) => {
     if (!stripe) return res.status(503).json({ error: "Checkout isn't switched on yet. Please try again soon." });
     try {
       const mode = await getSiteMode();
       if (mode !== 'production') return res.status(503).json({ error: mode === 'offline' ? 'AXIA is offline.' : 'AXIA is unavailable for a moment. Your bag is saved, please try again soon.' });
       if (!(await isShopOpen())) return res.status(403).json({ error: "The shop isn't open yet. Your bag is saved for when it is." });
-      const sale = await getStoreDiscount();
-      const { lines, gift } = await priceCart(req.body && req.body.items, getProduct, { giftLength: req.body && req.body.giftLength, discountPct: sale ? sale.pct : 0 });
+      const promotions = await getPromotions();
+      const { lines, gift } = await priceCart(req.body && req.body.items, getProduct, { giftLength: req.body && req.body.giftLength, promotions });
+      const used = lines.filter(l => l.promo).map(l => l.promo);
+      const topPct = used.reduce((a, p) => Math.max(a, p.pct), 0);
       const origin = siteOrigin(req);
       const session = await stripe.checkout.sessions.create({
         mode: 'payment',
@@ -51,7 +74,7 @@ export function checkoutRoutes() {
               name: l.name,
               ...(l.options ? { description: l.options } : {}),
               ...(l.image && origin.startsWith('https://') ? { images: [`${origin}/${encodeURI(l.image)}`] } : {}),
-              metadata: compact({ productId: l.id, width: l.width, length: l.length, colour: l.colour, engraving: l.engraving, set: setMeta(l), listPrice: l.listPriceAUD }),
+              metadata: compact({ productId: l.id, width: l.width, length: l.length, colour: l.colour, engraving: l.engraving, set: setMeta(l), listPrice: l.listPriceAUD, promo: l.promo ? `${l.promo.name} (${l.promo.pct}%)`.slice(0, 120) : '' }),
             },
           },
         })),
@@ -66,14 +89,14 @@ export function checkoutRoutes() {
           },
         })),
         phone_number_collection: { enabled: true },
-        // During a store discount, promo codes work on top only if the discount allows it.
-        allow_promotion_codes: sale ? sale.allowPromos : true,
+        // Promo codes work on top of a promotion only if every promotion in this bag allows it.
+        allow_promotion_codes: used.every(p => p.allowPromos),
         billing_address_collection: 'auto',
         custom_text: {
           submit: { message: 'Every piece is hand-set and made to order. Allow approximately 3-5 weeks before dispatch.' },
           ...(gift ? { shipping_address: { message: `Your free ${gift.name}${gift.length ? ' (' + gift.length + ')' : ''} ships with this order.` } } : {}),
         },
-        metadata: compact({ ...(gift ? { gift: gift.id, giftName: gift.name, giftLength: gift.length } : {}), storeDiscountPct: sale ? sale.pct : '' }),
+        metadata: compact({ ...(gift ? { gift: gift.id, giftName: gift.name, giftLength: gift.length } : {}), storeDiscountPct: topPct || '', promotions: [...new Set(used.map(p => p.name))].join(', ').slice(0, 450) }),
         success_url: `${origin}/checkout?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/checkout`,
       });

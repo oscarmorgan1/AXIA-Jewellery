@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { ArrowUpRight, EyeOff, Save, Timer, Type, Undo2 } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, EyeOff, Save, Tag, Timer, Type, Undo2 } from 'lucide-react';
 import { db, siteUrl } from '../firebase';
 import { DEFAULT_COUNTDOWN, useCountdown } from '../lib/data';
 import { useToast } from '../components/Toast';
 import VideosCard from '../components/VideosCard';
-import StoreDiscountCard from '../components/StoreDiscountCard';
+import GiveawayCard from '../components/GiveawayCard';
+import { Link } from 'react-router-dom';
 import type { Countdown } from '../types';
 
 const MODES: { key: Countdown['mode']; label: string; icon: React.ReactNode; hint: string }[] = [
@@ -62,12 +63,18 @@ export default function Website() {
   return (
     <>
       <div className="page-head">
-        <div><h1>Website</h1><p className="lede" style={{ margin: 0 }}>The store discount, the site film, and the launch countdown on the landing page, the Cuban and First Drop pages, and the bar across the shop.</p></div>
+        <div><h1>Website</h1><p className="lede" style={{ margin: 0 }}>The giveaway end date, the site film, and the launch countdown on the landing page, the Cuban and First Drop pages, and the bar across the shop.</p></div>
         <span className="spacer" />
         <a className="btn" href={siteUrl('/')} target="_blank" rel="noreferrer">Open site <ArrowUpRight size={15} /></a>
       </div>
 
-      <StoreDiscountCard />
+      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <Tag size={18} />
+        <div style={{ flex: 1, minWidth: 220 }}><b>Sales and discounts</b><div className="card__sub">The store discount is now part of Promotions, with banners, countdowns and item picking.</div></div>
+        <Link className="btn" to="/promotions">Open Promotions <ArrowRight size={15} /></Link>
+      </div>
+
+      <GiveawayCard />
 
       <VideosCard />
 

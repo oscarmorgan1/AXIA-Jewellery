@@ -49,6 +49,7 @@ async function buildOrder(sessionId) {
       qty: li.quantity || 1,
       priceAUD: cents(li.price && li.price.unit_amount),
       ...(Number(m.listPrice) > 0 ? { listPriceAUD: Number(m.listPrice) } : {}),
+      ...(m.promo ? { promotion: m.promo } : {}),
       image: (product.images || [])[0] || '',
       ...(m.set ? { components: parseSet(m.set) } : {}),
     };
@@ -77,6 +78,7 @@ async function buildOrder(sessionId) {
     subtotalAUD: cents(s.amount_subtotal),
     discountAUD: cents(s.total_details && s.total_details.amount_discount),
     ...(Number(s.metadata && s.metadata.storeDiscountPct) > 0 ? { storeDiscountPct: Number(s.metadata.storeDiscountPct) } : {}),
+    ...(s.metadata && s.metadata.promotions ? { promotions: String(s.metadata.promotions) } : {}),
     promotionCode: (promoObj && promoObj.code) || '',
     promotionCodeId: (promoObj && promoObj.id) || '',
     totalAUD: cents(s.amount_total),

@@ -3,6 +3,7 @@
 // pay less by editing their cart in the browser.
 
 import { hasWidths, pickVariant, priceSet, salePrice, SetError, sizeLabel, widthsOf } from './variants.js';
+import { normalizePromotion, promoFor } from './promotions.js';
 
 export const MAX_LINES = 20;
 export const MAX_QTY = 10;
@@ -26,8 +27,9 @@ const canEngrave = p => p.art === 'cuban' || p.art === 'cubanBracelet';
  * @param {Array} items  [{ id, width?, length?, colour?, engraving?, q?, parts? }]
  *   parts: for a set, the buyer's [{ width?, length? }] per component, in the set's order
  * @param {(id: string) => Promise<object|null>} getProduct  loads products/{id}
- * @param {{ giftLength?: string, discountPct?: number }} [extra]  the free bracelet's length, picked in the bag,
- *   and the store discount running now (activeDiscount), taken off every line
+ * @param {{ giftLength?: string, promotions?: Array, discountPct?: number }} [extra]  the free bracelet's length,
+ *   picked in the bag, and the promotions running now (activePromotions in promotions.js), each line
+ *   getting the biggest one that covers it. discountPct is a % off every line (the older store discount).
  */
 export async function priceCart(items, getProduct, extra = {}) {
   if (!Array.isArray(items) || !items.length) throw new CartError('Your bag is empty.');
@@ -40,6 +42,7 @@ export async function priceCart(items, getProduct, extra = {}) {
   };
 
   const lines = [];
+  const products = []; // the product behind each line, for the promotions
   for (const raw of items) {
     let id = str(raw && raw.id, 120);
     let p = id && (await load(id));
@@ -75,6 +78,7 @@ export async function priceCart(items, getProduct, extra = {}) {
         components: priced.components,
         image: (p.images || [])[0] || '',
       });
+      products.push(p);
       continue;
     }
 
@@ -113,18 +117,23 @@ export async function priceCart(items, getProduct, extra = {}) {
         || (p.imagesByColor && (p.imagesByColor[colour] || [])[0])
         || (p.images || [])[0] || '',
     });
+    products.push(p);
   }
 
-  // The store discount comes off every line, set pieces included, so a set's refund
+  // Promotions come off each line they cover, set pieces included, so a set's refund
   // per piece (setRefund) works from what was paid. listPriceAUD keeps the price before it.
-  const pct = Number(extra.discountPct) || 0;
-  if (pct) {
-    for (const l of lines) {
-      l.listPriceAUD = l.priceAUD;
-      l.priceAUD = salePrice(l.priceAUD, pct);
-      if (l.components) l.components = l.components.map(c => ({ ...c, listPriceAUD: c.priceAUD, priceAUD: salePrice(c.priceAUD, pct) }));
-    }
-  }
+  // The product's price is never changed: the sale price is worked out from it here.
+  const promos = Array.isArray(extra.promotions) ? extra.promotions
+    : Number(extra.discountPct) > 0 ? [normalizePromotion({ id: 'store-discount', on: true, pct: Number(extra.discountPct), scope: 'all' })] : [];
+  lines.forEach((l, i) => {
+    const promo = promoFor(promos, products[i], l.priceAUD);
+    if (!promo) return;
+    const pct = promo.pct;
+    l.listPriceAUD = l.priceAUD;
+    l.priceAUD = salePrice(l.priceAUD, pct);
+    l.promo = { id: promo.id, name: promo.name, pct, allowPromos: promo.allowPromos };
+    if (l.components) l.components = l.components.map(c => ({ ...c, listPriceAUD: c.priceAUD, priceAUD: salePrice(c.priceAUD, pct) }));
+  });
 
   const subtotalAUD = lines.reduce((a, l) => a + l.priceAUD * l.qty, 0);
   let gift = null;
