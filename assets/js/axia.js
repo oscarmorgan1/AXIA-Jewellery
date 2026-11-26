@@ -331,6 +331,11 @@
   const openSearch = () => { SEARCH_INDEX = buildSearchIndex(); srch.classList.add('on'); srch.setAttribute('aria-hidden', 'false'); document.documentElement.style.overflow = 'hidden'; srchRender(''); setTimeout(() => srchInput.focus(), 40); };
   const closeSearch = () => { srch.classList.remove('on'); srch.setAttribute('aria-hidden', 'true'); document.documentElement.style.overflow = ''; srchInput.value = ''; };
   srchInput.addEventListener('input', e => srchRender(e.target.value));
+  // Meta Pixel Search when a result is picked (Enter goes to collection?q=, which sends its own).
+  srchResults.addEventListener('click', e => {
+    const q = srchInput.value.trim();
+    if (q && e.target.closest('.srch__item')) (window.axiaPx = window.axiaPx || []).push(['Search', { search_string: q.slice(0, 100), content_category: 'products' }]);
+  });
   // Enter = browse the whole catalogue filtered by the query (not jump to one item; click a result for that)
   srchInput.addEventListener('keydown', e => { if (e.key === 'Enter') { const q = srchInput.value.trim(); location.href = q ? 'collection?q=' + encodeURIComponent(q) : 'collection'; } });
   $$('[data-search-close]').forEach(b => b.onclick = closeSearch);

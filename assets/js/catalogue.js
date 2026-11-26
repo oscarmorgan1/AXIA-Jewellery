@@ -182,7 +182,12 @@
     signup: function (data) {
       return fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
         .then(function (r) {
-          if (r.ok) return true;
+          if (r.ok) {
+            /* Meta Pixel Lead (assets/js/analytics.js: only sent if analytics is on). Which form
+               and piece, never the name, email or phone. */
+            (window.axiaPx = window.axiaPx || []).push(['Lead', { content_category: data.source === 'giveaway' ? 'giveaway' : 'waitlist', content_ids: data.productId ? [String(data.productId)] : [], content_name: String(data.productName || '') }]);
+            return true;
+          }
           return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.error || 'Sign-up failed (' + r.status + ')'); });
         });
     }
