@@ -1,20 +1,25 @@
-/* AXIA analytics: Google Analytics 4 and Microsoft Clarity, storefront only.
+/* AXIA analytics: Google Analytics 4, Microsoft Clarity and the Meta Pixel, storefront only.
    The server adds this script (server/analytics.js) with the IDs it has:
-     data-ga="G-..."  data-clarity="..."  data-consent="notice" | "opt-in"
-   notice: both run unless the visitor declines. opt-in: nothing runs until they tap OK.
+     data-ga="G-..."  data-clarity="..."  data-meta="..."  data-consent="notice" | "opt-in"
+   notice: they run unless the visitor declines. opt-in: nothing runs until they tap OK.
    The choice is kept in localStorage (axia_consent: yes | no) and can be changed
    from the privacy page ([data-consent-open]).
 
    Never runs for admins (the portal sets axia_no_track), bots, or a browser
    sending Global Privacy Control. Clarity is told to hide every form field and
    the authenticity results, and GA only sees an allow-listed query string, so a
-   serial or anything typed in a form never leaves the page. */
+   serial or anything typed in a form never leaves the page. The Meta Pixel runs
+   with autoConfig off (no automatic button, form or page-content collection),
+   and only sends the shop events pages queue for it:
+     (window.axiaPx = window.axiaPx || []).push(['AddToCart', {value: 129, currency: 'AUD'}]);
+   Queued events wait until the pixel starts, and are dropped if it never does. */
 (function () {
   'use strict';
   var me = document.currentScript;
   if (!me) return;
   var GA = me.getAttribute('data-ga') || '';
   var CLARITY = me.getAttribute('data-clarity') || '';
+  var META = me.getAttribute('data-meta') || '';
   var MODE = me.getAttribute('data-consent') === 'opt-in' ? 'opt-in' : 'notice';
   var KEY = 'axia_consent';
   var started = false;
@@ -51,8 +56,20 @@
     root.querySelectorAll(PRIVATE).forEach(function (el) { el.setAttribute('data-clarity-mask', 'True'); });
   }
 
+  /* Meta events from the page: [name, params, {eventID}] */
+  function send(e) {
+    if (!e || !e[0] || !window.fbq) return;
+    if (e[2] && e[2].eventID) window.fbq('track', e[0], e[1] || {}, { eventID: String(e[2].eventID) });
+    else window.fbq('track', e[0], e[1] || {});
+  }
+
   function start() {
-    if (started || excluded) return;
+    if (excluded) return;
+    if (started) { /* turned back on after a decline on this page */
+      if (GA) window['ga-disable-' + GA] = false;
+      if (META && window.fbq) { window.fbq('consent', 'grant'); window.axiaPx = { push: send }; }
+      return;
+    }
     started = true;
     if (GA) {
       window.dataLayer = window.dataLayer || [];
@@ -74,16 +91,31 @@
       window.clarity = window.clarity || function () { (window.clarity.q = window.clarity.q || []).push(arguments); };
       add('https://www.clarity.ms/tag/' + encodeURIComponent(CLARITY));
     }
+    if (META) {
+      /* Meta's own base code, loaded with this page's nonce instead of inline. */
+      var n = window.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); };
+      if (!window._fbq) window._fbq = n;
+      n.push = n; n.loaded = true; n.version = '2.0'; n.queue = [];
+      window.fbq('set', 'autoConfig', false, META);
+      window.fbq('init', META);
+      window.fbq('track', 'PageView');
+      add('https://connect.facebook.net/en_US/fbevents.js');
+      var q = window.axiaPx || [];
+      window.axiaPx = { push: send };
+      if (q.forEach) q.forEach(send);
+    }
   }
 
   /* Turning it off: stop sending now, and clear the tools' cookies. */
   function stop() {
     if (GA) window['ga-disable-' + GA] = true;
     if (CLARITY && window.clarity) { try { window.clarity('consent', false); } catch (e) {} }
+    if (META && window.fbq) { try { window.fbq('consent', 'revoke'); } catch (e) {} }
+    window.axiaPx = { push: function () {} };
     var host = location.hostname.split('.').slice(-2).join('.');
     document.cookie.split(';').forEach(function (c) {
       var name = c.split('=')[0].trim();
-      if (/^(_ga|_gid|_gat|_clck|_clsk|CLID|MUID)/.test(name)) {
+      if (/^(_ga|_gid|_gat|_clck|_clsk|CLID|MUID|_fbp|_fbc)/.test(name)) {
         ['', '; domain=' + location.hostname, '; domain=.' + host].forEach(function (d) {
           document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/' + d;
         });
@@ -114,7 +146,8 @@
     var t = [];
     if (GA) t.push('Google Analytics');
     if (CLARITY) t.push('Microsoft Clarity');
-    return t.join(' and ');
+    if (META) t.push('the Meta Pixel');
+    return t.length > 1 ? t.slice(0, -1).join(', ') + ' and ' + t[t.length - 1] : t.join('');
   }
 
   var box = null;
@@ -129,7 +162,7 @@
     box.className = 'axc';
     box.setAttribute('role', 'region');
     box.setAttribute('aria-label', 'Analytics choice');
-    box.innerHTML = '<p>We use ' + tools() + ' to provide a better experience for our customers. Find out more in our <a href="/privacy#analytics">privacy policy</a>.</p>' +
+    box.innerHTML = '<p>We use ' + tools() + ' to provide a better experience for our customers' + (META ? ' and to measure our ads' : '') + '. Find out more in our <a href="/privacy#analytics">privacy policy</a>.</p>' +
       '<div class="axc__row"><button type="button" class="axc__no">Decline</button><button type="button" class="axc__ok">OK</button></div>';
     box.querySelector('.axc__ok').addEventListener('click', function () { choose('yes'); });
     box.querySelector('.axc__no').addEventListener('click', function () { choose('no'); });

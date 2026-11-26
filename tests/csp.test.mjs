@@ -46,15 +46,21 @@ test('the admin offline page’s inline script matches its allowed hash', () => 
 });
 
 test('analytics hosts only on pages that load them, and only for the tool configured', async () => {
-  const { GA_HOSTS, CLARITY_HOSTS } = await import('../server/csp.js');
-  const all = [...Object.values(GA_HOSTS).flat(), ...Object.values(CLARITY_HOSTS).flat()];
+  const { GA_HOSTS, CLARITY_HOSTS, META_HOSTS } = await import('../server/csp.js');
+  const all = [...Object.values(GA_HOSTS).flat(), ...Object.values(CLARITY_HOSTS).flat(), ...Object.values(META_HOSTS).flat()];
   const plain = policy('n');
   assert.ok(!all.some(h => plain.includes(h)), 'the default policy (admin, portal, api) has no analytics host');
 
   const ga = policy('n', { ga: 'G-ABC123', clarity: '' });
   assert.ok(directive(ga, 'script-src').includes('https://www.googletagmanager.com'));
   assert.ok(directive(ga, 'connect-src').includes('https://region1.google-analytics.com'));
-  assert.ok(!ga.includes('clarity.ms'));
+  assert.ok(!ga.includes('clarity.ms') && !ga.includes('facebook'));
+
+  const meta = policy('n', { ga: '', clarity: '', meta: '1039087952550475' });
+  assert.ok(directive(meta, 'script-src').includes('https://connect.facebook.net'));
+  assert.ok(directive(meta, 'connect-src').includes('https://www.facebook.com'));
+  assert.ok(directive(meta, 'img-src').includes('https://www.facebook.com'));
+  assert.ok(!meta.includes('google-analytics'));
 
   const both = policy('n', { ga: 'G-ABC123', clarity: 'abcdef1234' });
   const connect = directive(both, 'connect-src');
@@ -68,15 +74,24 @@ test('analytics config: valid IDs only, never on checkout or unsubscribe, no Cla
   const { analyticsFor, analyticsTag } = await import('../server/analytics.js');
   const keep = { ...process.env };
   try {
-    delete process.env.GA_MEASUREMENT_ID; delete process.env.CLARITY_PROJECT_ID;
+    delete process.env.GA_MEASUREMENT_ID; delete process.env.CLARITY_PROJECT_ID; delete process.env.META_PIXEL_ID;
     assert.equal(analyticsFor('store'), null);
     process.env.GA_MEASUREMENT_ID = 'G-ABC123'; process.env.CLARITY_PROJECT_ID = 'abcdef1234';
-    assert.deepEqual(analyticsFor('store'), { ga: 'G-ABC123', clarity: 'abcdef1234', consent: 'notice' });
+    assert.deepEqual(analyticsFor('store'), { ga: 'G-ABC123', clarity: 'abcdef1234', meta: '', consent: 'notice' });
     for (const p of ['checkout', 'unsubscribe', 'styleguide']) assert.equal(analyticsFor(p), null);
     assert.equal(analyticsFor('genuine').clarity, '');
+    // Meta: storefront and checkout (InitiateCheckout, Purchase), never genuine, unsubscribe or the style guide
+    process.env.META_PIXEL_ID = '1039087952550475';
+    assert.equal(analyticsFor('store').meta, '1039087952550475');
+    assert.deepEqual(analyticsFor('checkout'), { ga: '', clarity: '', meta: '1039087952550475', consent: 'notice' });
+    assert.equal(analyticsFor('genuine').meta, '');
+    for (const p of ['unsubscribe', 'styleguide']) assert.equal(analyticsFor(p), null);
+    process.env.META_PIXEL_ID = '1039"><script>';
+    assert.equal(analyticsFor('store').meta, '');
+    delete process.env.META_PIXEL_ID;
     process.env.GA_MEASUREMENT_ID = '"><script>'; process.env.CLARITY_PROJECT_ID = 'x';
     assert.equal(analyticsFor('store'), null);
     process.env.GA_MEASUREMENT_ID = 'G-ABC123'; process.env.ANALYTICS_CONSENT = 'opt-in';
-    assert.equal(analyticsTag(analyticsFor('store')), '<script src="/assets/js/analytics.js?v=20261116c" data-ga="G-ABC123" data-consent="opt-in" defer></script>');
+    assert.equal(analyticsTag(analyticsFor('store')), '<script src="/assets/js/analytics.js?v=20261126a" data-ga="G-ABC123" data-consent="opt-in" defer></script>');
   } finally { process.env = keep; }
 });

@@ -47,6 +47,14 @@ export const GA_HOSTS = {
   connect: ['https://www.google-analytics.com', 'https://region1.google-analytics.com', 'https://analytics.google.com', 'https://region1.analytics.google.com', 'https://www.googletagmanager.com'],
   img: ['https://www.google-analytics.com', 'https://www.googletagmanager.com'],
 };
+// Meta Pixel: fbevents.js and the config/plugin scripts it loads from
+// connect.facebook.net, and events sent to www.facebook.com/tr (as an image,
+// a beacon or a fetch).
+export const META_HOSTS = {
+  script: ['https://connect.facebook.net'],
+  connect: ['https://www.facebook.com', 'https://connect.facebook.net'],
+  img: ['https://www.facebook.com'],
+};
 export const CLARITY_HOSTS = {
   script: ['https://www.clarity.ms', 'https://scripts.clarity.ms'],
   connect: ['https://*.clarity.ms'],
@@ -56,10 +64,10 @@ export const CLARITY_HOSTS = {
 /**
  * The policy for one response.
  * @param {string} nonce
- * @param {{ga?: string, clarity?: string}|null} analytics  the page's analytics (storefront pages only)
+ * @param {{ga?: string, clarity?: string, meta?: string}|null} analytics  the page's analytics (storefront pages only)
  */
 export function policy(nonce, analytics = null) {
-  const extra = [analytics && analytics.ga && GA_HOSTS, analytics && analytics.clarity && CLARITY_HOSTS].filter(Boolean);
+  const extra = [analytics && analytics.ga && GA_HOSTS, analytics && analytics.clarity && CLARITY_HOSTS, analytics && analytics.meta && META_HOSTS].filter(Boolean);
   const more = k => extra.flatMap(h => h[k]);
   const dev = EMULATING() ? EMULATORS : [];
   const site = SITE();

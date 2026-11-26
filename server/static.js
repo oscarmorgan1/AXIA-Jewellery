@@ -65,7 +65,7 @@ export function staticSite(root) {
   // Storefront pages go out with their canonical, preview and robots tags (seo.js).
   const sendSitePage = async (req, res, name) => {
     let html = await renderPage(path.join(root, name + '.html'), name, req.path === '/' ? '/' : '/' + name, req.query);
-    // GA4 and Clarity on storefront pages only, with their hosts added to this page's CSP (analytics.js).
+    // GA4, Clarity and the Meta Pixel on storefront pages only, with their hosts added to this page's CSP (analytics.js).
     const analytics = analyticsFor(name);
     if (analytics) { html = html.replace('</head>', `${analyticsTag(analytics)}\n</head>`); allowAnalytics(res, analytics); }
     res.set('Cache-Control', NO_CACHE).type('html').send(withNonce(html, res.locals.nonce));
