@@ -98,7 +98,7 @@ env:
   # and Purchase. Same consent and exclusions as GA (assets/js/analytics.js).
   # A public ID, so a plain value. Remove this to turn the pixel off.
   - variable: META_PIXEL_ID
-    value: "1039087952550475"
+    value: "1464912622413645"
     availability: [RUNTIME]
 
   # "notice": analytics runs unless a visitor declines (Australian Privacy Act

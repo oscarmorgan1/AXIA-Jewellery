@@ -461,8 +461,8 @@
   <symbol id="boxArt" viewBox="0 0 400 320"><path d="M70 140 L130 84 L360 84 L300 140 Z" fill="#242220" stroke="#3a3733" stroke-width="1.5"/><path d="M300 140 L360 84 L360 232 L300 288 Z" fill="#181614" stroke="#3a3733" stroke-width="1.5"/><rect x="70" y="140" width="230" height="148" rx="4" fill="#1f1d1b" stroke="#3a3733" stroke-width="1.5"/><text x="185" y="220" text-anchor="middle" font-family="Bodoni Moda,serif" font-size="24" letter-spacing="7" fill="#F4F1EA">AXIA</text><path d="M300 200 L300 288" stroke="#F3436E" stroke-width="8"/></symbol>
 </svg>
 
-<script src="assets/js/catalogue.js?v=20261122e"></script>
-<script type="text/axia-deferred" src="assets/js/axia.js?v=20261126a"></script>
+<script src="assets/js/catalogue.js?v=20261126b"></script>
+<script type="text/axia-deferred" src="assets/js/axia.js?v=20261126b"></script>
 <script type="text/axia-deferred">
 (function(){
   const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
@@ -721,6 +721,10 @@
     }
   }
   let pxViewed=false; // ViewContent once per visit, not on every option change
+  // Meta Pixel CustomizeProduct: once per visit, the first time the buyer picks an option or types an
+  // engraving (never the engraving's words)
+  let pxCustom=false;
+  const pxCustomize=()=>{ if(pxCustom) return; pxCustom=true; (window.axiaPx=window.axiaPx||[]).push(['CustomizeProduct',{content_ids:[p.id],content_type:'product',content_name:p.name}]); };
   function sync(){
     $('#pEyebrow').textContent=eyebrow();
     $('#pName').textContent=fullName();
@@ -774,6 +778,7 @@
   /* live engraving preview: updates the clasp text as they type */
   (function(){ const ei=$('#engraveInput'); if(!ei) return;
     ei.addEventListener('input',()=>{
+      pxCustomize();
       let v=ei.value.replace(/[<>]/g,'').slice(0,ENGRAVE_MAX);
       if(v!==ei.value) ei.value=v;
       engraving=v;
@@ -958,6 +963,7 @@
   }
   $('#optWrap').addEventListener('click',e=>{
     const c=e.target.closest('.chip'); if(!c)return;
+    pxCustomize();
     if(SET){
       const part=c.closest('[data-part]'), i=part?+part.dataset.part:-1;
       if(c.dataset.sw!==undefined) setPickers.forEach(k=>{ setParts[k].w=c.dataset.sw; });
