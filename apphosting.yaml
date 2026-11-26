@@ -93,6 +93,14 @@ env:
   # create the Clarity project, set the secret clarity-project-id, add it here as
   # CLARITY_PROJECT_ID (RUNTIME), and add Clarity back to privacy.html.
 
+  # Meta Pixel (Meta Events Manager > Data sources), for measuring Meta ads:
+  # PageView on storefront pages, plus ViewContent, AddToCart, InitiateCheckout
+  # and Purchase. Same consent and exclusions as GA (assets/js/analytics.js).
+  # A public ID, so a plain value. Remove this to turn the pixel off.
+  - variable: META_PIXEL_ID
+    value: "1039087952550475"
+    availability: [RUNTIME]
+
   # "notice": analytics runs unless a visitor declines (Australian Privacy Act
   # allows this). "opt-in": nothing loads until they tap OK.
   - variable: ANALYTICS_CONSENT

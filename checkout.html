@@ -181,7 +181,13 @@
   const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let cart=[]; try{cart=JSON.parse(localStorage.getItem(KEY))||[];}catch(e){}
   const thumb=it=> it.img ? '<img src="'+esc(it.img)+'" alt="" loading="lazy">' : '<span class="ci__mono">A</span>';
-  const sessionId=new URLSearchParams(location.search).get('session_id');
+  // Stripe's session id opens this order's details (/api/checkout/session), so it's taken out of the
+  // address straight away, before analytics loads, and kept in this tab for a refresh.
+  const qs=new URLSearchParams(location.search);
+  let sessionId=qs.get('session_id');
+  if(sessionId){ try{sessionStorage.setItem('axia_co_session',sessionId);}catch(e){} history.replaceState(null,'',location.pathname+'?done=1'); }
+  else if(qs.get('done')){ try{sessionId=sessionStorage.getItem('axia_co_session');}catch(e){} if(!sessionId) history.replaceState(null,'',location.pathname); }
+  const px=e=>(window.axiaPx=window.axiaPx||[]).push(e); // Meta Pixel, only sent if analytics is on (assets/js/analytics.js)
 
   if(sessionId){ confirmation(sessionId); return; }
   if(!cart.length){ $('#coEmpty').hidden=false; return; }
@@ -204,6 +210,7 @@
     (subtotal>999?'<div class="ci"><div class="ci__m"><img src="assets/img/products/tennis-bracelet-4mm/1.jpg" alt="" loading="lazy"></div><div class="ci__t"><div class="ci__n">Classic Tennis Bracelet</div><div class="ci__o">'+(giftLen?esc(giftLen)+' · ':'')+'Free with orders over A$999</div><span class="ci__gift">Free gift</span></div><div class="ci__p">Free</div></div>':'');
   $('#sumSub').textContent=fmtA(subtotal);
   $('#sumTot').textContent=fmtA(subtotal);
+  px(['InitiateCheckout',{content_ids:cart.map(i=>i.id).filter(Boolean),content_type:'product',num_items:cart.reduce((a,i)=>a+(i.q||1),0),value:subtotal,currency:'AUD'}]);
 
   $('#payBtn').addEventListener('click',async()=>{
     const btn=$('#payBtn'), err=$('#coErr');
@@ -227,7 +234,14 @@
       if(!r.ok) throw new Error();
       const o=await r.json();
       if(o.status!=='complete'){ // back from Stripe without paying: show the bag again
+        try{sessionStorage.removeItem('axia_co_session');}catch(e){}
         history.replaceState(null,'',location.pathname); location.reload(); return;
+      }
+      // Purchase, once per order (a refresh doesn't count it again); the order number dedupes it in Meta too.
+      let last=''; try{ last=localStorage.getItem('axia_px_order')||''; }catch(e){}
+      if(o.orderNumber&&last!==String(o.orderNumber)){
+        try{ localStorage.setItem('axia_px_order',String(o.orderNumber)); }catch(e){}
+        px(['Purchase',{content_ids:cart.map(i=>i.id).filter(Boolean),content_type:'product',num_items:o.items.reduce((a,i)=>a+(i.qty||1),0),value:o.totalAUD,currency:'AUD'},{eventID:'order-'+o.orderNumber}]);
       }
       try{ localStorage.setItem(KEY,'[]'); localStorage.setItem('axia_cart_at',String(Date.now())); }catch(e){}
       if(!o.paid) $('#doneLine').innerHTML='Thank you. We\'ll email <span id="doneEmail">you</span> as soon as your payment clears.';

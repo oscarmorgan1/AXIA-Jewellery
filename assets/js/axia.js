@@ -221,6 +221,8 @@
   }
   // `axia_cart_at` stamps each change so a signed-in customer's saved bag
   // (admin-portal/portal/sync.ts) knows which copy is newest.
+  // Meta Pixel AddToCart (assets/js/analytics.js queues it, and only sends it if analytics is on).
+  const pxAdd = it => { (window.axiaPx = window.axiaPx || []).push(['AddToCart', { content_ids: it.id ? [it.id] : [], content_type: 'product', content_name: it.name || '', value: sale(+it.price || 0, it.id), currency: 'AUD' }]); };
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(cart)); localStorage.setItem('axia_cart_at', String(Date.now())); } catch (e) {}
     render();
@@ -241,13 +243,14 @@
     const d = btn.dataset;
     let parts = null; try { parts = d.parts ? JSON.parse(d.parts) : null; } catch (err) { parts = null; }
     cart.push({ id: d.id || '', name: d.name, price: +d.price, opt, img: d.img || '', width: d.width || '', length: d.length || '', colour: d.colour || '', engraving: d.engraving || '', q: 1, ...(Array.isArray(parts) ? { parts } : {}) });
+    pxAdd(cart[cart.length - 1]);
     save(); say(shopOpen() ? 'Added to bag' : 'Reserved'); openC();
   });
 
   // public API for page-level scripts (collection, product)
   window.AXIA = {
     openCart: openC, closeCart: closeC, toast: say,
-    addToCart(it) { cart.push({ q: 1, ...it }); save(); say(shopOpen() ? 'Added to bag' : 'Reserved'); openC(); },
+    addToCart(it) { cart.push({ q: 1, ...it }); pxAdd(it); save(); say(shopOpen() ? 'Added to bag' : 'Reserved'); openC(); },
     getCart: () => cart.slice(),
     // Replaces the bag with the saved one from their account, keeping its timestamp.
     setCart(lines, at) {
